@@ -24,7 +24,7 @@ const MascotaSchema = new mongoose.Schema({
     enum: ['macho', 'hembra'],
     required: true
   },
-  tamaño: {
+  tamano: {
     type: String,
     enum: ['pequeño', 'mediano', 'grande'],
     // required: true
