@@ -1,14 +1,23 @@
 import { FaVenus, FaMars, FaClock } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
-function PetCard({ nombre, edad, sexo, descripcion, imagen }) {
+function PetCard({ nombre, edad, sexo, descripcion, imagen, redirigir = false }) {
+  const navigate = useNavigate();
+
+  const handleAdoptar = () => {
+    if (redirigir) {
+      navigate('/adoptar');
+    }
+  };
+
   return (
     <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-72 flex-shrink-0 transform transition duration-300 hover:scale-105 hover:shadow-2xl">
       {/* Imagen */}
-      <div className="bg-white h-56 w-full flex justify-center items-center overflow-hidden">
+      <div className="h-56 w-full overflow-hidden">
         <img
           src={imagen}
           alt={nombre}
-          className="object-contain h-full w-full"
+          className="h-full w-full object-cover"
         />
       </div>
 
@@ -34,7 +43,10 @@ function PetCard({ nombre, edad, sexo, descripcion, imagen }) {
           {descripcion?.substring(0, 50)}...
         </p>
 
-        <button className="bg-purple-400 text-white font-bold w-full py-2 rounded-full mt-3 hover:bg-purple-500">
+        <button
+          onClick={handleAdoptar}
+          className="bg-purple-400 text-white font-bold w-full py-2 rounded-full mt-3 hover:bg-purple-500"
+        >
           Adoptar
         </button>
       </div>

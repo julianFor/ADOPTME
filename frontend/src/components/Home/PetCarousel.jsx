@@ -1,85 +1,27 @@
-// src/components/Home/PetCarousel.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PetCard from './PetCard';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-
-const mascotas = [
-  {
-    nombre: 'Dasha',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/Dasha.jpeg', // Reemplaza por ruta real desde /public
-  },
-  {
-    nombre: 'Dasha',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/Dasha.jpeg', // Reemplaza por ruta real desde /public
-  },
-  {
-    nombre: 'Dasha',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/Dasha.jpeg', // Reemplaza por ruta real desde /public
-  },
-  {
-    nombre: 'Dasha',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/Dasha.jpeg', // Reemplaza por ruta real desde /public
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  {
-    nombre: 'PerroCalvo',
-    edad: '1 año',
-    sexo: 'Hembra',
-    descripcion: 'tengo 1 año y soy muy caliente 🔥',
-    imagen: 'src/assets/images/perroCalvo.jpg',
-  },
-  // Puedes duplicar esto para más tarjetas
-];
+import { getMascotasFundacion } from '../../services/mascotaService';
 
 function PetCarousel() {
+  const [mascotas, setMascotas] = useState([]);
   const [start, setStart] = useState(0);
   const visible = 3;
+  const navigate = useNavigate(); // 👈 para redirección
+
+  useEffect(() => {
+    const fetchMascotas = async () => {
+      try {
+        const response = await getMascotasFundacion();
+        setMascotas(response.data || []);
+      } catch (error) {
+        console.error('Error al cargar mascotas:', error);
+      }
+    };
+
+    fetchMascotas();
+  }, []);
 
   const avanzar = () => {
     if (start + visible < mascotas.length) {
@@ -109,13 +51,22 @@ function PetCarousel() {
         </button>
 
         {/* Carrusel */}
-        <div className="overflow-x-hidden w-[910px] pb-4"> {/* ya no corta la sombra inferior */}
+        <div className="overflow-x-hidden w-[910px] pb-4">
           <div
             className="flex gap-4 transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${start * 304}px)` }} // 304 = ancho exacto aprox. por tarjeta (incluye gap)
+            style={{ transform: `translateX(-${start * 304}px)` }}
           >
             {mascotas.map((mascota, idx) => (
-              <PetCard key={idx} {...mascota} />
+              <PetCard
+                key={mascota._id || idx}
+                nombre={mascota.nombre}
+                edad={calcularEdad(mascota.fechaNacimiento)}
+                sexo={mascota.sexo}
+                descripcion={mascota.descripcion}
+                imagen={`http://localhost:3000/uploads/${mascota.imagenes}`}
+                redirigir={true} // ✅ solo en carrusel
+                onAdoptar={() => navigate('/adoptar')}
+              />
             ))}
           </div>
         </div>
@@ -142,6 +93,19 @@ function PetCarousel() {
       </div>
     </section>
   );
+}
+
+// Función para calcular edad a partir de la fecha de nacimiento
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return 'N/A';
+  const nacimiento = new Date(fechaNacimiento);
+  const hoy = new Date();
+  const años = hoy.getFullYear() - nacimiento.getFullYear();
+  const meses = hoy.getMonth() - nacimiento.getMonth();
+  if (años <= 0) {
+    return `${Math.max(meses, 1)} mes${meses !== 1 ? 'es' : ''}`;
+  }
+  return `${años} año${años !== 1 ? 's' : ''}`;
 }
 
 export default PetCarousel;

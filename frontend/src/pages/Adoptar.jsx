@@ -141,12 +141,17 @@ function Adoptar() {
   );
 }
 
+// Función para calcular edad a partir de la fecha de nacimiento
 function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return "Edad desconocida";
+  if (!fechaNacimiento) return 'N/A';
   const nacimiento = new Date(fechaNacimiento);
   const hoy = new Date();
-  const edad = hoy.getFullYear() - nacimiento.getFullYear();
-  return `${edad} año${edad > 1 ? "s" : ""}`;
+  const años = hoy.getFullYear() - nacimiento.getFullYear();
+  const meses = hoy.getMonth() - nacimiento.getMonth();
+  if (años <= 0) {
+    return `${Math.max(meses, 1)} mes${meses !== 1 ? 'es' : ''}`;
+  }
+  return `${años} año${años !== 1 ? 's' : ''}`;
 }
 
 export default Adoptar;
