@@ -35,7 +35,7 @@ function PetCard({ nombre, edad, sexo, descripcion, imagen }) {
         </p>
 
         <button className="bg-purple-400 text-white font-bold w-full py-2 rounded-full mt-3 hover:bg-purple-500">
-          Adoptar
+          Conocer mas
         </button>
       </div>
     </div>

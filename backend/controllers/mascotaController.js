@@ -12,7 +12,7 @@ const mongoose = require('mongoose');
     estadoSalud,
     origen,
     sexo,
-    tamaño,
+    tamano,
     publicadaPor
   } = req.body;
     const imagenes = req.files?.map(file => file.filename) || [];
@@ -26,7 +26,7 @@ const mongoose = require('mongoose');
       estadoSalud,
       origen,
       sexo,
-      tamaño,
+      tamano,
       publicadaPor,
       imagenes,
   });
