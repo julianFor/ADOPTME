@@ -9,6 +9,8 @@ import MascotaExternaList from './Gestion/Mascotas/MascotaExternaList';
 import SolicitudesPorMascotaList from '../pages/Gestion/SolicitudesAdopcion/SolicitudesPorMascotaList';
 import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/SolicitudesDetalleMascota';
 import SolicitudDetalle from '../pages/Gestion/SolicitudesAdopcion/SolicitudDetalle';
+import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAdopcion';
+
 
 import ProcesosAdopcionList from '../pages/Gestion/Adopciones/ProcesosAdopcionList';
 
@@ -32,6 +34,8 @@ const DashboardAdmin = () => {
 
           {/* Procesos de Adopción */}
           <Route path="procesos-adopcion" element={<ProcesosAdopcionList />} />
+          <Route path="procesos-adopcion/:id" element={<DetalleProcesoAdopcion />} />
+
         </Routes>
       </main>
     </div>

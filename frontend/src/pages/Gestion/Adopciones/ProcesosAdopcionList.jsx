@@ -90,7 +90,7 @@ const ProcesosAdopcionList = () => {
                 <td className="px-4 py-2">
                   <button
                     onClick={() =>
-                      navigate(`/dashboard/admin/procesos-adopcion/${proceso._id}`)
+                      navigate(`/dashboard/admin/procesos-adopcion/${proceso.solicitud._id}`)
                     }
                     className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
                   >
