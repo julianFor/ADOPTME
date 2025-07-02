@@ -69,17 +69,40 @@ const App = () => {
       imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.xGHxycEyEXAUbJhovanz8QHaHa?pid=Api&P=0&h=180' 
     }
   ];
-
+    
   const handleDonate = (product) => {
     setSelectedProduct(product);
     setShowForm(true);
   };
 
-  const handleSubmitDonation = (donationData) => {
-    console.log('Datos de donación:', donationData);
-    alert(`¡Gracias por donar ${donationData.product.name}!`);
-    setShowForm(false);
+  const handleSubmitDonation = async (donationData) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/donations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product: donationData.product.name,
+          firstName: donationData.firstName,
+          lastName: donationData.lastName,
+          email: donationData.email,
+          phone: donationData.phone
+        })
+      });
+
+      if (!response.ok) throw new Error('Error en la respuesta del servidor');
+      
+      const result = await response.json();
+      alert(`¡Gracias por donar ${donationData.product.name}! (ID: ${result._id})`);
+      setShowForm(false);
+      
+    } catch (error) {
+      console.error('Error al enviar donación:', error);
+      alert('Error al procesar la donación');
+    }
   };
+
 
   return (
     <div className="app">
