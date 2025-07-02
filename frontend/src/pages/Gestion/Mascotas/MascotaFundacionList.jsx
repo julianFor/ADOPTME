@@ -9,6 +9,8 @@ import ConfirmModal from "../../../components/ConfirmModal";
 
 const MascotaFundacionList = () => {
   const [mascotas, setMascotas] = useState([]);
+  const [filteredMascotas, setFilteredMascotas] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMascota, setSelectedMascota] = useState(null);
@@ -18,6 +20,7 @@ const MascotaFundacionList = () => {
     try {
       const response = await getMascotasFundacion();
       setMascotas(response.data);
+      setFilteredMascotas(response.data);
     } catch (error) {
       console.error("Error al obtener mascotas:", error);
     }
@@ -26,6 +29,17 @@ const MascotaFundacionList = () => {
   useEffect(() => {
     fetchMascotas();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredMascotas(mascotas);
+    } else {
+      const filtered = mascotas.filter(mascota =>
+        mascota.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredMascotas(filtered);
+    }
+  }, [searchTerm, mascotas]);
 
   const handleCrear = () => {
     setSelectedMascota(null);
@@ -62,8 +76,10 @@ const MascotaFundacionList = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar"
+              placeholder="Buscar por nombre"
               className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
           </div>
@@ -90,7 +106,7 @@ const MascotaFundacionList = () => {
             </tr>
           </thead>
           <tbody>
-            {mascotas.map((mascota) => (
+            {filteredMascotas.map((mascota) => (
               <tr key={mascota._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
                     <img
@@ -124,8 +140,10 @@ const MascotaFundacionList = () => {
             ))}
           </tbody>
         </table>
-        {mascotas.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No hay mascotas registradas.</p>
+        {filteredMascotas.length === 0 && (
+          <p className="text-center text-gray-500 py-6">
+            {searchTerm ? "No se encontraron mascotas con ese nombre" : "No hay mascotas registradas."}
+          </p>
         )}
       </div>
 
