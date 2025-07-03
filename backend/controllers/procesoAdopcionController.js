@@ -270,3 +270,22 @@ exports.rechazarEtapa = async (req, res) => {
   }
 };
 
+exports.getProcesoPorId = async (req, res) => {
+  try {
+    const proceso = await ProcesoAdopcion.findById(req.params.id)
+      .populate({
+        path: 'solicitud',
+        populate: { path: 'mascota' }
+      });
+
+    if (!proceso) {
+      return res.status(404).json({ message: 'Proceso no encontrado' });
+    }
+
+    res.json({ success: true, proceso });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener el proceso' });
+  }
+};
+

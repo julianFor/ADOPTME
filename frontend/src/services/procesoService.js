@@ -33,18 +33,15 @@ export const registrarVisita = async (idProceso, datosVisita) => {
 };
 
 // Subir compromiso (PDF firmado)
-export const subirCompromiso = async (idProceso, file) => {
-  const formData = new FormData();
-  formData.append('compromiso', file);
-
+export const subirCompromiso = async (idProceso, formData) => {
   const { data } = await axiosClient.post(`/proceso/${idProceso}/compromiso`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   });
-
   return data;
 };
+
 
 // Registrar entrega
 export const registrarEntrega = async (idProceso, datosEntrega) => {
@@ -64,4 +61,9 @@ export const rechazarEtapa = async (idProceso, etapa, motivo) => {
     motivo
   });
   return data;
+};
+//Consultar Proceso Por Id
+export const getProcesoPorId = async (procesoId) => {
+  const response = await axiosClient.get(`/proceso/${procesoId}`);
+  return response.data;
 };

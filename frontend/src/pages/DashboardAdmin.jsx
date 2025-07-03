@@ -34,7 +34,7 @@ const DashboardAdmin = () => {
 
           {/* Procesos de Adopción */}
           <Route path="procesos-adopcion" element={<ProcesosAdopcionList />} />
-          <Route path="procesos-adopcion/:id" element={<DetalleProcesoAdopcion />} />
+          <Route path="procesos-adopcion/:procesoId" element={<DetalleProcesoAdopcion />} />
 
         </Routes>
       </main>

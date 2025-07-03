@@ -26,14 +26,17 @@ const ProcesosAdopcionList = () => {
     p.solicitud?.adoptante?.username?.toLowerCase().includes(filtro.toLowerCase())
   );
 
-  const contarEtapasCompletadas = (proceso) => {
-    let total = 0;
-    if (proceso.entrevista?.aprobada) total++;
-    if (proceso.visita?.aprobada) total++;
-    if (proceso.compromiso?.aprobada) total++;
-    if (proceso.entrega?.aprobada) total++;
-    return `${total}/4`;
-  };
+const contarEtapasCompletadas = (proceso) => {
+  let total = 1; // ✅ El formulario siempre cuenta como aprobado
+
+  if (proceso.entrevista?.aprobada) total++;
+  if (proceso.visita?.aprobada) total++;
+  if (proceso.compromiso?.aprobada) total++;
+  if (proceso.entrega?.aprobada) total++;
+
+  return `${total}/5`;
+};
+
 
   return (
     <div className="p-6">
@@ -90,12 +93,13 @@ const ProcesosAdopcionList = () => {
                 <td className="px-4 py-2">
                   <button
                     onClick={() =>
-                      navigate(`/dashboard/admin/procesos-adopcion/${proceso.solicitud._id}`)
+                      navigate(`/dashboard/admin/procesos-adopcion/${proceso._id}`)
                     }
                     className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
                   >
                     Ver Detalles
                   </button>
+
                 </td>
               </tr>
             ))}
