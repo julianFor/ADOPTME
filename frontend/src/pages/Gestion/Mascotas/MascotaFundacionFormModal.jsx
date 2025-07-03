@@ -12,7 +12,7 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
     raza: "",
     fechaNacimiento: "",
     sexo: "hembra",
-    tamaño: "mediano",
+    tamano: "mediano",
     descripcion: "",
     estadoSalud: "saludable",
     esterilizado: false,
@@ -24,6 +24,7 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
     if (initialData) {
       setForm({
         ...initialData,
+        tamano: initialData.tamano || initialData.tamaño || "mediano",
         fechaNacimiento: initialData.fechaNacimiento
           ? new Date(initialData.fechaNacimiento).toISOString().split("T")[0]
           : "",
@@ -35,7 +36,7 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
         raza: "",
         fechaNacimiento: "",
         sexo: "hembra",
-        tamaño: "mediano",
+        tamano: "mediano",
         descripcion: "",
         estadoSalud: "saludable",
         esterilizado: false,
@@ -101,7 +102,7 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
               <option value="hembra">Hembra</option>
               <option value="macho">Macho</option>
             </select>
-            <select name="tamaño" value={form.tamaño} onChange={handleChange} className="w-full border rounded px-3 py-2">
+            <select name="tamano" value={form.tamano} onChange={handleChange} className="w-full border rounded px-3 py-2">
               <option value="pequeño">Pequeño</option>
               <option value="mediano">Mediano</option>
               <option value="grande">Grande</option>
@@ -133,3 +134,4 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
 };
 
 export default MascotaFundacionFormModal;
+
