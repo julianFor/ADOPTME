@@ -102,7 +102,7 @@ exports.getAllSolicitudes = async (req, res) => {
 exports.getMisSolicitudes = async (req, res) => {
   try {
     const solicitudes = await SolicitudAdopcion.find({ adoptante: req.userId })
-      .populate('mascota', 'nombre especie raza');
+      .populate('mascota', 'nombre especie raza imagenes');
     res.status(200).json(solicitudes);
   } catch (error) {
     res.status(500).json({

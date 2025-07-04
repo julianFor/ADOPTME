@@ -1,12 +1,12 @@
 // src/services/solicitudAdopcionService.js
 import axiosClient from "./axiosClient";
 
-// ✅ Obtener resumen de solicitudes agrupadas por mascota (para tabla)
+//  Obtener resumen de solicitudes agrupadas por mascota (para tabla)
 export const getMascotasConSolicitudes = () => {
   return axiosClient.get("/solicitudesAdopcion/resumen-por-mascota");
 };
 
-// ✅ Obtener todas las solicitudes para una mascota específica
+//  Obtener todas las solicitudes para una mascota específica
 export const obtenerSolicitudesPorMascota = (mascotaId) => {
   return axiosClient.get(`/solicitudesAdopcion/porMascota/${mascotaId}`);
 };
@@ -30,3 +30,12 @@ export const rechazarSolicitud = async (id) => {
   return data;
 };
 
+export const getMisSolicitudes = async () => {
+  try {
+    const response = await axiosClient.get('/solicitudesAdopcion/mias');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener tus solicitudes de adopción:', error);
+    throw error;
+  }
+};

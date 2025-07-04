@@ -18,7 +18,7 @@ router.get('/', [verifyToken, checkRole('adminFundacion', 'admin')], controller.
 // Ruta: Agrupar solicitudes por mascota (solo admin o adminFundacion)
 router.get('/porMascota/:idMascota', [verifyToken, checkRole('adminFundacion', 'admin')], controller.obtenerSolicitudesPorMascota);
 
-// Ruta: Ver mis solicitudes (adoptante)
+// Ruta: Ver mis solicitudes 
 router.get('/mias', verifyToken, controller.getMisSolicitudes);
 
 // Ruta: Obtener solicitud por ID (según permisos)
