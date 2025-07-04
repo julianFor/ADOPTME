@@ -3,8 +3,10 @@ import { useContext } from 'react';
 import './index.css';
 import Home from './pages/Home';
 import Adoptar from './pages/Adoptar';
+import ComoAdoptar from './pages/ComoAdoptar';
 import MascotaDetalle from './pages/Mascotas/MascotaDetalle';
 import FormularioAdopcion from './pages/Gestion/SolicitudesAdopcion/FormularioAdopcion';
+import FormularioPublicacion from './pages/Gestion/SolicitudesPublicacion/FormularioPublicacion';
 
 import AuthModal from './components/AuthModal';
 import DashboardAdmin from './pages/DashboardAdmin';
@@ -23,10 +25,10 @@ function AppContent() {
   const { user } = useContext(UserContext);
   const location = useLocation();
 
-  // ✅ Detecta si es una ruta de dashboard
+  //  Detecta si es una ruta de dashboard
   const esRutaDashboard = location.pathname.startsWith('/dashboard');
 
-  // ✅ Renderiza el Navbar correspondiente
+  //  Renderiza el Navbar correspondiente
   const renderNavbar = () => {
     if (!user) return <NavbarDefault />;
     if (user.role === 'admin') return <NavbarAdmin />;
@@ -43,8 +45,10 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/adoptar" element={<Adoptar />} />
+          <Route path="/ComoAdoptar" element={<ComoAdoptar />} />
           <Route path="/mascotas/:id" element={<MascotaDetalle />} />
           <Route path="/adopcion/:idMascota" element={<FormularioAdopcion />} />
+          <Route path="/publicaciones" element={<FormularioPublicacion />} />
 
           <Route path="/dashboard/admin/*" element={<DashboardAdmin />} />
           <Route path="/dashboard/fundacion" element={<DashboardFundacion />} />
@@ -52,7 +56,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* ✅ Footer solo si NO es dashboard */}
+      {/*  Footer solo si NO es dashboard */}
       {!esRutaDashboard && <Footer />}
 
       <AuthModal />

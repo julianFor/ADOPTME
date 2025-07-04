@@ -53,7 +53,7 @@ const DetalleProcesoAdopcion = () => {
 
   return (
     <div className="px-6 py-4">
-      <h2 className="text-3xl font-bold text-purple-600 mb-4">Proceso de Adopción</h2>
+      <h2 className="text-3xl font-bold text-purple-600 mb-4 text-center">Proceso de Adopción</h2>
 
       <LineaProgreso proceso={proceso} />
 

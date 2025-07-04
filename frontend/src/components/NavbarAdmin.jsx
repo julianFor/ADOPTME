@@ -43,7 +43,7 @@ const NavbarAdmin = () => {
 
     const data = await res.json();
     if (data.success) {
-      updateUser(data.user); // 🟣 Actualiza el UserContext y localStorage
+      updateUser(data.user); //  Actualiza el UserContext y localStorage
       alert('Perfil actualizado');
       setEditing(false);
       setShowModal(false);
@@ -150,9 +150,9 @@ const NavbarAdmin = () => {
       <nav className="flex gap-6 text-lg font-medium">
         <Link to="/" className={`pb-1 ${location.pathname === '/' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Inicio</Link>
         <Link to="/adoptar" className={`pb-1 ${location.pathname === '/adoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Adoptar</Link>
-        <Link to="#" className="text-gray-700 hover:text-purple-600">¿Cómo Adoptar?</Link>
+        <Link to="/ComoAdoptar" className={`pb-1 ${location.pathname === '/ComoAdoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>¿Cómo Adoptar?</Link>
         <Link to="#" className="text-gray-700 hover:text-purple-600">Donar</Link>
-        <Link to="/dashboard/admin" className="text-gray-700 hover:text-purple-600">Gestión</Link>
+        <Link to="/dashboard/admin" className={`pb-1 ${location.pathname === '/dashboard/admin' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Gestión</Link>
       </nav>
 
       <div className="flex gap-3 relative">
