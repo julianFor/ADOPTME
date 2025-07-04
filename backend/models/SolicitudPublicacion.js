@@ -27,7 +27,7 @@ const SolicitudPublicacionSchema = new mongoose.Schema({
     sexo: { type: String, enum: ['macho', 'hembra'] },
     estadoSalud: { type: String, enum: ['saludable', 'en tratamiento', 'otro'] },
     personalidad: String,
-    historia: String
+    historia: String,
   },
 
   imagenes: [String], // nombres de archivo subidos

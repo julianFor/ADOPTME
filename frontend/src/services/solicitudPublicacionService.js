@@ -47,3 +47,11 @@ export const rechazarSolicitudPublicacion = async (id) => {
   const response = await axiosClient.patch(`/publicaciones/${id}/rechazar`);
   return response.data;
 };
+
+/**
+ * Obtener las solicitudes de publicación del usuario autenticado (adoptante)
+ */
+export const getMisSolicitudes = async () => {
+  const response = await axiosClient.get('/publicaciones/mias');
+  return response.data.solicitudes;
+};

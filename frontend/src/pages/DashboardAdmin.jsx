@@ -18,6 +18,8 @@ import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAd
 
 import ListaSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/ListaSolicitudesPublicacion';
 import DetalleSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetalleSolicitudPublicacion';
+import MisSolicitudesPublicacion from "../pages/Gestion/SolicitudesPublicacion/MisSolicitudesPublicacion";
+import DetallesMiSolicitudPublicacion from "../pages/Gestion/SolicitudesPublicacion/DetallesMiSolicitudPublicacion";
 
 const DashboardAdmin = () => {
   return (
@@ -47,6 +49,9 @@ const DashboardAdmin = () => {
           {/* Solicitudes de Publicación */}
           <Route path="solicitudes-publicacion" element={<ListaSolicitudesPublicacion />} />
           <Route path="solicitudes-publicacion/:id" element={<DetalleSolicitudPublicacion />} />
+          <Route path="mis-solicitudes-publicacion" element={<MisSolicitudesPublicacion />} />
+          <Route path="/mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
+
         </Routes>
       </main>
     </div>
