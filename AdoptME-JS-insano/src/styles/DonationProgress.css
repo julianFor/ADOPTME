@@ -1,0 +1,19 @@
+.donation-progress {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.donation-progress .progress-bar {
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 24px;
+  margin: 1rem auto;
+  max-width: 500px;
+}
+
+.donation-progress .filled {
+  background-color: #a855f7;
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
