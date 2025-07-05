@@ -43,10 +43,11 @@ export const aprobarSolicitudPublicacion = async (id) => {
 /**
  * Rechazar solicitud (solo admin)
  */
-export const rechazarSolicitudPublicacion = async (id) => {
-  const response = await axiosClient.patch(`/publicaciones/${id}/rechazar`);
+export const rechazarSolicitudPublicacion = async (id, observaciones = '') => {
+  const response = await axiosClient.patch(`/publicaciones/${id}/rechazar`, { observaciones });
   return response.data;
 };
+
 
 /**
  * Obtener las solicitudes de publicación del usuario autenticado (adoptante)

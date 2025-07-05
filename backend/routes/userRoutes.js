@@ -56,6 +56,7 @@ router.delete('/:id',
     checkRole('admin'),
     userController.deleteUser
 );
-
+// Consultar Usuarios por Rol
+router.get('/por-rol/:rol', verifyToken, userController.getUsersByRole);
 
 module.exports = router;

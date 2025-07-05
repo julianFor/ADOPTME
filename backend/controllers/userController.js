@@ -330,3 +330,34 @@ exports.actualizarMiPerfil = async (req, res) => {
     });
   }
 };
+
+
+// Obtener todos los usuarios por rol (uso interno para backend: notificaciones, etc.)
+exports.getUsersByRole = async (req, res) => {
+  try {
+    const { rol } = req.params;
+
+    const rolesValidos = ['admin', 'adminFundacion', 'adoptante'];
+
+    if (!rolesValidos.includes(rol)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rol no válido'
+      });
+    }
+
+    const usuarios = await User.find({ role: rol }).select('-password');
+
+    res.status(200).json({
+      success: true,
+      data: usuarios
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener usuarios por rol',
+      error: error.message
+    });
+  }
+};

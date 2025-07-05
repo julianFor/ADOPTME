@@ -1,6 +1,7 @@
 const SolicitudPublicacion = require('../models/SolicitudPublicacion');
 const Mascota = require('../models/Mascota');
-
+const { enviarNotificacionesPorRol } = require('../utils/notificaciones');
+const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
 // Crear nueva solicitud (la llena el adoptante)
 exports.crearSolicitud = async (req, res) => {
   try {
@@ -27,9 +28,28 @@ exports.crearSolicitud = async (req, res) => {
     });
 
     const guardada = await nuevaSolicitud.save();
-    res.status(201).json({ success: true, message: 'Solicitud creada', solicitud: guardada });
+
+    //  Enviar notificación a admin y adminFundacion
+    const mensaje = 'Nueva solicitud para publicar una mascota ha sido registrada';
+    const datosAdicionales = {
+      solicitudId: guardada._id
+    };
+
+    await enviarNotificacionesPorRol('admin', 'nueva-solicitud-publicacion', mensaje, datosAdicionales);
+    await enviarNotificacionesPorRol('adminFundacion', 'nueva-solicitud-publicacion', mensaje, datosAdicionales);
+
+    res.status(201).json({
+      success: true,
+      message: 'Solicitud creada',
+      solicitud: guardada
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al crear solicitud', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear solicitud',
+      error: error.message
+    });
   }
 };
 
@@ -117,13 +137,34 @@ exports.aprobarYPublicar = async (req, res) => {
     solicitud.estado = 'aprobada';
     await solicitud.save();
 
-    res.status(200).json({ success: true, message: 'Solicitud aprobada y mascota publicada', mascota: nuevaMascota });
+    //  Notificar al adoptante
+    const mensaje = '¡Tu mascota ha sido publicada exitosamente en la plataforma!';
+    const datosAdicionales = {
+      mascotaId: nuevaMascota._id
+    };
+
+    await enviarNotificacionPersonalizada(
+      [solicitud.adoptante._id],
+      'solicitud-publicacion-aprobada',
+      mensaje,
+      datosAdicionales
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Solicitud aprobada y mascota publicada',
+      mascota: nuevaMascota
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al aprobar y publicar', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al aprobar y publicar',
+      error: error.message
+    });
   }
 };
 
-// Rechazar solicitud (solo admin)
 exports.rechazarSolicitud = async (req, res) => {
   try {
     const solicitud = await SolicitudPublicacion.findById(req.params.id);
@@ -135,9 +176,33 @@ exports.rechazarSolicitud = async (req, res) => {
     solicitud.observacionesAdmin = req.body.observaciones || '';
     await solicitud.save();
 
-    res.status(200).json({ success: true, message: 'Solicitud rechazada', solicitud });
+    // ✅ Manejo seguro de notificación
+    if (solicitud.adoptante) {
+      try {
+        await enviarNotificacionPersonalizada(
+          [solicitud.adoptante],
+          'solicitud-publicacion-rechazada',
+          'Tu solicitud para publicar una mascota fue rechazada. Revisa las observaciones o contáctanos.',
+          { solicitudId: solicitud._id }
+        );
+      } catch (notiError) {
+        console.error('⚠️ Error al enviar notificación de rechazo:', notiError.message);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Solicitud rechazada',
+      solicitud
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al rechazar solicitud', error: error.message });
+    console.error('⛔ Error completo al rechazar solicitud:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al rechazar solicitud',
+      error: error.message
+    });
   }
 };
 

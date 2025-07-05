@@ -1,10 +1,12 @@
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
+const { enviarNotificacionPersonalizada } = require('../utils/notificaciones'); 
 
 // Crear un nuevo proceso (solo si la solicitud está aprobada)
 exports.crearProceso = async (req, res) => {
   try {
     const { solicitudId } = req.body;
+
     const solicitud = await SolicitudAdopcion.findById(solicitudId);
 
     if (!solicitud || solicitud.estado !== 'pendiente') {
@@ -17,12 +19,34 @@ exports.crearProceso = async (req, res) => {
     const proceso = new ProcesoAdopcion({ solicitud: solicitudId });
     const guardado = await proceso.save();
 
-    res.status(201).json({ success: true, message: 'Proceso de adopción creado', proceso: guardado });
+    //  Notificar al adoptante
+    const mensaje = 'Tu solicitud de adopción fue aprobada. Hemos iniciado el proceso de adopción.';
+    const datosAdicionales = {
+      solicitudId: solicitud._id,
+      procesoId: guardado._id
+    };
+
+    await enviarNotificacionPersonalizada(
+      [solicitud.adoptante],
+      'solicitud-adopcion-aprobada',
+      mensaje,
+      datosAdicionales
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Proceso de adopción creado',
+      proceso: guardado
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al crear proceso', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear proceso',
+      error: error.message
+    });
   }
 };
-
 
 // Agendar entrevista virtual
 exports.agendarEntrevista = async (req, res) => {
@@ -133,9 +157,31 @@ exports.registrarEntrega = async (req, res) => {
 
     await proceso.save();
 
-    res.status(200).json({ success: true, message: 'Entrega registrada exitosamente.', entrega: proceso.entrega });
+    //  Notificar al adoptante
+    const mensaje = '¡Entrega confirmada! Gracias por brindarle un hogar a tu nuevo compañero peludo 🐾';
+    const datosAdicionales = {
+      procesoId: proceso._id,
+      fechaEntrega
+    };
+
+    await enviarNotificacionPersonalizada(
+      [solicitud.adoptante],
+      'proceso-entrega-confirmada',
+      mensaje,
+      datosAdicionales
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Entrega registrada exitosamente.',
+      entrega: proceso.entrega
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al registrar entrega.', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al registrar entrega.',
+      error: error.message
+    });
   }
 };
 

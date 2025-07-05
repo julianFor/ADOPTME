@@ -47,7 +47,7 @@ const DetalleSolicitudPublicacion = () => {
 
   const handleRechazar = async () => {
     try {
-      await rechazarSolicitudPublicacion(solicitud._id);
+      await rechazarSolicitudPublicacion(solicitud._id, 'No cumple con los criterios de publicación');
       alert('Solicitud rechazada.');
       navigate('/dashboard/admin/solicitudes-publicacion');
     } catch (error) {

@@ -1,11 +1,11 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authView, setAuthView] = useState('login');
-  const [user, setUser] = useState(null); // 👈 Nuevo
+  const [user, setUser] = useState(null);
 
   const openLogin = () => {
     setAuthView('login');
@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
   const switchToRegister = () => setAuthView('register');
   const switchToLogin = () => setAuthView('login');
 
-  // Cargar usuario desde localStorage si existe
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -41,10 +40,13 @@ export const AuthProvider = ({ children }) => {
         switchToRegister,
         switchToLogin,
         user,
-        setUser, // 👈 lo exportamos
+        setUser,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
+// ✅ Agregado para que NotificationContext funcione correctamente
+export const useAuth = () => useContext(AuthContext);

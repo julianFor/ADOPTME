@@ -1,72 +1,82 @@
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
+const { enviarNotificacionesPorRol } = require('../utils/notificaciones'); //  Importar utilidades
+const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
 
 // Crear nueva solicitud de adopción
 exports.crearSolicitud = async (req, res) => {
   try {
-        const {
-        mascota,
-        nombreCompleto,
-        cedula,
-        fechaNacimiento,
-        direccion,
-        barrio,
-        ciudad,
-        telefono,
-        correo,
-        tipoVivienda,
-        tenenciaVivienda,        
-        acuerdoFamiliar,         
-        hayNinos,
-        otrasMascotas,
-        alergias,
-        motivoAdopcion,
-        lugarMascota,            
-        reaccionProblemas,       
-        tiempoSola,
-        responsable,
-        queHariasMudanza,        
-        aceptaVisitaVirtual,
-        compromisoCuidados,
-        aceptaContrato
+    const {
+      mascota,
+      nombreCompleto,
+      cedula,
+      fechaNacimiento,
+      direccion,
+      barrio,
+      ciudad,
+      telefono,
+      correo,
+      tipoVivienda,
+      tenenciaVivienda,
+      acuerdoFamiliar,
+      hayNinos,
+      otrasMascotas,
+      alergias,
+      motivoAdopcion,
+      lugarMascota,
+      reaccionProblemas,
+      tiempoSola,
+      responsable,
+      queHariasMudanza,
+      aceptaVisitaVirtual,
+      compromisoCuidados,
+      aceptaContrato
     } = req.body;
-
 
     const documentoIdentidad = req.files?.documentoIdentidad?.[0]?.filename || null;
     const pruebaResidencia = req.files?.pruebaResidencia?.[0]?.filename || null;
 
-
     const solicitud = new SolicitudAdopcion({
-        mascota,
-        nombreCompleto,
-        cedula,
-        fechaNacimiento,
-        direccion,
-        barrio,
-        ciudad,
-        telefono,
-        correo,
-        tipoVivienda,
-        tenenciaVivienda,      
-        acuerdoFamiliar,       
-        hayNinos,
-        otrasMascotas,
-        alergias,
-        motivoAdopcion,
-        lugarMascota,           
-        reaccionProblemas,      
-        tiempoSola,
-        responsable,
-        queHariasMudanza,       
-        aceptaVisitaVirtual,
-        compromisoCuidados,
-        aceptaContrato,
-        documentoIdentidad,     
-        pruebaResidencia,       
-        adoptante: req.userId
-});
-
+      mascota,
+      nombreCompleto,
+      cedula,
+      fechaNacimiento,
+      direccion,
+      barrio,
+      ciudad,
+      telefono,
+      correo,
+      tipoVivienda,
+      tenenciaVivienda,
+      acuerdoFamiliar,
+      hayNinos,
+      otrasMascotas,
+      alergias,
+      motivoAdopcion,
+      lugarMascota,
+      reaccionProblemas,
+      tiempoSola,
+      responsable,
+      queHariasMudanza,
+      aceptaVisitaVirtual,
+      compromisoCuidados,
+      aceptaContrato,
+      documentoIdentidad,
+      pruebaResidencia,
+      adoptante: req.userId
+    });
 
     const guardada = await solicitud.save();
+
+    //  Enviar notificaciones
+    const mensaje = 'Nueva solicitud de adopción registrada';
+    const datosAdicionales = {
+      solicitudId: guardada._id,
+      mascotaId: guardada.mascota
+    };
+
+    await enviarNotificacionesPorRol('admin', 'solicitud-adopcion-creada', mensaje, datosAdicionales);
+    await enviarNotificacionesPorRol('adminFundacion', 'solicitud-adopcion-creada', mensaje, datosAdicionales);
+
     res.status(201).json({
       success: true,
       message: 'Solicitud registrada con éxito',
@@ -81,7 +91,6 @@ exports.crearSolicitud = async (req, res) => {
     });
   }
 };
-
 // Obtener todas las solicitudes (solo admin y adminFundacion)
 exports.getAllSolicitudes = async (req, res) => {
   try {
@@ -145,8 +154,8 @@ exports.obtenerSolicitudesPorMascota = async (req, res) => {
     const { idMascota } = req.params;
 
     const solicitudes = await SolicitudAdopcion.find({ mascota: idMascota })
-      .populate('adoptante', 'username email role') // ✅ trae datos del adoptante
-      .populate('mascota', 'nombre especie raza imagenes') // ✅ trae datos básicos de la mascota
+      .populate('adoptante', 'username email role') //  trae datos del adoptante
+      .populate('mascota', 'nombre especie raza imagenes') //  trae datos básicos de la mascota
       .sort({ createdAt: -1 });
 
     if (!solicitudes || solicitudes.length === 0) {
@@ -249,11 +258,23 @@ exports.rechazarSolicitud = async (req, res) => {
     solicitud.estado = 'rechazada';
     await solicitud.save();
 
+    // ✅ Enviar notificación al adoptante
+    const mensaje = 'Tu solicitud de adopción fue rechazada. Puedes intentarlo nuevamente con otra mascota.';
+    const datosAdicionales = { solicitudId: solicitud._id };
+
+    await enviarNotificacionPersonalizada(
+      [solicitud.adoptante],
+      'solicitud-adopcion-rechazada',
+      mensaje,
+      datosAdicionales
+    );
+
     res.status(200).json({
       success: true,
       message: 'Solicitud rechazada exitosamente',
       solicitud
     });
+
   } catch (error) {
     console.error('Error al rechazar solicitud:', error);
     res.status(500).json({

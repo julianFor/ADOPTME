@@ -35,14 +35,13 @@ const ListaSolicitudesPublicacion = () => {
 
   return (
     <div className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Solicitudes Publicación</h1>
-
-        <div className="flex gap-4 items-center w-full sm:w-auto">
+        <div className="flex gap-4">
           <select
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+            className="border border-purple-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
           >
             <option value="">Estado</option>
             <option value="pendiente">Pendiente</option>
@@ -50,13 +49,13 @@ const ListaSolicitudesPublicacion = () => {
             <option value="rechazada">Rechazada</option>
           </select>
 
-          <div className="relative w-full sm:w-64">
+          <div className="relative">
             <input
               type="text"
               placeholder="Buscar"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              className="pl-4 pr-10 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
           </div>
@@ -66,7 +65,7 @@ const ListaSolicitudesPublicacion = () => {
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto">
           <thead>
-            <tr className="border-b text-left text-gray-500 text-sm font-light">
+            <tr className="border-b text-left text-gray-400 font-light">
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Teléfono</th>
               <th className="px-4 py-2">Mascota</th>
