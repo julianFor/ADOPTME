@@ -15,11 +15,14 @@ import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/De
 import SolicitudDetalle from '../pages/Gestion/SolicitudesAdopcion/SolicitudDetalle';
 import ProcesosAdopcionList from '../pages/Gestion/Adopciones/ProcesosAdopcionList';
 import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAdopcion';
+import MisProcesosAdopcion from "../pages/Gestion/Adopciones/MisProcesosAdopcion";
+
 
 import ListaSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/ListaSolicitudesPublicacion';
 import DetalleSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetalleSolicitudPublicacion';
 import MisSolicitudesPublicacion from "../pages/Gestion/SolicitudesPublicacion/MisSolicitudesPublicacion";
 import DetallesMiSolicitudPublicacion from "../pages/Gestion/SolicitudesPublicacion/DetallesMiSolicitudPublicacion";
+import MisPublicaciones from '../pages/Gestion/SolicitudesPublicacion/MisPublicaciones';
 
 const DashboardAdmin = () => {
   return (
@@ -45,12 +48,15 @@ const DashboardAdmin = () => {
           {/* Procesos de Adopción */}
           <Route path="procesos-adopcion" element={<ProcesosAdopcionList />} />
           <Route path="procesos-adopcion/:procesoId" element={<DetalleProcesoAdopcion />} />
+          <Route path="mis-procesos" element={<MisProcesosAdopcion />} />
+
 
           {/* Solicitudes de Publicación */}
           <Route path="solicitudes-publicacion" element={<ListaSolicitudesPublicacion />} />
           <Route path="solicitudes-publicacion/:id" element={<DetalleSolicitudPublicacion />} />
           <Route path="mis-solicitudes-publicacion" element={<MisSolicitudesPublicacion />} />
-          <Route path="/mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
+          <Route path="mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
+          <Route path="mis-publicaciones" element={<MisPublicaciones />} />
 
         </Routes>
       </main>

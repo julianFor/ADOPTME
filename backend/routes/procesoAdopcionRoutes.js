@@ -13,6 +13,9 @@ router.post(
   controller.crearProceso
 );
 
+// Consultar Procesos de Adopcion del Adoptante
+router.get('/mis-procesos', verifyToken, controller.getMisProcesos);
+
 // Agendar entrevista virtual
 router.patch(
   '/:id/entrevista',

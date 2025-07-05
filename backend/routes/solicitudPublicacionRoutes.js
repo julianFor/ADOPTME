@@ -26,6 +26,9 @@ router.get(
   controller.getSolicitudes
 );
 
+
+router.get('/mis-publicaciones', verifyToken, controller.getMisPublicaciones);
+
 //Obtener todas las solicitudes por Usuario
 router.get('/mias', verifyToken, getMisSolicitudes);
 
@@ -54,5 +57,7 @@ router.patch(
   checkRole('admin','adminFundacion'),
   controller.rechazarSolicitud
 );
+
+
 
 module.exports = router;

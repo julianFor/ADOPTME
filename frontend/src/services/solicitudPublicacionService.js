@@ -55,3 +55,11 @@ export const getMisSolicitudes = async () => {
   const response = await axiosClient.get('/publicaciones/mias');
   return response.data.solicitudes;
 };
+
+/**
+ * Obtener las mascotas publicadas por el usuario autenticado
+ */
+export const getMisPublicaciones = async () => {
+  const response = await axiosClient.get('/publicaciones/mis-publicaciones');
+  return response.data.mascotas;
+};

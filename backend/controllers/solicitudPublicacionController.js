@@ -142,3 +142,25 @@ exports.rechazarSolicitud = async (req, res) => {
 };
 
 
+// Obtener las mascotas publicadas por el usuario autenticado (a partir de solicitudes de publicación)
+exports.getMisPublicaciones = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const mascotas = await Mascota.find({
+      origen: 'externo',
+      publicadaPor: userId
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      mascotas
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener tus publicaciones',
+      error: error.message
+    });
+  }
+};

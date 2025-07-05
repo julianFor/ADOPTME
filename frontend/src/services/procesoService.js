@@ -14,6 +14,13 @@ export const getAllProcesos = async () => {
   return data;
 };
 
+// Obtener procesos de adopción del usuario autenticado (adoptante)
+export const getMisProcesos = async () => {
+  const { data } = await axiosClient.get('/proceso/mis-procesos');
+  return data;
+};
+
+
 // Obtener proceso por solicitud (todos los roles)
 export const getProcesoPorSolicitud = async (solicitudId) => {
   const { data } = await axiosClient.get(`/proceso/solicitud/${solicitudId}`);

@@ -289,3 +289,24 @@ exports.getProcesoPorId = async (req, res) => {
   }
 };
 
+
+
+// Obtener procesos de adopción del usuario autenticado 
+exports.getMisProcesos = async (req, res) => {
+  try {
+    const procesos = await ProcesoAdopcion.find()
+      .populate({
+        path: 'solicitud',
+        match: { adoptante: req.userId },
+        populate: { path: 'mascota' }
+      });
+
+    // Filtrar los procesos donde la solicitud fue excluida (por no coincidir con el userId)
+    const procesosFiltrados = procesos.filter(p => p.solicitud !== null);
+
+    res.status(200).json({ success: true, procesos: procesosFiltrados });
+  } catch (error) {
+    console.error('Error al obtener procesos del usuario:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener procesos del usuario.', error: error.message });
+  }
+};
