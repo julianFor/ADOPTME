@@ -6,13 +6,12 @@ import {
   rechazarEtapa
 } from '../../services/procesoService';
 
-const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
+const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
   const [fecha, setFecha] = useState(proceso?.visita?.fechaVisita?.split('T')[0] || '');
   const [hora, setHora] = useState(proceso?.visita?.horaVisita || '');
   const [responsable, setResponsable] = useState(proceso?.visita?.responsable || '');
   const [observaciones, setObservaciones] = useState(proceso?.visita?.observacionesVisita || '');
 
-  // Verifica si se puede aprobar o rechazar esta etapa (requiere que la entrevista esté aprobada)
   const puedeGestionarEtapa = () => {
     return proceso?.entrevista?.aprobada === true;
   };
@@ -65,10 +64,10 @@ const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
 
     const titulo = encodeURIComponent('Visita a la Fundación');
     const detalles = encodeURIComponent(`Responsable: ${responsable}\nObservaciones: ${observaciones}`);
-    const location = ''; // Puedes poner dirección si lo deseas
+    const location = '';
 
     const start = new Date(`${fecha}T${hora}`);
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // duración 1h
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
     const formato = (date) => date.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
     const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formato(start)}/${formato(end)}&details=${detalles}&location=${location}&sf=true&output=xml`;
@@ -88,6 +87,7 @@ const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
+            disabled={!editable}
           />
         </div>
 
@@ -98,6 +98,7 @@ const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={hora}
             onChange={(e) => setHora(e.target.value)}
+            disabled={!editable}
           />
         </div>
 
@@ -109,6 +110,7 @@ const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={responsable}
             onChange={(e) => setResponsable(e.target.value)}
+            readOnly={!editable}
           />
         </div>
 
@@ -120,52 +122,57 @@ const EtapaVisita = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
+            readOnly={!editable}
           />
         </div>
       </form>
 
-      <div className="flex flex-wrap gap-4 mt-8">
-        <button
-          type="button"
-          onClick={generarGoogleCalendarURL}
-          className="flex items-center gap-2 px-4 py-2 border-2 border-purple-500 text-purple-600 rounded-full hover:bg-purple-50 transition"
-        >
-          <img
-            src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png"
-            alt="Google"
-            className="w-5 h-5"
-          />
-          Agendar en Google Calendar
-        </button>
+      {editable && (
+        <>
+          <div className="flex flex-wrap gap-4 mt-8">
+            <button
+              type="button"
+              onClick={generarGoogleCalendarURL}
+              className="flex items-center gap-2 px-4 py-2 border-2 border-purple-500 text-purple-600 rounded-full hover:bg-purple-50 transition"
+            >
+              <img
+                src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              Agendar en Google Calendar
+            </button>
 
-        <button
-          type="button"
-          onClick={handleGuardar}
-          className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
-        >
-          Guardar
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={handleGuardar}
+              className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
+            >
+              Guardar
+            </button>
+          </div>
 
-      <div className="flex gap-4 mt-6 justify-end">
-        <button
-          type="button"
-          onClick={handleRechazar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaTimes /> Rechazar
-        </button>
+          <div className="flex gap-4 mt-6 justify-end">
+            <button
+              type="button"
+              onClick={handleRechazar}
+              disabled={!puedeGestionarEtapa()}
+              className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaTimes /> Rechazar
+            </button>
 
-        <button
-          type="button"
-          onClick={handleAprobar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaCheck /> Aprobar
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={handleAprobar}
+              disabled={!puedeGestionarEtapa()}
+              className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaCheck /> Aprobar
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

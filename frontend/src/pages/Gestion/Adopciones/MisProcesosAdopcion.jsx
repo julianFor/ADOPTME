@@ -81,11 +81,13 @@ const MisProcesosAdopcion = () => {
                   <td className="px-4 py-2">{calcularEstado(item)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      onClick={() => navigate(`/dashboard/adoptante/mis-procesos/${item._id}`)}
-                      className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    >
-                      Ver Detalles
-                    </button>
+                    onClick={() =>
+                      navigate(`/dashboard/admin/procesos-adopcion/${item._id}`)
+                    }
+                    className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
+                  >
+                    Ver Detalles
+                  </button>
                   </td>
                 </tr>
               );

@@ -69,7 +69,7 @@ const LineaProgreso = ({ proceso }) => {
               : etapaActual === 3
               ? 'w-[75%]'
               : 'w-full'
-          } bg-purple-500`}
+          } bg-green-500`}
         ></div>
       </div>
 

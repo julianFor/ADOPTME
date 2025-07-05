@@ -6,11 +6,10 @@ import {
   rechazarEtapa,
 } from '../../services/procesoService';
 
-const EtapaEntrevista = ({ proceso, setProceso, procesoId }) => {
+const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) => {
   const [fecha, setFecha] = useState(proceso?.entrevista?.fechaEntrevista?.split('T')[0] || '');
   const [enlace, setEnlace] = useState(proceso?.entrevista?.enlaceMeet || '');
   const [observaciones, setObservaciones] = useState(proceso?.entrevista?.observacionesEntrevista || '');
-  const [motivoRechazo, setMotivoRechazo] = useState('');
 
   const handleGuardar = async () => {
     try {
@@ -63,8 +62,7 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId }) => {
 
     const start = new Date(`${fecha}T10:00:00`);
     const end = new Date(`${fecha}T11:00:00`);
-    const formato = (date) =>
-      date.toISOString().replace(/[-:]|\.\d{3}/g, '');
+    const formato = (date) => date.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
     const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formato(start)}/${formato(end)}&details=${detalles}&location=${location}&sf=true&output=xml`;
 
@@ -83,6 +81,7 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
+            disabled={!editable}
           />
         </div>
 
@@ -94,6 +93,7 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={enlace}
             onChange={(e) => setEnlace(e.target.value)}
+            readOnly={!editable}
           />
         </div>
 
@@ -105,50 +105,55 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId }) => {
             className="border border-gray-300 rounded-md px-4 py-2"
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
+            readOnly={!editable}
           />
         </div>
       </form>
 
-      <div className="flex flex-wrap gap-4 mt-8">
-        <button
-          type="button"
-          onClick={generarGoogleCalendarURL}
-          className="flex items-center gap-2 px-4 py-2 border-2 border-purple-500 text-purple-600 rounded-full hover:bg-purple-50 transition"
-        >
-          <img
-            src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png"
-            alt="Google"
-            className="w-5 h-5"
-          />
-          Agendar en Google Calendar
-        </button>
+      {editable && (
+        <>
+          <div className="flex flex-wrap gap-4 mt-8">
+            <button
+              type="button"
+              onClick={generarGoogleCalendarURL}
+              className="flex items-center gap-2 px-4 py-2 border-2 border-purple-500 text-purple-600 rounded-full hover:bg-purple-50 transition"
+            >
+              <img
+                src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              Agendar en Google Calendar
+            </button>
 
-        <button
-          type="button"
-          onClick={handleGuardar}
-          className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
-        >
-          Guardar
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={handleGuardar}
+              className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
+            >
+              Guardar
+            </button>
+          </div>
 
-      <div className="flex gap-4 mt-6 justify-end">
-        <button
-          type="button"
-          onClick={handleRechazar}
-          className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition"
-        >
-          <FaTimes /> Rechazar
-        </button>
+          <div className="flex gap-4 mt-6 justify-end">
+            <button
+              type="button"
+              onClick={handleRechazar}
+              className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition"
+            >
+              <FaTimes /> Rechazar
+            </button>
 
-        <button
-          type="button"
-          onClick={handleAprobar}
-          className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition"
-        >
-          <FaCheck /> Aprobar
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={handleAprobar}
+              className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition"
+            >
+              <FaCheck /> Aprobar
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

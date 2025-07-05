@@ -2,8 +2,10 @@ import { useRef, useState } from 'react';
 import jsPDF from 'jspdf';
 import { FaCheck, FaTimes, FaFileSignature } from 'react-icons/fa';
 import { aprobarEtapa, rechazarEtapa, subirCompromiso } from '../../services/procesoService';
+import useUser from '../../hooks/useUser';
 
 const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
+  const { user } = useUser();
   const canvasRef = useRef(null);
   const [nombre, setNombre] = useState('');
   const [documento, setDocumento] = useState('');
@@ -11,9 +13,7 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
   const [verPDF, setVerPDF] = useState(false);
   const [pdfURL, setPdfURL] = useState(null);
 
-  const puedeGestionarEtapa = () => {
-    return proceso?.visita?.aprobada === true;
-  };
+  const puedeGestionarEtapa = () => proceso?.visita?.aprobada === true;
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
@@ -82,9 +82,12 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
       const res = await subirCompromiso(procesoId, formData);
       setProceso(res.proceso);
       alert('Compromiso enviado correctamente.');
-      const url = URL.createObjectURL(blob);
-      setPdfURL(url);
-      setVerPDF(true);
+
+      // ✅ Guardar etapa actual en localStorage
+      localStorage.setItem(`etapaActual-${procesoId}`, '3');
+
+      // ✅ Recargar para mantener estado coherente
+      window.location.reload();
     } catch (error) {
       console.error('Error al enviar compromiso:', error);
       alert('Error al enviar compromiso.');
@@ -213,25 +216,27 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
         </div>
       )}
 
-      <div className="flex gap-4 justify-end">
-        <button
-          type="button"
-          onClick={handleRechazar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaTimes /> Rechazar
-        </button>
+      {user?.role !== 'adoptante' && (
+        <div className="flex gap-4 justify-end">
+          <button
+            type="button"
+            onClick={handleRechazar}
+            disabled={!puedeGestionarEtapa()}
+            className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaTimes /> Rechazar
+          </button>
 
-        <button
-          type="button"
-          onClick={handleAprobar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaCheck /> Aprobar
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleAprobar}
+            disabled={!puedeGestionarEtapa()}
+            className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaCheck /> Aprobar
+          </button>
+        </div>
+      )}
     </div>
   );
 };

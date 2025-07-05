@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { aprobarEtapa, rechazarEtapa, registrarEntrega } from '../../services/procesoService';
+import useUser from '../../hooks/useUser';
 
 const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
+  const { user } = useUser();
+
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [personaEntrega, setPersonaEntrega] = useState('');
   const [observacionesEntrega, setObservacionesEntrega] = useState('');
@@ -14,7 +17,7 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
   useEffect(() => {
     if (proceso?.entrega) {
       if (proceso.entrega.fechaEntrega) {
-        setFechaEntrega(proceso.entrega.fechaEntrega.slice(0, 10)); // formato yyyy-mm-dd
+        setFechaEntrega(proceso.entrega.fechaEntrega.slice(0, 10));
       }
       setPersonaEntrega(proceso.entrega.personaEntrega || '');
       setObservacionesEntrega(proceso.entrega.observacionesEntrega || '');
@@ -22,38 +25,47 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
   }, [proceso]);
 
   const handleGuardar = async () => {
-    if (!fechaEntrega || !personaEntrega) {
-      alert('Por favor completa la fecha y el nombre de quien entrega.');
-      return;
-    }
+  if (!fechaEntrega || !personaEntrega) {
+    alert('Por favor completa la fecha y el nombre de quien entrega.');
+    return;
+  }
 
-    const datosEntrega = {
-      fechaEntrega,
-      personaEntrega,
-      observacionesEntrega,
-    };
-
-    try {
-      const res = await registrarEntrega(procesoId, datosEntrega);
-      setProceso(res.proceso);
-      alert('Entrega registrada exitosamente.');
-    } catch (error) {
-      console.error(error);
-      alert('Error al registrar entrega.');
-    }
+  const datosEntrega = {
+    fechaEntrega,
+    personaEntrega,
+    observacionesEntrega,
   };
 
-  const handleAprobar = async () => {
-    try {
-      const res = await aprobarEtapa(procesoId, 'entrega');
-      setProceso(res.proceso);
-      alert('Etapa de entrega aprobada.');
-    } catch (error) {
-      console.error(error);
-      alert('Error al aprobar etapa.');
-    }
-  };
+  try {
+    const res = await registrarEntrega(procesoId, datosEntrega);
+    setProceso(res.proceso);
+    alert('Entrega registrada exitosamente.');
 
+    // ✅ Guardar etapa actual como 4 (etapa entrega)
+    localStorage.setItem(`etapaActual-${procesoId}`, '4');
+
+    // ✅ Recargar para reflejar el cambio y avanzar en el componente padre
+    window.location.reload();
+  } catch (error) {
+    console.error(error);
+    alert('Error al registrar entrega.');
+  }
+};
+
+const handleAprobar = async () => {
+  try {
+    const res = await aprobarEtapa(procesoId, 'entrega');
+    setProceso(res.proceso);
+    alert('Etapa de entrega aprobada.');
+
+    // ✅ Guardar en localStorage y recargar
+    localStorage.setItem(`etapaActual-${procesoId}`, '4');
+    window.location.reload();
+  } catch (error) {
+    console.error(error);
+    alert('Error al aprobar etapa.');
+  }
+};
   const handleRechazar = async () => {
     const motivo = prompt('¿Cuál es el motivo del rechazo?');
     if (!motivo) return;
@@ -71,7 +83,7 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
     <div className="bg-white p-6 rounded-xl shadow-md">
       <h2 className="text-xl font-bold text-gray-800 mb-6">Entrega de la Mascota</h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="flex flex-col md:col-span-2">
           <label className="font-semibold mb-1">Fecha de Entrega:</label>
           <input
@@ -103,10 +115,11 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
             onChange={(e) => setObservacionesEntrega(e.target.value)}
           />
         </div>
-      </form>
+      </div>
 
       <div className="flex justify-center mb-6">
         <button
+          type="button"
           onClick={handleGuardar}
           className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
         >
@@ -114,23 +127,27 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
         </button>
       </div>
 
-      <div className="flex gap-4 justify-end">
-        <button
-          onClick={handleRechazar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaTimes /> Rechazar
-        </button>
+      {user?.role !== 'adoptante' && (
+        <div className="flex gap-4 justify-end">
+          <button
+            type="button"
+            onClick={handleRechazar}
+            disabled={!puedeGestionarEtapa()}
+            className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaTimes /> Rechazar
+          </button>
 
-        <button
-          onClick={handleAprobar}
-          disabled={!puedeGestionarEtapa()}
-          className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaCheck /> Aprobar
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleAprobar}
+            disabled={!puedeGestionarEtapa()}
+            className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaCheck /> Aprobar
+          </button>
+        </div>
+      )}
     </div>
   );
 };
