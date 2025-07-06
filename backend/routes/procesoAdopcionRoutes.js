@@ -79,7 +79,8 @@ router.patch(
   checkRole('admin', 'adminFundacion'),
   controller.rechazarEtapa
 );
-router.get('/:id', verifyToken, checkRole('admin', 'adminFundacion'), controller.getProcesoPorId);
+
+router.get('/:id', verifyToken, checkRole('admin', 'adminFundacion', 'adoptante'), controller.getProcesoPorId);
 
 
 module.exports = router;

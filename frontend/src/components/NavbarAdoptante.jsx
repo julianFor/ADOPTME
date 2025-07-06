@@ -1,11 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/LogoAdoptmeLavandaV1.svg';
 import { FiBell, FiUser, FiMail } from 'react-icons/fi';
 import { UserContext } from '../context/UserContext';
 
-const NavbarFundacion = () => {
+const NavbarAdoptante = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logoutUser, updateUser } = useContext(UserContext);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -15,6 +16,11 @@ const NavbarFundacion = () => {
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate('/');
   };
 
   const handleUpdate = async () => {
@@ -65,24 +71,27 @@ const NavbarFundacion = () => {
     };
 
     return (
-      <div className="absolute top-20 right-8 bg-white shadow-lg rounded-xl p-6 w-80 z-50">
+      <div className="absolute top-20 right-8 bg-white shadow-xl rounded-xl p-6 w-96 z-50">
         {!editing ? (
           <>
-            <div className="flex items-start gap-4">
+            <div className="flex items-center gap-4">
               <img
                 src={imagenPorRol[user.role]}
                 alt="avatar"
                 className="w-24 h-24 rounded-full object-cover"
               />
-              <div className="flex flex-col justify-between">
-                <h2 className="text-xl font-semibold">{user.username}</h2>
-                <p className="text-gray-500 mb-1">Rol: {user.role}</p>
-                <div className="flex items-center gap-2 text-gray-600 mb-3">
-                  <FiMail />
-                  <span className="break-words">{user.email}</span>
-                </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold truncate">{user.username}</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  <FiUser className="inline mr-1" />
+                  Rol: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                </p>
+                <p className="text-gray-600 text-sm mt-1 break-all">
+                  <FiMail className="inline mr-1" />
+                  {user.email}
+                </p>
                 <button
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 mb-2"
+                  className="w-full bg-purple-600 text-white py-2 rounded-md mt-3 hover:bg-purple-700 transition text-sm"
                   onClick={() => {
                     setFormData({ username: user.username, password: '' });
                     setEditing(true);
@@ -90,49 +99,52 @@ const NavbarFundacion = () => {
                 >
                   Editar Perfil
                 </button>
-                <button
-                  className="border border-gray-400 px-4 py-2 rounded text-gray-800 hover:bg-gray-100"
-                  onClick={logoutUser}
-                >
-                  Cerrar Sesión
-                </button>
               </div>
+            </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            <div className="flex justify-center">
+              <button
+                className="px-6 py-2 border border-gray-400 rounded-full text-gray-800 hover:bg-gray-100 transition text-sm"
+                onClick={handleLogout}
+              >
+                Cerrar Sesión
+              </button>
             </div>
           </>
         ) : (
-          <>
-            <h2 className="text-xl font-semibold mb-4">Editar Perfil</h2>
-            <div className="flex flex-col gap-4">
-              <input
-                type="text"
-                name="username"
-                placeholder="Escribe tu usuario"
-                value={formData.username}
-                onChange={handleChange}
-                className="border px-4 py-2 rounded"
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Escribe tu contraseña"
-                value={formData.password}
-                onChange={handleChange}
-                className="border px-4 py-2 rounded"
-              />
-              <button
-                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                onClick={handleUpdate}
-              >
-                Guardar cambios
-              </button>
-              <button
-                className="text-sm text-gray-500 hover:underline"
-                onClick={() => setEditing(false)}
-              >
-                Cancelar
-              </button>
-            </div>
-          </>
+          <div className="flex flex-col gap-4">
+            <h2 className="text-xl font-semibold text-center">Editar Perfil</h2>
+            <input
+              type="text"
+              name="username"
+              placeholder="Escribe tu usuario"
+              value={formData.username}
+              onChange={handleChange}
+              className="border px-4 py-2 rounded"
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Escribe tu contraseña"
+              value={formData.password}
+              onChange={handleChange}
+              className="border px-4 py-2 rounded"
+            />
+            <button
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+              onClick={handleUpdate}
+            >
+              Guardar cambios
+            </button>
+            <button
+              className="text-sm text-gray-500 hover:underline text-center"
+              onClick={() => setEditing(false)}
+            >
+              Cancelar
+            </button>
+          </div>
         )}
       </div>
     );
@@ -168,4 +180,4 @@ const NavbarFundacion = () => {
   );
 };
 
-export default NavbarFundacion;
+export default NavbarAdoptante;

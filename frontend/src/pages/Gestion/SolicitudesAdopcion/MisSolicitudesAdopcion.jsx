@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { getMisSolicitudes } from "../../../services/solicitudAdopcionService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../../../context/UserContext";
 
 const MisSolicitudesAdopcion = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [filtro, setFiltro] = useState("");
   const navigate = useNavigate();
+  const { user } = useContext(UserContext); // 🔐 obtenemos el rol del usuario
 
   const fetchMisSolicitudes = async () => {
     try {
       const response = await getMisSolicitudes();
-      // ✅ Ajustado para la estructura que trae directamente el array
       setSolicitudes(response || []);
     } catch (error) {
       console.error("Error al obtener tus solicitudes:", error);
@@ -25,6 +26,17 @@ const MisSolicitudesAdopcion = () => {
   const filtradas = solicitudes.filter((item) =>
     item?.mascota?.nombre?.toLowerCase().includes(filtro.toLowerCase())
   );
+
+  // 💡 Ruta dinámica según rol
+  const getRutaDetalle = (id) => {
+    if (user?.role === "admin") {
+      return `/dashboard/admin/mis-solicitudes/${id}`;
+    } else if (user?.role === "adminFundacion") {
+      return `/dashboard/adminFundacion/mis-solicitudes/${id}`;
+    } else {
+      return `/dashboard/adoptante/mis-solicitudes/${id}`;
+    }
+  };
 
   return (
     <div className="p-6">
@@ -58,7 +70,6 @@ const MisSolicitudesAdopcion = () => {
             {filtradas.map((item) => (
               <tr key={item._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
-                  {/* Imagen temporal mientras no haya imagen en el modelo */}
                   <img
                     src={`http://localhost:3000/uploads/${item.mascota?.imagenes}`}
                     alt="mascota"
@@ -74,13 +85,10 @@ const MisSolicitudesAdopcion = () => {
                 <td className="px-4 py-2 text-center">
                   <button
                     className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    onClick={() =>
-                        navigate(`/dashboard/admin/mis-solicitudes/${item._id}`)
-                    }
-                    >
+                    onClick={() => navigate(getRutaDetalle(item._id))}
+                  >
                     Ver Detalles
-                    </button>
-
+                  </button>
                 </td>
               </tr>
             ))}

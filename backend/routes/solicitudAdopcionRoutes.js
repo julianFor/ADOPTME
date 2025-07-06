@@ -22,7 +22,7 @@ router.get('/porMascota/:idMascota', [verifyToken, checkRole('adminFundacion', '
 router.get('/mias', verifyToken, controller.getMisSolicitudes);
 
 // Ruta: Obtener solicitud por ID (según permisos)
-router.get('/:id', [verifyToken, checkRole('adminFundacion', 'admin')], controller.getSolicitudById);
+router.get('/:id', [verifyToken, checkRole('adminFundacion', 'admin','adoptante')], controller.getSolicitudById);
 
 router.put('/:id/rechazar',  [verifyToken, checkRole('adminFundacion', 'admin')], controller.rechazarSolicitud);
 

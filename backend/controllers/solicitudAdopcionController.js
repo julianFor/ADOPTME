@@ -122,7 +122,6 @@ exports.getMisSolicitudes = async (req, res) => {
   }
 };
 
-// Obtener solicitud por ID
 exports.getSolicitudById = async (req, res) => {
   try {
     const solicitud = await SolicitudAdopcion.findById(req.params.id)
@@ -133,10 +132,15 @@ exports.getSolicitudById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
     }
 
-    // Validación de acceso (adoptante solo puede ver su propia solicitud)
-    if (req.userRole === 'adoptante' && solicitud.adoptante._id.toString() !== req.userId) {
-      return res.status(403).json({ success: false, message: 'Acceso denegado' });
+    // ✅ Validación de acceso por rol
+    if (req.userRole === 'adoptante') {
+      if (solicitud.adoptante?._id.toString() !== req.userId) {
+        return res.status(403).json({ success: false, message: 'Acceso denegado' });
+      }
     }
+
+    // Los roles admin y adminFundacion pueden ver cualquier solicitud
+    // No se necesita validación extra
 
     res.status(200).json(solicitud);
   } catch (error) {

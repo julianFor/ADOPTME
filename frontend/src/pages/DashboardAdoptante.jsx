@@ -1,12 +1,41 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import SidebarAdoptante from '../components/dashboard/SidebarAdoptante';
+
+// Vistas del adoptante
+import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
+import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/DetallesMiSolicitudAdopcion';
+
+import MisProcesosAdopcion from "../pages/Gestion/Adopciones/MisProcesosAdopcion";
+import DetalleProcesoAdopcion from "../pages/Gestion/Adopciones/DetalleProcesoAdopcion";
+
+import MisSolicitudesPublicacion from "../pages/Gestion/SolicitudesPublicacion/MisSolicitudesPublicacion";
+import DetallesMiSolicitudPublicacion from "../pages/Gestion/SolicitudesPublicacion/DetallesMiSolicitudPublicacion";
+
+import MisPublicaciones from '../pages/Gestion/SolicitudesPublicacion/MisPublicaciones';
 
 const DashboardAdoptante = () => {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-purple-600 mb-4">Panel del Adoptante</h1>
-      <p className="text-gray-700">
-        Aquí puedes ver el estado de tus solicitudes de adopción, hacer seguimiento al proceso y gestionar tus publicaciones externas si las has enviado.
-      </p>
+    <div className="flex">
+      <SidebarAdoptante />
+      <main className="flex-1 p-6">
+        <Routes>
+          {/* Mi Actividad - Solicitudes de Adopción */}
+          <Route path="mis-solicitudes" element={<MisSolicitudesAdopcion />} />
+          <Route path="mis-solicitudes/:id" element={<DetallesMiSolicitudAdopcion />} />
+
+          {/* Mi Actividad - Procesos de Adopción */}
+          <Route path="mis-procesos" element={<MisProcesosAdopcion />} />
+          <Route path="mis-procesos/:procesoId" element={<DetalleProcesoAdopcion />} />
+
+          {/* Mi Actividad - Solicitudes de Publicación */}
+          <Route path="mis-solicitudes-publicacion" element={<MisSolicitudesPublicacion />} />
+          <Route path="mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
+
+          {/* Mi Actividad - Publicaciones Aprobadas */}
+          <Route path="mis-publicaciones" element={<MisPublicaciones />} />
+        </Routes>
+      </main>
     </div>
   );
 };

@@ -66,15 +66,28 @@ exports.getSolicitudes = async (req, res) => {
 // Obtener una solicitud por ID
 exports.getSolicitudById = async (req, res) => {
   try {
-    const solicitud = await SolicitudPublicacion.findById(req.params.id).populate('adoptante', 'username email');
+    const solicitud = await SolicitudPublicacion.findById(req.params.id)
+      .populate('adoptante', 'username email');
+
     if (!solicitud) {
       return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
     }
+
+    // Validación: solo el adoptante puede ver su propia solicitud
+    if (req.userRole === 'adoptante' && solicitud.adoptante._id.toString() !== req.userId) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado' });
+    }
+
     res.status(200).json({ success: true, solicitud });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al consultar solicitud', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Error al consultar solicitud',
+      error: error.message
+    });
   }
 };
+
 
 exports.getMisSolicitudes = async (req, res) => {
   try {

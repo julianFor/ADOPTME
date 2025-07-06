@@ -117,16 +117,17 @@ const handleAprobar = async () => {
         </div>
       </div>
 
-      <div className="flex justify-center mb-6">
-        <button
-          type="button"
-          onClick={handleGuardar}
-          className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
-        >
-          Guardar
-        </button>
-      </div>
-
+            {(user?.role === 'admin' || user?.role === 'adminFundacion') && (
+        <div className="flex justify-center mb-6">
+          <button
+            type="button"
+            onClick={handleGuardar}
+            className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-6 py-2 rounded-full hover:from-purple-600 hover:to-purple-500 transition"
+          >
+            Guardar
+          </button>
+        </div>
+      )}
       {user?.role !== 'adoptante' && (
         <div className="flex gap-4 justify-end">
           <button

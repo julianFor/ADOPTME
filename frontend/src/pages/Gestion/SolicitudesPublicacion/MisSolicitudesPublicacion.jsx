@@ -2,17 +2,18 @@ import React, { useEffect, useState } from "react";
 import { getMisSolicitudes } from "../../../services/solicitudPublicacionService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 const MisSolicitudesPublicacion = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [filtro, setFiltro] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchMisSolicitudes = async () => {
       try {
         const data = await getMisSolicitudes();
-        console.log("Solicitudes del usuario:", data); // 👈 importante para depurar
         setSolicitudes(data || []);
       } catch (error) {
         console.error("Error al obtener tus solicitudes:", error);
@@ -71,11 +72,19 @@ const MisSolicitudesPublicacion = () => {
                 <td className="px-4 py-2 capitalize">{item.estado}</td>
                 <td className="px-4 py-2 text-center">
                   <button
-                    onClick={() => navigate(`/dashboard/admin/mis-solicitudes-publicacion/${item._id}`)}
+                    onClick={() => {
+                      const rutaBase =
+                        user?.role === "admin"
+                          ? "/dashboard/admin"
+                          : user?.role === "adminFundacion"
+                          ? "/dashboard/adminFundacion"
+                          : "/dashboard/adoptante";
+                      navigate(`${rutaBase}/mis-solicitudes-publicacion/${item._id}`);
+                    }}
                     className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    >
+                  >
                     Ver detalles
-                    </button>
+                  </button>
                 </td>
               </tr>
             ))}

@@ -1,12 +1,56 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import SidebarAdminFundacion from '../components/dashboard/SidebarAdminFundacion';
+
+import MascotaFundacionList from './Gestion/Mascotas/MascotaFundacionList';
+import MascotaExternaList from './Gestion/Mascotas/MascotaExternaList';
+
+import SolicitudesPorMascotaList from '../pages/Gestion/SolicitudesAdopcion/SolicitudesPorMascotaList';
+import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/SolicitudesDetalleMascota';
+import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
+import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/DetallesMiSolicitudAdopcion';
+
+import SolicitudDetalle from '../pages/Gestion/SolicitudesAdopcion/SolicitudDetalle';
+import ProcesosAdopcionList from '../pages/Gestion/Adopciones/ProcesosAdopcionList';
+import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAdopcion';
+import MisProcesosAdopcion from '../pages/Gestion/Adopciones/MisProcesosAdopcion';
+
+import ListaSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/ListaSolicitudesPublicacion';
+import DetalleSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetalleSolicitudPublicacion';
+import MisSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/MisSolicitudesPublicacion';
+import DetallesMiSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetallesMiSolicitudPublicacion';
+import MisPublicaciones from '../pages/Gestion/SolicitudesPublicacion/MisPublicaciones';
 
 const DashboardFundacion = () => {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-purple-600 mb-4">Panel de Administración de Fundación</h1>
-      <p className="text-gray-700">
-        Bienvenido al panel de gestión de mascotas de la fundación. Desde aquí puedes administrar adopciones, agendar entrevistas y coordinar entregas.
-      </p>
+    <div className="flex">
+      <SidebarAdminFundacion />
+      <main className="flex-1 p-6">
+        <Routes>
+          {/* Mascotas */}
+          <Route path="mascotas/fundacion" element={<MascotaFundacionList />} />
+          <Route path="mascotas/externas" element={<MascotaExternaList />} />
+
+          {/* Solicitudes de Adopción */}
+          <Route path="solicitudes-adopcion" element={<SolicitudesPorMascotaList />} />
+          <Route path="solicitudes-adopcion/:id" element={<SolicitudesDetalleMascota />} />
+          <Route path="solicitudes-adopcion/detalle/:id" element={<SolicitudDetalle />} />
+          <Route path="mis-solicitudes" element={<MisSolicitudesAdopcion />} />
+          <Route path="mis-solicitudes/:id" element={<DetallesMiSolicitudAdopcion />} />
+
+          {/* Procesos de Adopción */}
+          <Route path="procesos-adopcion" element={<ProcesosAdopcionList />} />
+          <Route path="procesos-adopcion/:procesoId" element={<DetalleProcesoAdopcion />} />
+          <Route path="mis-procesos" element={<MisProcesosAdopcion />} />
+
+          {/* Solicitudes de Publicación */}
+          <Route path="solicitudes-publicacion" element={<ListaSolicitudesPublicacion />} />
+          <Route path="solicitudes-publicacion/:id" element={<DetalleSolicitudPublicacion />} />
+          <Route path="mis-solicitudes-publicacion" element={<MisSolicitudesPublicacion />} />
+          <Route path="mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
+          <Route path="mis-publicaciones" element={<MisPublicaciones />} />
+        </Routes>
+      </main>
     </div>
   );
 };

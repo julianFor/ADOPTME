@@ -1,13 +1,15 @@
 // src/pages/ProcesosAdopcion/MisProcesosAdopcion.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { getMisProcesos } from "../../../services/procesoService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../../../context/UserContext";
 
 const MisProcesosAdopcion = () => {
   const [procesos, setProcesos] = useState([]);
   const [filtro, setFiltro] = useState("");
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const fetchProcesos = async () => {
@@ -27,10 +29,18 @@ const MisProcesosAdopcion = () => {
     return "Pendiente";
   };
 
+  const getRutaDetalle = (id) => {
+    if (user?.role === "admin") {
+      return `/dashboard/admin/procesos-adopcion/${id}`;
+    } else if (user?.role === "adminFundacion") {
+      return `/dashboard/adminFundacion/procesos-adopcion/${id}`;
+    } else {
+      return `/dashboard/adoptante/mis-procesos/${id}`;
+    }
+  };
+
   const filtrados = procesos.filter((item) =>
-    item?.solicitud?.mascota?.nombre
-      ?.toLowerCase()
-      .includes(filtro.toLowerCase())
+    item?.solicitud?.mascota?.nombre?.toLowerCase().includes(filtro.toLowerCase())
   );
 
   return (
@@ -81,13 +91,11 @@ const MisProcesosAdopcion = () => {
                   <td className="px-4 py-2">{calcularEstado(item)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                    onClick={() =>
-                      navigate(`/dashboard/admin/procesos-adopcion/${item._id}`)
-                    }
-                    className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                  >
-                    Ver Detalles
-                  </button>
+                      onClick={() => navigate(getRutaDetalle(item._id))}
+                      className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
+                    >
+                      Ver Detalles
+                    </button>
                   </td>
                 </tr>
               );

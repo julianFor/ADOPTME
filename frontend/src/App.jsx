@@ -63,8 +63,8 @@ function AppContent() {
 
           {/* Rutas protegidas (según rol) */}
           <Route path="/dashboard/admin/*" element={<DashboardAdmin />} />
-          <Route path="/dashboard/fundacion" element={<DashboardFundacion />} />
-          <Route path="/dashboard/adoptante" element={<DashboardAdoptante />} />
+          <Route path="/dashboard/adminFundacion/*" element={<DashboardFundacion />} />
+          <Route path="/dashboard/adoptante/*" element={<DashboardAdoptante />} />
         </Routes>
       </main>
 

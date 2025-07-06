@@ -321,11 +321,22 @@ exports.getProcesoPorId = async (req, res) => {
     const proceso = await ProcesoAdopcion.findById(req.params.id)
       .populate({
         path: 'solicitud',
-        populate: { path: 'mascota' }
+        populate: [
+          { path: 'mascota' },
+          { path: 'adoptante', select: 'username email' } // 👈 necesario para validar dueño
+        ]
       });
 
     if (!proceso) {
       return res.status(404).json({ message: 'Proceso no encontrado' });
+    }
+
+    // 🔐 Validación para que el adoptante solo vea sus propios procesos
+    if (
+      req.userRole === 'adoptante' &&
+      proceso.solicitud.adoptante._id.toString() !== req.userId
+    ) {
+      return res.status(403).json({ message: 'Acceso denegado' });
     }
 
     res.json({ success: true, proceso });

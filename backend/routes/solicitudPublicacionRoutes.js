@@ -32,11 +32,11 @@ router.get('/mis-publicaciones', verifyToken, controller.getMisPublicaciones);
 //Obtener todas las solicitudes por Usuario
 router.get('/mias', verifyToken, getMisSolicitudes);
 
-// Obtener solicitud por ID (admin)
+// Obtener solicitud por ID 
 router.get(
   '/:id',
   verifyToken,
-  checkRole('admin','adminFundacion'),
+  checkRole('admin','adminFundacion','adoptante'),
   controller.getSolicitudById
 );
 
