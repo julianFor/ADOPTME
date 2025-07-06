@@ -12,6 +12,8 @@ const solicitudAdopcionRoutes = require('./routes/solicitudAdopcionRoutes');
 const procesoAdopcionRoutes = require('./routes/procesoAdopcionRoutes'); 
 const solicitudPublicacionRoutes = require('./routes/solicitudPublicacionRoutes');
 const notificacionRoutes = require('./routes/notificacionRoutes');
+const donationRoutes = require('./routes/donationRoutes');
+const donationGoalRoutes = require('./routes/donationGoalRoutes');
 const path = require("path");
 
 // Cargar variables de entorno
@@ -41,6 +43,15 @@ app.use('/api/proceso', procesoAdopcionRoutes);
 app.use('/api/publicaciones', solicitudPublicacionRoutes);
 app.use('/api/notificaciones', notificacionRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/api/donations', donationRoutes);
+app.use('/api/donation-goals', donationGoalRoutes);
+
+
+// Middleware especial para PayPal IPN (antes de JSON)
+app.use('/api/paypal/ipn', express.urlencoded({ extended: false }));
+
+// Después de JSON
+app.use('/api/paypal', require('./routes/paypalRoutes'));
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
