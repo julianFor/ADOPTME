@@ -1,7 +1,7 @@
 // src/components/Contacto.jsx
 function Contacto() {
   return (
-    <section className="w-full py-16 bg-white flex justify-center items-center">
+    <section id="contacto" className="w-full py-16 bg-white flex justify-center items-center">
       <div className="max-w-7xl w-full flex flex-col md:flex-row items-center justify-between px-6 md:px-16">
         
         {/* Columna izquierda: formulario */}

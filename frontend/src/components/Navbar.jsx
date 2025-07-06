@@ -44,7 +44,13 @@ const Navbar = () => {
         <Link to="/ComoAdoptar" className={`pb-1 ${location.pathname === '/ComoAdoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>¿Cómo Adoptar?</Link>
         
         <Link to="#" className="text-gray-700 hover:text-purple-600">Donar</Link>
-        <Link to="#" className="text-gray-700 hover:text-purple-600">Contacto</Link>
+        <Link
+          to={{ pathname: '/', hash: '#contacto' }}
+          className="text-gray-700 hover:text-purple-600"
+        >
+          Contacto
+        </Link>
+
         {user && (
           <Link
             to={gestionPath}
