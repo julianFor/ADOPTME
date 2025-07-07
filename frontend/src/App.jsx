@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useContext } from 'react';
 import './index.css';
@@ -10,6 +9,8 @@ import ComoAdoptar from './pages/ComoAdoptar';
 import MascotaDetalle from './pages/Mascotas/MascotaDetalle';
 import FormularioAdopcion from './pages/Gestion/SolicitudesAdopcion/FormularioAdopcion';
 import FormularioPublicacion from './pages/Gestion/SolicitudesPublicacion/FormularioPublicacion';
+import Donar from './pages/Donar'; // ✅ NUEVO
+import AdminMetas from './pages/AdminMetas'; // ✅ NUEVO
 
 // Dashboards por rol
 import DashboardAdmin from './pages/DashboardAdmin';
@@ -28,17 +29,14 @@ import AuthModal from './components/AuthModal';
 
 // Contexto
 import { UserContext } from './context/UserContext';
-import { NotificationProvider } from './context/NotificationContext'; // 👈 Importamos el contexto de notificaciones
+import { NotificationProvider } from './context/NotificationContext';
 
-// ------------------- CONTENIDO DE LA APP -----------------------
 function AppContent() {
   const { user } = useContext(UserContext);
   const location = useLocation();
 
-  // ¿Estamos en una ruta de dashboard?
   const esRutaDashboard = location.pathname.startsWith('/dashboard');
 
-  // Navbar dinámico según el rol
   const renderNavbar = () => {
     if (!user) return <NavbarDefault />;
     if (user.role === 'admin') return <NavbarAdmin />;
@@ -60,38 +58,34 @@ function AppContent() {
           <Route path="/mascotas/:id" element={<MascotaDetalle />} />
           <Route path="/adopcion/:idMascota" element={<FormularioAdopcion />} />
           <Route path="/publicaciones" element={<FormularioPublicacion />} />
+          <Route path="/donar" element={<Donar />} /> {/* ✅ Nueva ruta pública */}
+          <Route path="/admin/metas" element={<AdminMetas />} /> {/* ✅ Ruta directa por si se desea acceder sin dashboard */}
 
-          {/* Rutas protegidas (según rol) */}
+          {/* Rutas protegidas */}
           <Route path="/dashboard/admin/*" element={<DashboardAdmin />} />
           <Route path="/dashboard/adminFundacion/*" element={<DashboardFundacion />} />
           <Route path="/dashboard/adoptante/*" element={<DashboardAdoptante />} />
         </Routes>
       </main>
 
-      {/* Footer solo en rutas públicas */}
       {!esRutaDashboard && <Footer />}
-
       <AuthModal />
     </>
   );
 }
 
-// ---------------------- APP PRINCIPAL -------------------------
 function App() {
-  const { user } = useContext(UserContext); // Necesitamos saber si hay usuario autenticado
+  const { user } = useContext(UserContext);
 
   return (
     <BrowserRouter>
-      {
-        user ? (
-          // 👇 Envolvemos AppContent con el NotificationProvider SOLO si el usuario está autenticado
-          <NotificationProvider>
-            <AppContent />
-          </NotificationProvider>
-        ) : (
+      {user ? (
+        <NotificationProvider>
           <AppContent />
-        )
-      }
+        </NotificationProvider>
+      ) : (
+        <AppContent />
+      )}
     </BrowserRouter>
   );
 }

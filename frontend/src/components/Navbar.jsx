@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/images/LogoAdoptmeLavandaV1.svg';
@@ -41,9 +40,18 @@ const Navbar = () => {
         >
           Adoptar
         </Link>
-        <Link to="/ComoAdoptar" className={`pb-1 ${location.pathname === '/ComoAdoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>¿Cómo Adoptar?</Link>
-        
-        <Link to="#" className="text-gray-700 hover:text-purple-600">Donar</Link>
+        <Link
+          to="/ComoAdoptar"
+          className={`pb-1 ${location.pathname === '/ComoAdoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}
+        >
+          ¿Cómo Adoptar?
+        </Link>
+        <Link
+          to="/donar"
+          className={`pb-1 ${location.pathname === '/donar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}
+        >
+          Donar
+        </Link>
         <Link
           to={{ pathname: '/', hash: '#contacto' }}
           className="text-gray-700 hover:text-purple-600"
