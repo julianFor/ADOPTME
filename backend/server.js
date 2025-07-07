@@ -53,7 +53,7 @@ const routes = [
   { path: './routes/procesoAdopcionRoutes.js', endpoint: '/api/proceso' },
   { path: './routes/solicitudPublicacionRoutes.js', endpoint: '/api/publicaciones' },
   { path: './routes/notificacionRoutes.js', endpoint: '/api/notificaciones' },
-  { path: './routes/donationRoutes.js', endpoint: '/api/donations' },
+  { path: './routes/donationRoutes.js', endpoint: '/api/donaciones' },
   { path: './routes/donationGoalRoutes.js', endpoint: '/api/donation-goals', endpoint: '/api/metas' },
   { path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
   { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' }
