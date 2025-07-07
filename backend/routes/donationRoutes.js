@@ -5,10 +5,10 @@ const { verifyToken } = require("../middlewares/authJwt");
 const { checkRole } = require("../middlewares/role");
 
 // Crear donación (solo usuarios autenticados, cualquier rol)
-router.post("/", verifyToken, checkRole("adoptante", "admin", "adminFundacion"), controller.crearDonacion);
+router.post("/", controller.crearDonacion);
 
 // Obtener donaciones por meta (solo admin y adminFundacion)
-router.get("/:goalId", verifyToken, checkRole("admin", "adminFundacion"), controller.obtenerPorMeta);
+router.get("/:goalId", controller.obtenerPorMeta);
 
 // Total recaudado (solo admin y adminFundacion)
 router.get("/total/:goalId", verifyToken, checkRole("admin", "adminFundacion"), controller.totalRecaudado);
