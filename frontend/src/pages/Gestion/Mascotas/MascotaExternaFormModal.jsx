@@ -9,7 +9,7 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
   const [formData, setFormData] = useState({
     nombre: "",
     especie: "",
-    tamaño: "",
+    tamano: "",
     sexo: "",
     estado: "Disponible",
     estadoSalud: "",

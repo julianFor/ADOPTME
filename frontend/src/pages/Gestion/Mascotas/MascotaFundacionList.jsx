@@ -9,6 +9,7 @@ import ConfirmModal from "../../../components/ConfirmModal";
 
 const MascotaFundacionList = () => {
   const [mascotas, setMascotas] = useState([]);
+  const [searchText, setSearchText] = useState(""); // Nuevo estado
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMascota, setSelectedMascota] = useState(null);
@@ -54,6 +55,13 @@ const MascotaFundacionList = () => {
     }
   };
 
+  // 🟣 Filtro por nombre, especie, estado de salud o disponibilidad
+  const filteredMascotas = mascotas.filter((m) =>
+    `${m.nombre} ${m.especie} ${m.estadoSalud} ${m.disponible ? "Disponible" : "No disponible"}`
+      .toLowerCase()
+      .includes(searchText.toLowerCase())
+  );
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -63,6 +71,8 @@ const MascotaFundacionList = () => {
             <input
               type="text"
               placeholder="Buscar"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
@@ -90,25 +100,25 @@ const MascotaFundacionList = () => {
             </tr>
           </thead>
           <tbody>
-            {mascotas.map((mascota) => (
+            {filteredMascotas.map((mascota) => (
               <tr key={mascota._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
-                    <img
+                  <img
                     src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
                     alt="mascota"
                     className="w-12 h-12 rounded-full object-cover"
-                    />
+                  />
                 </td>
                 <td className="px-4 py-2">{mascota.nombre}</td>
                 <td className="px-4 py-2">{mascota.especie}</td>
                 <td className="px-4 py-2">
-                {mascota.fechaNacimiento
+                  {mascota.fechaNacimiento
                     ? Math.floor((new Date() - new Date(mascota.fechaNacimiento)) / (1000 * 60 * 60 * 24 * 365)) + " años"
                     : "No especificado"}
                 </td>
                 <td className="px-4 py-2">{mascota.estadoSalud}</td>
                 <td className="px-4 py-2">
-                {mascota.disponible ? "Disponible" : "No disponible"}
+                  {mascota.disponible ? "Disponible" : "No disponible"}
                 </td>
                 <td className="px-4 py-2 flex justify-center gap-4">
                   <PencilIcon
@@ -124,8 +134,9 @@ const MascotaFundacionList = () => {
             ))}
           </tbody>
         </table>
-        {mascotas.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No hay mascotas registradas.</p>
+
+        {filteredMascotas.length === 0 && (
+          <p className="text-center text-gray-500 py-6">No hay mascotas que coincidan con la búsqueda.</p>
         )}
       </div>
 

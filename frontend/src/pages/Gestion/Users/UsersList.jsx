@@ -6,6 +6,7 @@ import ConfirmModal from "../../../components/ConfirmModal";
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
+  const [searchText, setSearchText] = useState(""); // <-- Nuevo estado
   const [showUserModal, setShowUserModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -51,6 +52,13 @@ const UsersList = () => {
     }
   };
 
+  // 🔍 Aplica filtro
+  const filteredUsers = users.filter((user) =>
+    `${user.username} ${user.email} ${user.role}`
+      .toLowerCase()
+      .includes(searchText.toLowerCase())
+  );
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -60,6 +68,8 @@ const UsersList = () => {
             <input
               type="text"
               placeholder="Buscar"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)} // <-- Actualiza estado
               className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
@@ -85,7 +95,7 @@ const UsersList = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <tr key={user._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">{user.username}</td>
                 <td className="px-4 py-2">{user.email}</td>
@@ -105,8 +115,9 @@ const UsersList = () => {
             ))}
           </tbody>
         </table>
-        {users.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No hay usuarios registrados.</p>
+
+        {filteredUsers.length === 0 && (
+          <p className="text-center text-gray-500 py-6">No hay usuarios que coincidan con la búsqueda.</p>
         )}
       </div>
 

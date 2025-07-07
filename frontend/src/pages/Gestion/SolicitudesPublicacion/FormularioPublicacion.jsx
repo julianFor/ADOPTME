@@ -18,7 +18,7 @@ const FormularioPublicacion = () => {
     especie: '',
     raza: '',
     fechaNacimiento: '',
-    tamaño: '',
+    tamano: '',
     sexo: '',
     estadoSalud: '',
     personalidad: '',
@@ -67,7 +67,7 @@ const FormularioPublicacion = () => {
     data.append('mascota[especie]', form.especie);
     data.append('mascota[raza]', form.raza);
     data.append('mascota[fechaNacimiento]', form.fechaNacimiento);
-    data.append('mascota[tamaño]', form.tamaño);
+    data.append('mascota[tamano]', form.tamano);
     data.append('mascota[sexo]', form.sexo);
     data.append('mascota[estadoSalud]', form.estadoSalud);
     data.append('mascota[personalidad]', form.personalidad);

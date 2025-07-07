@@ -1,15 +1,19 @@
-// src/pages/Gestion/Mascotas/MascotaExternaList.jsx
 import React, { useEffect, useState } from "react";
 import {
   getMascotasExternas,
   deleteMascota,
 } from "../../../services/mascotaService";
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
 import MascotaExternaFormModal from "./MascotaExternaFormModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 
 const MascotaExternaList = () => {
   const [mascotas, setMascotas] = useState([]);
+  const [searchText, setSearchText] = useState(""); // ← filtro
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMascota, setSelectedMascota] = useState(null);
@@ -55,6 +59,13 @@ const MascotaExternaList = () => {
     }
   };
 
+  // 🟣 Filtro de búsqueda por varios campos
+  const filteredMascotas = mascotas.filter((m) =>
+    `${m.nombre} ${m.contactoExterno?.nombre} ${m.contactoExterno?.telefono} ${m.contactoExterno?.correo} ${m.estado}`
+      .toLowerCase()
+      .includes(searchText.toLowerCase())
+  );
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -64,6 +75,8 @@ const MascotaExternaList = () => {
             <input
               type="text"
               placeholder="Buscar"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
@@ -91,14 +104,14 @@ const MascotaExternaList = () => {
             </tr>
           </thead>
           <tbody>
-            {mascotas.map((mascota) => (
+            {filteredMascotas.map((mascota) => (
               <tr key={mascota._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
-                   <img
+                  <img
                     src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
                     alt="mascota"
                     className="w-12 h-12 rounded-full object-cover"
-                    />
+                  />
                 </td>
                 <td className="px-4 py-2">{mascota.nombre}</td>
                 <td className="px-4 py-2">{mascota.contactoExterno?.nombre}</td>
@@ -119,8 +132,11 @@ const MascotaExternaList = () => {
             ))}
           </tbody>
         </table>
-        {mascotas.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No hay mascotas registradas.</p>
+
+        {filteredMascotas.length === 0 && (
+          <p className="text-center text-gray-500 py-6">
+            No hay mascotas que coincidan con la búsqueda.
+          </p>
         )}
       </div>
 
