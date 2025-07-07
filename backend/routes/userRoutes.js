@@ -26,7 +26,7 @@ router.get('/',
 // Crear usuario (solo admin)
 router.post('/',
     verifyToken,
-    checkRole('admin','adminFundacion'),
+    checkRole('admin'),
     userController.createUser
 );
 
