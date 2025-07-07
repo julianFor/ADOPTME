@@ -21,6 +21,8 @@ import MisSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/M
 import DetallesMiSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetallesMiSolicitudPublicacion';
 import MisPublicaciones from '../pages/Gestion/SolicitudesPublicacion/MisPublicaciones';
 
+import DonationGoalCRUD from '../components/donaciones/DonationGoalCRUD';
+
 const DashboardFundacion = () => {
   return (
     <div className="flex">
@@ -49,6 +51,10 @@ const DashboardFundacion = () => {
           <Route path="mis-solicitudes-publicacion" element={<MisSolicitudesPublicacion />} />
           <Route path="mis-solicitudes-publicacion/:id" element={<DetallesMiSolicitudPublicacion />} />
           <Route path="mis-publicaciones" element={<MisPublicaciones />} />
+
+          {/* Donaciones */}
+          <Route path="donaciones/meta" element={<DonationGoalCRUD />} />
+          
         </Routes>
       </main>
     </div>
