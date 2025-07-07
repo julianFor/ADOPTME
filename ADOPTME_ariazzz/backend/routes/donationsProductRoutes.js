@@ -1,9 +1,9 @@
 import express from 'express';
-import Donation from '../models/Donation.js';
+import Donation from '../models/Donations.js'; // Asegúrate de que la ruta al modelo es correcta
 
 const router = express.Router();
 
-// Crear donación
+// Crear donación de producto
 router.post('/', async (req, res) => {
   try {
     const newDonation = new Donation(req.body);
@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Obtener todas las donaciones
+// Obtener todas las donaciones de productos
 router.get('/', async (req, res) => {
   try {
     const donations = await Donation.find();

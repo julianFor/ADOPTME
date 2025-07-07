@@ -27,4 +27,6 @@ const donationSchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.model('Donation', donationSchema);
+// Solución para evitar recompilación
+const Donation = mongoose.models.Donation || mongoose.model('Donation', donationSchema);
+export default Donation;
