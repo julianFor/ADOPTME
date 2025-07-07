@@ -1,0 +1,10 @@
+# Ignorar node_modules
+node_modules/
+
+# Ignorar carpeta uploads
+uploads/
+backend/uploads/
+
+# Ignorar archivos del sistema
+.DS_Store
+Thumbs.db

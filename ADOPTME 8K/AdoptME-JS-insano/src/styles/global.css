@@ -1,0 +1,112 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+  }
+  
+  header {
+    background: #333;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  nav ul {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+  }
+  
+  nav a {
+    color: white;
+    text-decoration: none;
+  }
+  
+  .btn {
+    background: #B75DFC;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .modal {
+    display: flex;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    width: 400px;
+    border-radius: 10px;
+    position: relative;
+    text-align: center;
+  }
+  
+  .modal input {
+    width: 90%;
+    padding: 10px;
+    margin: 5px 0;
+  }
+  
+  .close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    cursor: pointer;
+  }
+  
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+  }
+  
+  .pets {
+    padding: 2rem;
+  }
+  
+  .pet-card {
+    background: white;
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 10px;
+    text-align: center;
+  }
+  
+  .contact form {
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    margin: auto;
+  }
+  .user-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.username {
+  font-weight: 500;
+  color: #333;
+}
+
+.logout-btn {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.logout-btn:hover {
+  background-color: #e60000;
+}
