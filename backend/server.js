@@ -1,15 +1,18 @@
+
 // server.js
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
-const connectDB = require('./config/db');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Configuración de ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cargar variables de entorno
 dotenv.config();
-
-// Conectar a MongoDB
-connectDB();
 
 // Crear app
 const app = express();
@@ -18,38 +21,75 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Importar rutas
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const mascotaRoutes = require('./routes/mascotaRoutes');
-const solicitudAdopcionRoutes = require('./routes/solicitudAdopcionRoutes');
-const procesoAdopcionRoutes = require('./routes/procesoAdopcionRoutes'); 
-const solicitudPublicacionRoutes = require('./routes/solicitudPublicacionRoutes');
-const notificacionRoutes = require('./routes/notificacionRoutes');
-const donationRoutes = require('./routes/donationRoutes');
-const donationGoalRoutes = require('./routes/donationGoalRoutes');
-const paypalRoutes = require('./routes/paypalRoutes'); // opcional pero recomendado
+// Conexión a MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Conectado a MongoDB Atlas');
+  } catch (err) {
+    console.error('❌ Error de conexión a MongoDB:', err.message);
+    process.exit(1);
+  }
+};
+await connectDB();
+
+// Importar rutas dinámicamente con manejo de errores
+const importRoute = async (routePath) => {
+  try {
+    const module = await import(routePath);
+    return module.default;
+  } catch (err) {
+    console.error(`❌ Error cargando ruta ${routePath}:`, err);
+    return null;
+  }
+};
+
+// Cargar rutas dinámicamente
+const routes = [
+  { path: './routes/authRoutes.js', endpoint: '/api/auth' },
+  { path: './routes/userRoutes.js', endpoint: '/api/users' },
+  { path: './routes/mascotaRoutes.js', endpoint: '/api/mascotas' },
+  { path: './routes/solicitudAdopcionRoutes.js', endpoint: '/api/solicitudesAdopcion' },
+  { path: './routes/procesoAdopcionRoutes.js', endpoint: '/api/proceso' },
+  { path: './routes/solicitudPublicacionRoutes.js', endpoint: '/api/publicaciones' },
+  { path: './routes/notificacionRoutes.js', endpoint: '/api/notificaciones' },
+  { path: './routes/donationRoutes.js', endpoint: '/api/donations' },
+  { path: './routes/donationGoalRoutes.js', endpoint: '/api/donation-goals' },
+  { path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
+  { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' }
+];
+
+for (const route of routes) {
+  try {
+    const routeModule = await import(route.path);
+    if (routeModule && routeModule.default) {
+      app.use(route.endpoint, routeModule.default);
+      console.log(`✓ Ruta ${route.endpoint} cargada correctamente`);
+    }
+  } catch (err) {
+    console.error(`✗ No se pudo cargar la ruta ${route.path}:`, err.message);
+  }
+}
+
+// Middleware para PayPal IPN
+app.use('/api/paypal/ipn', express.urlencoded({ extended: false }));
+
+// Servir archivos estáticos
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Ruta base
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
   res.send('🚀 API de AdoptMe funcionando');
 });
 
-// Montar rutas
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/mascotas', mascotaRoutes);
-app.use('/api/solicitudesAdopcion', solicitudAdopcionRoutes);
-app.use('/api/proceso', procesoAdopcionRoutes); 
-app.use('/api/publicaciones', solicitudPublicacionRoutes);
-app.use('/api/notificaciones', notificacionRoutes);
-app.use('/api/donaciones', donationRoutes);
-app.use('/api/metas', donationGoalRoutes);
-app.use('/api/paypal', paypalRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Manejo de errores centralizado
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Algo salió mal en el servidor' });
+});
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor backend escuchando en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor backend escuchando en http://localhost:${PORT}`);
 });
