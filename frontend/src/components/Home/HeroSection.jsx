@@ -1,6 +1,7 @@
 // src/components/HeroSection.jsx
 import React from 'react';
 import heroImg from '../../assets/images/ilustrationHeroSection.png'; 
+import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
@@ -14,9 +15,11 @@ const HeroSection = () => {
         <p className="text-gray-600 mb-6">
           Aquí te ayudamos a encontrar a tu mascota ideal. AdoptMe conecta a rescatistas y adoptantes para garantizar adopciones seguras y responsables.
         </p>
-        <button className="bg-purple-500 text-white px-6 py-3 rounded-full text-lg hover:bg-purple-600 transition">
-          Adoptar
-        </button>
+        <Link to="/adoptar">
+          <button className="bg-purple-500 text-white px-6 py-3 rounded-full text-lg hover:bg-purple-600 transition">
+            Adoptar
+          </button>
+        </Link>
       </div>
       <div className="max-w-[500px] w-full">
         <img src={heroImg} alt="Ilustración AdoptMe" className="w-82 object-contain" />
