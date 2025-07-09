@@ -76,7 +76,7 @@ function DonationSection() {
       {meta !== null ? (
         <div className="mt-6 w-full max-w-lg text-center">
           {meta.descripcion && (
-            <p className="italic text-gray-700 mb-2">📝 {meta.descripcion}</p>
+            <p className="italic text-gray-700 mb-2"> {meta.descripcion}</p>
           )}
           <DonationProgress total={total} meta={meta.monto} />
         </div>

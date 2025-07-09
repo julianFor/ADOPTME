@@ -3,14 +3,19 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/LogoAdoptmeLavandaV1.svg';
 import { FiBell, FiUser, FiMail } from 'react-icons/fi';
 import { UserContext } from '../context/UserContext';
+import NotificationModal from './NotificationModal';
+import { useNotificaciones } from '../context/NotificationContext';
 
 const NavbarAdmin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logoutUser, updateUser } = useContext(UserContext);
+  const { noLeidas } = useNotificaciones();
+
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ username: '', password: '' });
+  const [showNotificaciones, setShowNotificaciones] = useState(false);
 
   const toggleModal = () => setShowModal(!showModal);
 
@@ -161,24 +166,34 @@ const NavbarAdmin = () => {
         <Link to="/" className={`pb-1 ${location.pathname === '/' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Inicio</Link>
         <Link to="/adoptar" className={`pb-1 ${location.pathname === '/adoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Adoptar</Link>
         <Link to="/ComoAdoptar" className={`pb-1 ${location.pathname === '/ComoAdoptar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>¿Cómo Adoptar?</Link>
-        <Link
-                  to="/donar"
-                  className={`pb-1 ${location.pathname === '/donar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}
-                >
-                  Donar
-                </Link>
+        <Link to="/donar" className={`pb-1 ${location.pathname === '/donar' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Donar</Link>
         <Link to="/dashboard/admin" className={`pb-1 ${location.pathname === '/dashboard/admin' ? 'text-purple-600 border-b-2 border-purple-500' : 'text-gray-700 hover:text-purple-600'}`}>Gestión</Link>
       </nav>
 
       <div className="flex gap-3 relative">
-        <button className="bg-purple-500 text-white p-3 rounded-full shadow-md hover:bg-purple-600 transition">
-          <FiBell />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotificaciones(!showNotificaciones)}
+            className="w-12 h-12 flex items-center justify-center bg-purple-500 text-white rounded-full shadow-md hover:bg-purple-600 transition relative"
+          >
+            <FiBell className="text-xl" />
+            {noLeidas > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {noLeidas}
+              </span>
+            )}
+          </button>
+          <NotificationModal
+            visible={showNotificaciones}
+            onClose={() => setShowNotificaciones(false)}
+          />
+        </div>
+
         <button
           onClick={toggleModal}
-          className="bg-purple-500 text-white p-3 rounded-full shadow-md hover:bg-purple-600 transition"
+          className="w-12 h-12 flex items-center justify-center bg-purple-500 text-white rounded-full shadow-md hover:bg-purple-600 transition"
         >
-          <FiUser />
+          <FiUser className="text-xl" />
         </button>
         {renderProfileModal()}
       </div>
