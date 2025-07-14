@@ -29,7 +29,7 @@ const SidebarAdmin = () => {
       </button>
 
       <div className={`flex ${collapsed ? 'flex-col items-center justify-center gap-4 pt-6' : 'items-center gap-2 p-4'}`}>
-        <img src="/GatoAdmin.png" alt="avatar" className="w-10 h-10 rounded-full" />
+        <img src="/GatoAdmin.jpg" alt="avatar" className="w-10 h-10 rounded-full" />
         {!collapsed && (
           <div>
             <p className="text-xs text-gray-500">BIENVENIDO</p>

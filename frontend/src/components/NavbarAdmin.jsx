@@ -71,7 +71,7 @@ const NavbarAdmin = () => {
     if (!showModal) return null;
 
     const imagenPorRol = {
-      admin: '/GatoAdmin.png',
+      admin: '/GatoAdmin.jpg',
       adminFundacion: '/GatoFundacion.png',
       adoptante: '/GatoAdoptante.png',
     };
