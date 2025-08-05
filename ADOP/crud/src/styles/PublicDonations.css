@@ -1,0 +1,107 @@
+/* Estilos generales - Tema morado */
+:root {
+  --primary-purple: #B75DFC;     /* Morado principal */
+  --secondary-purple: #B75DFC;   /* Morado secundario */
+  --light-purple: #B75DFC;       /* Morado claro */
+  --dark-purple: #4a148c;        /* Morado oscuro */
+  --text-color: #333333;
+  --white: #ffffff;
+  --table-header-bg: #B75DFC;    /* Morado para encabezados */
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f3e5f5;     /* Fondo morado muy claro */
+  color: var(--text-color);
+  padding: 20px;
+}
+
+/* Contenedor principal */
+.donation-container {
+  max-width: 1000px;             /* Más ancho */
+  margin: 0 auto;
+  background-color: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+}
+
+/* Barra de búsqueda grande */
+.search-bar {
+  margin-bottom: 30px;           /* Más espacio */
+  display: flex;
+  gap: 15px;
+}
+
+.search-input {
+  flex-grow: 1;
+  padding: 15px 20px;            /* Más grande */
+  font-size: 18px;               /* Texto más grande */
+  border: 2px solid var(--light-purple);
+  border-radius: 8px;
+  color: var(--dark-purple);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-purple);
+  box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.2);
+}
+
+.search-button {
+  padding: 15px 25px;
+  background-color: var(--primary-purple);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.search-button:hover {
+  background-color: var(--dark-purple);
+}
+
+/* Tabla estilo minimalista con colores morados */
+.donation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.donation-table th {
+  background-color: var(--table-header-bg);
+  color: white;
+  padding: 18px;                /* Más grande */
+  text-align: left;
+  font-size: 18px;
+}
+
+.donation-table td {
+  padding: 15px;                /* Más grande */
+  border-bottom: 1px solid #e1bee7;
+  vertical-align: middle;
+}
+
+.donation-table tr:nth-child(even) {
+  background-color: #f5f0fa;    /* Fondo morado muy claro */
+}
+
+.donation-table tr:hover {
+  background-color: var(--light-purple);
+}
+
+/* Estilo para las imágenes/celdas vacías */
+.table-image {
+  width: 60px;
+  height: 60px;
+  background-color: #ede7f6;    /* Morado claro */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary-purple);
+  font-weight: bold;
+  border-radius: 4px;
+}

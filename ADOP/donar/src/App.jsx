@@ -7,7 +7,7 @@ const App = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   
- const products = [
+  const products = [
     { 
       id: 1, 
       name: 'Comida seca', 
@@ -51,17 +51,17 @@ const App = () => {
     { 
       id: 9, 
       name: 'Torre para gatos', 
-      imageUrl: '' 
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.60KIVlYSnBz5tY1HAEfefwHaGT?pid=Api&P=0&h=180' 
     },
     { 
       id: 10, 
       name: 'Cepillo', 
-      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.60KIVlYSnBz5tY1HAEfefwHaGT?pid=Api&P=0&h=180' 
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.BopYzqixDu66MbclRlFfIQHaHa?pid=Api&P=0&h=180' 
     },
     { 
       id: 11, 
       name: 'Shampoo', 
-      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.60KIVlYSnBz5tY1HAEfefwHaGT?pid=Api&P=0&h=180' 
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.p1gqCCbcyCTuvGMPH4SYvQHaGy?pid=Api&P=0&h=180' 
     },
     { 
       id: 12, 
