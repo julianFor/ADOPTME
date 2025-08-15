@@ -5,6 +5,37 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/UserContext";
 
+/** Helper: resuelve URL Cloudinary desde objeto/string/array */
+const getCloudinaryUrl = (asset) => {
+  if (!asset) return '';
+  if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
+  if (typeof asset === 'string' && /^https?:\/\//i.test(asset)) return asset;
+
+  if (typeof asset === 'object' && asset !== null) {
+    if (asset.secure_url) return asset.secure_url;
+    if (asset.url) return asset.url;
+
+    // Fallback si solo tienes public_id/format
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const public_id = asset.public_id || asset.filename;
+    const fmt = (asset.format || '').toLowerCase();
+    if (cloud && public_id) {
+      const rt = asset.resource_type || 'image';
+      const suffix = fmt ? `.${fmt}` : '';
+      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
+    }
+  }
+
+  // public_id como string plano
+  if (typeof asset === 'string') {
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (!cloud) return '';
+    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
+  }
+
+  return '';
+};
+
 const MisProcesosAdopcion = () => {
   const [procesos, setProcesos] = useState([]);
   const [filtro, setFiltro] = useState("");
@@ -74,14 +105,19 @@ const MisProcesosAdopcion = () => {
           <tbody>
             {filtrados.map((item) => {
               const mascota = item?.solicitud?.mascota;
+              const imgUrl = getCloudinaryUrl(mascota?.imagenes?.[0]);
               return (
                 <tr key={item._id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">
-                    <img
-                      src={`http://localhost:3000/uploads/${mascota?.imagenes?.[0]}`}
-                      alt="mascota"
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt="mascota"
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400">Sin imagen</span>
+                    )}
                   </td>
                   <td className="px-4 py-2">{mascota?.nombre}</td>
                   <td className="px-4 py-2 capitalize">{mascota?.especie}</td>

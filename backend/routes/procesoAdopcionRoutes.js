@@ -3,8 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/procesoAdopcionController');
 const { verifyToken } = require('../middlewares/authJwt');
 const { checkRole } = require('../middlewares/role');
-const upload = require('../middlewares/uploadDocs'); // Multer para PDF
-
+const { uploadCompromiso } = require('../middlewares/multerCloudinaryCompromiso');
 // Crear un proceso de adopción (solo admin o adminFundación)
 router.post(
   '/',
@@ -32,14 +31,15 @@ router.patch(
   controller.registrarVisita
 );
 
-// Subir compromiso firmado (PDF)
+// Subir compromiso firmado (IMAGEN)
 router.post(
   '/:id/compromiso',
   verifyToken,
   checkRole('admin','adminFundacion','adoptante'),
-  upload.single('compromiso'), // campo en el form-data debe llamarse "compromiso"
+  uploadCompromiso,                     // 👈 nuevo middleware
   controller.subirCompromiso
 );
+
 
 // Registrar entrega de la mascota
 router.patch(

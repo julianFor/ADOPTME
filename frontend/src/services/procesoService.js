@@ -39,7 +39,7 @@ export const registrarVisita = async (idProceso, datosVisita) => {
   return data;
 };
 
-// Subir compromiso (PDF firmado)
+// Subir compromiso (PNG firmado)
 export const subirCompromiso = async (idProceso, formData) => {
   const { data } = await axiosClient.post(`/proceso/${idProceso}/compromiso`, formData, {
     headers: {

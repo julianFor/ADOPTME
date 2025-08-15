@@ -3,6 +3,40 @@ import { useParams, useNavigate } from "react-router-dom";
 import { obtenerSolicitudesPorMascota } from "../../../services/solicitudAdopcionService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
+const getCloudinaryUrl = (img) => {
+  if (!img) return "";
+
+  // Caso 1: ya es string
+  if (typeof img === "string") {
+    // si ya viene con http(s), úsalo tal cual (Cloudinary o cualquier CDN)
+    if (/^https?:\/\//i.test(img)) return img;
+
+    // si te llega un public_id como "carpeta/archivo_xxx"
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (cloud) {
+      // optimizaciones básicas f_auto,q_auto y tamaño pequeño para avatar
+      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_112,h_112,c_fill/${img}`;
+    }
+
+    // Fallback (solo para datos viejos locales; puedes eliminarlo cuando migres todo)
+    return `/uploads/${img}`;
+  }
+
+  // Caso 2: objeto desde Cloudinary
+  if (typeof img === "object" && img !== null) {
+    if (img.secure_url) return img.secure_url;
+    if (img.url) return img.url;
+    if (img.public_id) {
+      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      if (cloud) {
+        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_112,h_112,c_fill/${img.public_id}`;
+      }
+    }
+  }
+
+  return "";
+};
+
 const SolicitudesDetalleMascota = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -17,9 +51,9 @@ const SolicitudesDetalleMascota = () => {
     const fetchData = async () => {
       try {
         const res = await obtenerSolicitudesPorMascota(id);
-        setSolicitudesOriginales(res.data.solicitudes);
-        setSolicitudesFiltradas(res.data.solicitudes);
-        setMascotaInfo(res.data.mascota);
+        setSolicitudesOriginales(res.data.solicitudes || []);
+        setSolicitudesFiltradas(res.data.solicitudes || []);
+        setMascotaInfo(res.data.mascota || null);
       } catch (error) {
         console.error("Error al obtener solicitudes:", error);
       }
@@ -44,19 +78,25 @@ const SolicitudesDetalleMascota = () => {
     setSolicitudesFiltradas(filtradas);
   }, [estadoFiltro, busqueda, solicitudesOriginales]);
 
+  const firstImg = mascotaInfo?.imagenes?.[0];
+  const avatarSrc = getCloudinaryUrl(firstImg);
+
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-4">
-        {mascotaInfo?.imagenes?.[0] && (
+        {avatarSrc && (
           <img
-            src={`http://localhost:3000/uploads/${mascotaInfo.imagenes[0]}`}
+            src={avatarSrc}
             alt="Mascota"
             className="w-14 h-14 rounded-full object-cover"
+            loading="lazy"
           />
         )}
         <h1 className="text-2xl font-bold">
           Solicitudes de Adopción Para{" "}
-          <span className="text-purple-600 uppercase">{mascotaInfo?.nombre}</span>
+          <span className="text-purple-600 uppercase">
+            {mascotaInfo?.nombre}
+          </span>
         </h1>
       </div>
 
@@ -110,12 +150,15 @@ const SolicitudesDetalleMascota = () => {
                 <td className="px-4 py-2 capitalize">{s.estado}</td>
                 <td className="px-4 py-2">
                   <button
-                    onClick={() => navigate(`/dashboard/admin/solicitudes-adopcion/detalle/${s._id}`)}
+                    onClick={() =>
+                      navigate(
+                        `/dashboard/admin/solicitudes-adopcion/detalle/${s._id}`
+                      )
+                    }
                     className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
                   >
                     Ver Detalles
                   </button>
-
                 </td>
               </tr>
             ))}

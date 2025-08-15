@@ -1,6 +1,37 @@
 // src/components/etapas/EtapaFormulario.jsx
 import { FaCheckCircle } from 'react-icons/fa';
 
+/** Helper: resuelve URL Cloudinary desde objeto/string/array */
+const getCloudinaryUrl = (asset) => {
+  if (!asset) return '';
+  if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
+  if (typeof asset === 'string' && /^https?:\/\//i.test(asset)) return asset;
+
+  if (typeof asset === 'object' && asset !== null) {
+    if (asset.secure_url) return asset.secure_url;
+    if (asset.url) return asset.url;
+
+    // Fallback si solo tienes public_id/format
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const public_id = asset.public_id || asset.filename;
+    const fmt = (asset.format || '').toLowerCase();
+    if (cloud && public_id) {
+      const rt = asset.resource_type || 'image'; // aquí estamos subiendo como image
+      const suffix = fmt ? `.${fmt}` : '';
+      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
+    }
+  }
+
+  // public_id como string (muy legado)
+  if (typeof asset === 'string') {
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (!cloud) return '';
+    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
+  }
+
+  return '';
+};
+
 const EtapaFormulario = ({ proceso }) => {
   const solicitud = proceso?.solicitud;
 
@@ -8,12 +39,17 @@ const EtapaFormulario = ({ proceso }) => {
     return <p className="text-gray-500">No se encontró información de la solicitud.</p>;
   }
 
+  const urlDocId = getCloudinaryUrl(solicitud.documentoIdentidad);
+  const urlResidencia = getCloudinaryUrl(solicitud.pruebaResidencia);
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
       {/* Alerta de formulario aprobado */}
       <div className="border-2 border-purple-500 bg-white text-purple-600 rounded-lg p-4 flex items-center gap-3 mb-6">
         <FaCheckCircle className="text-2xl" />
-        <p className="font-medium">El formulario del adoptante ha sido aprobado. Puedes continuar con el proceso.</p>
+        <p className="font-medium">
+          El formulario del adoptante ha sido aprobado. Puedes continuar con el proceso.
+        </p>
       </div>
 
       {/* Título */}
@@ -54,11 +90,11 @@ const EtapaFormulario = ({ proceso }) => {
         </div>
       </div>
 
-      {/* Botones PDF */}
+      {/* Botones archivos (Cloudinary) */}
       <div className="flex flex-wrap gap-4 mt-6">
-        {solicitud.documentoIdentidad && (
+        {urlDocId && (
           <a
-            href={`http://localhost:3000/uploads/${solicitud.documentoIdentidad}`}
+            href={urlDocId}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-purple-500 transition"
@@ -67,9 +103,9 @@ const EtapaFormulario = ({ proceso }) => {
           </a>
         )}
 
-        {solicitud.pruebaResidencia && (
+        {urlResidencia && (
           <a
-            href={`http://localhost:3000/uploads/${solicitud.pruebaResidencia}`}
+            href={urlResidencia}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-purple-500 transition"

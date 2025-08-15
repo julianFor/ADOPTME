@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useContext } from 'react';
 import './index.css';
@@ -9,8 +10,8 @@ import ComoAdoptar from './pages/ComoAdoptar';
 import MascotaDetalle from './pages/Mascotas/MascotaDetalle';
 import FormularioAdopcion from './pages/Gestion/SolicitudesAdopcion/FormularioAdopcion';
 import FormularioPublicacion from './pages/Gestion/SolicitudesPublicacion/FormularioPublicacion';
-import Donar from './pages/Donar'; // ✅ NUEVO
-import AdminMetas from './pages/AdminMetas'; // ✅ NUEVO
+import Donar from './pages/Donar';
+import AdminMetas from './pages/AdminMetas';
 
 // Dashboards por rol
 import DashboardAdmin from './pages/DashboardAdmin';
@@ -30,6 +31,9 @@ import AuthModal from './components/AuthModal';
 // Contexto
 import { UserContext } from './context/UserContext';
 import { NotificationProvider } from './context/NotificationContext';
+
+// 🟣 Toasts personalizados
+import { ToastProvider } from './components/ui/ToastProvider';
 
 function AppContent() {
   const { user } = useContext(UserContext);
@@ -58,8 +62,8 @@ function AppContent() {
           <Route path="/mascotas/:id" element={<MascotaDetalle />} />
           <Route path="/adopcion/:idMascota" element={<FormularioAdopcion />} />
           <Route path="/publicaciones" element={<FormularioPublicacion />} />
-          <Route path="/donar" element={<Donar />} /> {/* ✅ Nueva ruta pública */}
-          <Route path="/admin/metas" element={<AdminMetas />} /> {/* ✅ Ruta directa por si se desea acceder sin dashboard */}
+          <Route path="/donar" element={<Donar />} />
+          <Route path="/admin/metas" element={<AdminMetas />} />
 
           {/* Rutas protegidas */}
           <Route path="/dashboard/admin/*" element={<DashboardAdmin />} />
@@ -79,13 +83,16 @@ function App() {
 
   return (
     <BrowserRouter>
-      {user ? (
-        <NotificationProvider>
+      {/* ToastProvider debe envolver TODO para que los toasts funcionen en cualquier vista */}
+      <ToastProvider>
+        {user ? (
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
+        ) : (
           <AppContent />
-        </NotificationProvider>
-      ) : (
-        <AppContent />
-      )}
+        )}
+      </ToastProvider>
     </BrowserRouter>
   );
 }

@@ -1,63 +1,59 @@
 const express = require('express');
 const router = express.Router();
+
 const controller = require('../controllers/solicitudPublicacionController');
 const { verifyToken } = require('../middlewares/authJwt');
 const { checkRole } = require('../middlewares/role');
-const upload = require('../middlewares/uploadDocs');
-const { getMisSolicitudes } = require('../controllers/solicitudPublicacionController');
+const { uploadPublicacionDocs } = require('../middlewares/multerCloudinaryPublicacion');
 
-// Crear nueva solicitud (adoptante)
+// ⚠️ Elimina el viejo import local:
+// const upload = require('../middlewares/uploadDocs');
+
+// Crear nueva solicitud (la realiza el adoptante)
 router.post(
   '/',
   verifyToken,
-  checkRole('admin','adminFundacion','adoptante'),
-  upload.fields([
-    { name: 'documentoIdentidad', maxCount: 1 },
-    { name: 'imagenes', maxCount: 5 }
-  ]),
+  checkRole('adoptante', 'admin', 'adminFundacion'), // si quieres solo adoptante, déjalo en 'adoptante'
+  ...uploadPublicacionDocs,                           // <<— IMPORTANTE: spread del array de middlewares
   controller.crearSolicitud
 );
 
-// Obtener todas las solicitudes (admin)
+// Obtener todas las solicitudes (admin / adminFundacion)
 router.get(
   '/',
   verifyToken,
-  checkRole('admin','adminFundacion'),
+  checkRole('admin', 'adminFundacion'),
   controller.getSolicitudes
 );
 
-
+// Mis publicaciones (mascotas creadas a partir de mis solicitudes aprobadas)
 router.get('/mis-publicaciones', verifyToken, controller.getMisPublicaciones);
 
-//Obtener todas las solicitudes por Usuario
-router.get('/mias', verifyToken, getMisSolicitudes);
+// Mis solicitudes de publicación
+router.get('/mias', verifyToken, controller.getMisSolicitudes);
 
-// Obtener solicitud por ID 
+// Obtener una solicitud por ID
 router.get(
   '/:id',
   verifyToken,
-  checkRole('admin','adminFundacion','adoptante'),
+  checkRole('admin', 'adminFundacion', 'adoptante'),
   controller.getSolicitudById
 );
 
-
-
-// Aprobar y publicar (admin)
+// Aprobar y publicar (admin / adminFundacion)
 router.patch(
   '/:id/aprobar',
   verifyToken,
-  checkRole('admin','adminFundacion'),
+  checkRole('admin', 'adminFundacion'),
   controller.aprobarYPublicar
 );
 
-// Rechazar solicitud (admin)
+// Rechazar solicitud (admin / adminFundacion)
 router.patch(
   '/:id/rechazar',
   verifyToken,
-  checkRole('admin','adminFundacion'),
+  checkRole('admin', 'adminFundacion'),
   controller.rechazarSolicitud
 );
-
-
 
 module.exports = router;

@@ -9,16 +9,30 @@ const DetalleMascotaFundacion = ({ mascota }) => {
     navigate(`/adopcion/${mascota._id}`);
   };
 
+  // Función para obtener la imagen principal
+  const getImagenPrincipal = (imagenes) => {
+    if (!imagenes) return 'https://via.placeholder.com/600x400?text=AdoptMe';
+    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
+    if (!primera) return 'https://via.placeholder.com/600x400?text=AdoptMe';
+    if (typeof primera === 'string' && primera.startsWith('http')) return primera;
+    return 'https://via.placeholder.com/600x400?text=AdoptMe';
+  };
+
   return (
     <div className="pt-10">
       <h2 className="text-3xl md:text-4xl font-bold text-center text-purple-600 mb-10">
-        Presentación de Mascota 🐾
+        Presentación de Mascota <span className="inline-block"><img
+          src="/paw-title.svg"
+          alt="Huellita"
+          className="h-7 sm:h-8 w-auto select-none"
+          draggable="false"
+        /></span>
       </h2>
 
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-10 px-5">
         <div className="md:w-1/2 flex justify-center">
           <img
-            src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
+            src={getImagenPrincipal(mascota.imagenes)}
             alt={mascota.nombre}
             className="rounded-3xl bg-green-100 max-h-[400px] object-contain"
           />
@@ -40,7 +54,6 @@ const DetalleMascotaFundacion = ({ mascota }) => {
           <div>
             <p className="text-lg font-semibold mb-2">Características:</p>
             <div className="flex flex-col items-center gap-6">
-              {/* Características */}
               <div className="flex flex-wrap gap-4 justify-center">
                 {/* Sexo */}
                 <div className="bg-purple-200 w-[100px] h-[70px] rounded-xl flex flex-col justify-center items-center text-sm">
@@ -73,7 +86,6 @@ const DetalleMascotaFundacion = ({ mascota }) => {
                 </div>
               </div>
 
-              {/* Botón adoptar */}
               <button
                 onClick={irAFormularioAdopcion}
                 className="bg-purple-400 text-white font-bold text-sm w-[160px] h-[50px] rounded-full hover:bg-purple-500 transition"
@@ -90,7 +102,6 @@ const DetalleMascotaFundacion = ({ mascota }) => {
   );
 };
 
-// Utilidad para calcular edad a partir de fecha de nacimiento
 function calcularEdad(fechaNacimiento) {
   if (!fechaNacimiento) return 'Edad desconocida';
   const nacimiento = new Date(fechaNacimiento);

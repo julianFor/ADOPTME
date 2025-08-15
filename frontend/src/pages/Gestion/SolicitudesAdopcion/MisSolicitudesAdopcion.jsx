@@ -4,11 +4,43 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/UserContext";
 
+// Helper: resuelve URL (Cloudinary u otra) desde string/objeto/array/public_id
+const getCloudinaryUrl = (img) => {
+  if (!img) return "";
+
+  // si viene como array, usar el primero
+  if (Array.isArray(img)) return getCloudinaryUrl(img[0]);
+
+  // string: ya puede ser URL o public_id
+  if (typeof img === "string") {
+    if (/^https?:\/\//i.test(img)) return img; // ya es URL completa
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (cloud) {
+      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img}`;
+    }
+    return `/uploads/${img}`; // compat temporal
+  }
+
+  // objeto: de Cloudinary o similar
+  if (typeof img === "object" && img !== null) {
+    if (img.secure_url) return img.secure_url;
+    if (img.url) return img.url;
+    if (img.public_id) {
+      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      if (cloud) {
+        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img.public_id}`;
+      }
+    }
+  }
+
+  return "";
+};
+
 const MisSolicitudesAdopcion = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [filtro, setFiltro] = useState("");
   const navigate = useNavigate();
-  const { user } = useContext(UserContext); // 🔐 obtenemos el rol del usuario
+  const { user } = useContext(UserContext); // 🔐 rol del usuario
 
   const fetchMisSolicitudes = async () => {
     try {
@@ -24,7 +56,7 @@ const MisSolicitudesAdopcion = () => {
   }, []);
 
   const filtradas = solicitudes.filter((item) =>
-    item?.mascota?.nombre?.toLowerCase().includes(filtro.toLowerCase())
+    (item?.mascota?.nombre || "").toLowerCase().includes(filtro.toLowerCase())
   );
 
   // 💡 Ruta dinámica según rol
@@ -67,31 +99,41 @@ const MisSolicitudesAdopcion = () => {
             </tr>
           </thead>
           <tbody>
-            {filtradas.map((item) => (
-              <tr key={item._id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">
-                  <img
-                    src={`http://localhost:3000/uploads/${item.mascota?.imagenes}`}
-                    alt="mascota"
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                </td>
-                <td className="px-4 py-2">{item.mascota?.nombre}</td>
-                <td className="px-4 py-2 capitalize">{item.mascota?.especie}</td>
-                <td className="px-4 py-2">
-                  {new Date(item.createdAt).toLocaleDateString("es-CO")}
-                </td>
-                <td className="px-4 py-2 capitalize">{item.estado}</td>
-                <td className="px-4 py-2 text-center">
-                  <button
-                    className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    onClick={() => navigate(getRutaDetalle(item._id))}
-                  >
-                    Ver Detalles
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filtradas.map((item) => {
+              const imgSrc = getCloudinaryUrl(item?.mascota?.imagenes);
+              return (
+                <tr key={item._id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-2">
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={item?.mascota?.nombre || "mascota"}
+                        className="w-12 h-12 rounded-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-200" />
+                    )}
+                  </td>
+                  <td className="px-4 py-2">{item.mascota?.nombre}</td>
+                  <td className="px-4 py-2 capitalize">{item.mascota?.especie}</td>
+                  <td className="px-4 py-2">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleDateString("es-CO")
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-2 capitalize">{item.estado}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
+                      onClick={() => navigate(getRutaDetalle(item._id))}
+                    >
+                      Ver Detalles
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

@@ -66,6 +66,15 @@ const MascotaExternaList = () => {
       .includes(searchText.toLowerCase())
   );
 
+  // 🔸 Obtener imagen principal (URL válida o placeholder)
+  const getImagenPrincipal = (imagenes) => {
+    if (!imagenes) return "https://via.placeholder.com/300x300?text=AdoptMe";
+    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
+    if (!primera) return "https://via.placeholder.com/300x300?text=AdoptMe";
+    if (typeof primera === "string" && primera.startsWith("http")) return primera;
+    return "https://via.placeholder.com/300x300?text=AdoptMe";
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -108,7 +117,7 @@ const MascotaExternaList = () => {
               <tr key={mascota._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
                   <img
-                    src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
+                    src={getImagenPrincipal(mascota.imagenes)}
                     alt="mascota"
                     className="w-12 h-12 rounded-full object-cover"
                   />

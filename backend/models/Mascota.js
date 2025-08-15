@@ -36,7 +36,8 @@ const MascotaSchema = new mongoose.Schema({
   estadoSalud: {
     type: String,
     enum: ['saludable', 'en tratamiento', 'otro'],
-    default: 'saludable'
+    default: 'saludable',
+    required: false
   },
   vacunas: {
     type: [String], // Lista de vacunas aplicadas

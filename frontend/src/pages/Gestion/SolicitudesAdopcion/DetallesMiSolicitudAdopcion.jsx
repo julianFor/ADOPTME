@@ -3,6 +3,43 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSolicitudById } from "../../../services/solicitudAdopcionService";
 import { FaCheckCircle, FaTimesCircle, FaClock, FaStar, FaArrowLeft } from "react-icons/fa";
 
+/** Helper: resuelve URL de Cloudinary desde objeto/string/array */
+const getCloudinaryUrl = (asset) => {
+  if (!asset) return "";
+
+  // Si viene como lista, usa el primero
+  if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
+
+  // Si ya es URL absoluta, úsala
+  if (typeof asset === "string" && /^https?:\/\//i.test(asset)) return asset;
+
+  // Objeto Cloudinary
+  if (typeof asset === "object") {
+    // preferimos secure_url del backend
+    if (asset.secure_url) return asset.secure_url;
+    if (asset.url) return asset.url;
+
+    // Fallback extremo: construir desde public_id (requieres VITE_CLOUDINARY_CLOUD_NAME)
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const public_id = asset.public_id || asset.filename;
+    const fmt = (asset.format || "").toLowerCase();
+    if (cloud && public_id) {
+      const rt = asset.resource_type || "image"; // aquí siempre subimos como image
+      const suffix = fmt ? `.${fmt}` : "";
+      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
+    }
+  }
+
+  // public_id simple (muy legado)
+  if (typeof asset === "string") {
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (!cloud) return "";
+    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
+  }
+
+  return "";
+};
+
 const DetallesMiSolicitudAdopcion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -67,6 +104,10 @@ const DetallesMiSolicitudAdopcion = () => {
     return <p className="text-center py-6 text-gray-500">Cargando solicitud...</p>;
   }
 
+  // URLs Cloudinary (imágenes)
+  const urlDocId = getCloudinaryUrl(solicitud.documentoIdentidad);
+  const urlResidencia = getCloudinaryUrl(solicitud.pruebaResidencia);
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
       {/* Botón volver */}
@@ -116,11 +157,11 @@ const DetallesMiSolicitudAdopcion = () => {
         </div>
       </div>
 
-      {/* Botones PDF */}
+      {/* Botones archivos (Cloudinary) */}
       <div className="flex flex-wrap gap-4 mt-6">
-        {solicitud.documentoIdentidad && (
+        {urlDocId && (
           <a
-            href={`http://localhost:3000/uploads/${solicitud.documentoIdentidad}`}
+            href={urlDocId}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-purple-500 transition"
@@ -128,9 +169,9 @@ const DetallesMiSolicitudAdopcion = () => {
             Ver Documento de Identidad
           </a>
         )}
-        {solicitud.pruebaResidencia && (
+        {urlResidencia && (
           <a
-            href={`http://localhost:3000/uploads/${solicitud.pruebaResidencia}`}
+            href={urlResidencia}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-gradient-to-r from-purple-500 to-purple-400 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-purple-500 transition"

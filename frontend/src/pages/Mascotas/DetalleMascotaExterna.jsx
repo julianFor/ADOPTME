@@ -45,17 +45,31 @@ const DetalleMascotaExterna = () => {
 
   const { contactoExterno = {} } = mascota;
 
+  // === Imagen principal (misma lógica que en Adoptar) ===
+  const getImagenPrincipal = (imagenes) => {
+    if (!imagenes) return "https://via.placeholder.com/600x400?text=AdoptMe";
+    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes; // compatibilidad array/string
+    if (!primera) return "https://via.placeholder.com/600x400?text=AdoptMe";
+    if (typeof primera === "string" && primera.startsWith("http")) return primera; // Cloudinary u otra URL
+    return "https://via.placeholder.com/600x400?text=AdoptMe";
+  };
+
   return (
     <div className="pt-10">
       <h2 className="text-3xl md:text-4xl font-bold text-center text-purple-600 mb-10">
-        Presentación de Mascota 🐾
+        Presentación de Mascota <span className="inline-block"><img
+          src="/paw-title.svg"
+          alt="Huellita"
+          className="h-7 sm:h-8 w-auto select-none"
+          draggable="false"
+        /></span>
       </h2>
 
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-10 px-5">
         {/* Imagen */}
         <div className="md:w-1/2 flex justify-center">
           <img
-            src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
+            src={getImagenPrincipal(mascota.imagenes)}
             alt={mascota.nombre}
             className="rounded-3xl bg-green-100 max-h-[400px] object-contain"
           />

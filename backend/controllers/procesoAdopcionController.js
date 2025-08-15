@@ -95,12 +95,12 @@ exports.registrarVisita = async (req, res) => {
   }
 };
 
-// Subir PDF del compromiso firmado (adoptante)
+// Subir imagen del compromiso firmado (adoptante)
 exports.subirCompromiso = async (req, res) => {
   try {
     const procesoId = req.params.id;
 
-    if (!req.file) {
+    if (!req.cloudinaryCompromiso) {
       return res.status(400).json({ success: false, message: 'No se ha subido ningún archivo.' });
     }
 
@@ -115,9 +115,9 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     proceso.compromiso = {
-      archivo: req.file.filename,
-      firmado: false,
-      aprobada: false
+      archivo: req.cloudinaryCompromiso, // ← objeto Cloudinary
+      firmado: true,                     // ← ya está firmado por el adoptante
+      aprobada: false                    // ← la aprueba admin/adminFundación
     };
 
     await proceso.save();
@@ -125,13 +125,14 @@ exports.subirCompromiso = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Compromiso firmado subido con éxito.',
-      archivo: req.file.filename
+      proceso
     });
   } catch (error) {
     console.error('Error al subir compromiso:', error);
     res.status(500).json({ success: false, message: 'Error al subir compromiso firmado.', error: error.message });
   }
 };
+
 
 // Registrar entrega de la mascota
 exports.registrarEntrega = async (req, res) => {

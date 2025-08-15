@@ -79,7 +79,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Ruta base
 app.get('/', (_, res) => {
-  res.send('🚀 API de AdoptMe funcionando');
+  res.send('API de AdoptMe funcionando');
 });
 
 // Manejo de errores centralizado
@@ -91,5 +91,5 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend escuchando en http://localhost:${PORT}`);
+  console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
 });

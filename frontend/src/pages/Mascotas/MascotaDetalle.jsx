@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getMascotaById } from '../../services/mascotaService'; // ✅
+import { getMascotaById } from '../../services/mascotaService'; 
 
 import DetalleMascotaFundacion from './DetalleMascotaFundacion';
 import DetalleMascotaExterna from './DetalleMascotaExterna';
@@ -14,7 +14,7 @@ const MascotaDetalle = () => {
   useEffect(() => {
     const fetchMascota = async () => {
       try {
-        const data = await getMascotaById(id); // ✅
+        const data = await getMascotaById(id); 
         console.log("Mascota recibida:", data);
         setMascota(data);
       } catch (err) {

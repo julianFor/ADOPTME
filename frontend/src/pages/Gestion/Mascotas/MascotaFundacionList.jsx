@@ -7,9 +7,40 @@ import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/
 import MascotaFundacionFormModal from "./MascotaFundacionFormModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 
+// 🧮 Calcular edad simplificada: solo días, meses o años
+const formatSimpleAge = (fechaNacimiento) => {
+  if (!fechaNacimiento) return "No especificado";
+
+  const dob = new Date(fechaNacimiento);
+  if (Number.isNaN(dob.getTime())) return "No especificado";
+
+  const today = new Date();
+  if (dob > today) return "Fecha inválida";
+
+  let years = today.getFullYear() - dob.getFullYear();
+  let months = today.getMonth() - dob.getMonth();
+  let days = today.getDate() - dob.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonthIndex = (today.getMonth() - 1 + 12) % 12;
+    const prevMonthYear = prevMonthIndex === 11 ? today.getFullYear() - 1 : today.getFullYear();
+    days += new Date(prevMonthYear, prevMonthIndex + 1, 0).getDate();
+  }
+
+  if (months < 0) {
+    months += 12;
+    years -= 1;
+  }
+
+  if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
+  if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
+  return `${days} día${days !== 1 ? "s" : ""}`;
+};
+
 const MascotaFundacionList = () => {
   const [mascotas, setMascotas] = useState([]);
-  const [searchText, setSearchText] = useState(""); // Nuevo estado
+  const [searchText, setSearchText] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMascota, setSelectedMascota] = useState(null);
@@ -62,6 +93,15 @@ const MascotaFundacionList = () => {
       .includes(searchText.toLowerCase())
   );
 
+  // 🔸 Obtener imagen principal (URL válida o placeholder)
+  const getImagenPrincipal = (imagenes) => {
+    if (!imagenes) return "https://via.placeholder.com/300x300?text=AdoptMe";
+    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
+    if (!primera) return "https://via.placeholder.com/300x300?text=AdoptMe";
+    if (typeof primera === "string" && primera.startsWith("http")) return primera;
+    return "https://via.placeholder.com/300x300?text=AdoptMe";
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -104,7 +144,7 @@ const MascotaFundacionList = () => {
               <tr key={mascota._id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
                   <img
-                    src={`http://localhost:3000/uploads/${mascota.imagenes?.[0]}`}
+                    src={getImagenPrincipal(mascota.imagenes)}
                     alt="mascota"
                     className="w-12 h-12 rounded-full object-cover"
                   />
@@ -112,9 +152,7 @@ const MascotaFundacionList = () => {
                 <td className="px-4 py-2">{mascota.nombre}</td>
                 <td className="px-4 py-2">{mascota.especie}</td>
                 <td className="px-4 py-2">
-                  {mascota.fechaNacimiento
-                    ? Math.floor((new Date() - new Date(mascota.fechaNacimiento)) / (1000 * 60 * 60 * 24 * 365)) + " años"
-                    : "No especificado"}
+                  {formatSimpleAge(mascota.fechaNacimiento)}
                 </td>
                 <td className="px-4 py-2">{mascota.estadoSalud}</td>
                 <td className="px-4 py-2">
@@ -136,7 +174,9 @@ const MascotaFundacionList = () => {
         </table>
 
         {filteredMascotas.length === 0 && (
-          <p className="text-center text-gray-500 py-6">No hay mascotas que coincidan con la búsqueda.</p>
+          <p className="text-center text-gray-500 py-6">
+            No hay mascotas que coincidan con la búsqueda.
+          </p>
         )}
       </div>
 

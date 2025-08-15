@@ -36,8 +36,8 @@ function Footer() {
           </p>
           <p className="mt-4">
             <span className="inline-block mr-2">📧</span>{' '}
-            <a href="mailto:anhdansgvn@gmail.com" className="underline">
-              anhdansgvn@gmail.com
+            <a href="mailto:AdoptMe@gmail.com" className="underline">
+              AdoptMe@gmail.com
             </a>
           </p>
           <p className="mt-1">
@@ -59,11 +59,11 @@ function Footer() {
         <div>
           <h4 className="font-bold text-2xl mb-4">Menu</h4>
           <ul className="space-y-2 font-semibold text-gray-700">
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Adopta</a></li>
-            <li><a href="#">¿Cómo Adoptar?</a></li>
-            <li><a href="#">Donar</a></li>
-            <li><a href="#">Contacto</a></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/adoptar">Adopta</a></li>
+            <li><a href="/comoAdoptar">¿Cómo Adoptar?</a></li>
+            <li><a href="/donar">Donar</a></li>
+            <li><a href="/contacto">Contacto</a></li>
           </ul>
         </div>
       </div>

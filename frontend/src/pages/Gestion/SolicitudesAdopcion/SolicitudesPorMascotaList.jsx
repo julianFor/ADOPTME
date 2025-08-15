@@ -1,8 +1,35 @@
 import React, { useEffect, useState } from "react";
-// ✅ usa el nombre real de la función exportada
 import { getMascotasConSolicitudes } from "../../../services/solicitudAdopcionService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+
+// Helper para resolver URL de Cloudinary (o fallback)
+const getCloudinaryUrl = (img) => {
+  if (!img) return "";
+
+  if (typeof img === "string") {
+    if (/^https?:\/\//i.test(img)) return img; // ya es URL
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (cloud) {
+      // avatar pequeño con f_auto,q_auto y recorte centrado
+      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img}`;
+    }
+    return `/uploads/${img}`; // compatibilidad temporal
+  }
+
+  if (typeof img === "object") {
+    if (img.secure_url) return img.secure_url;
+    if (img.url) return img.url;
+    if (img.public_id) {
+      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      if (cloud) {
+        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img.public_id}`;
+      }
+    }
+  }
+
+  return "";
+};
 
 const SolicitudesPorMascotaList = () => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -11,9 +38,8 @@ const SolicitudesPorMascotaList = () => {
 
   const fetchResumen = async () => {
     try {
-      const response = await getMascotasConSolicitudes(); // ✅
- // función correcta
-      setSolicitudes(response.data);
+      const response = await getMascotasConSolicitudes(); 
+      setSolicitudes(response.data || []);
     } catch (error) {
       console.error("Error al obtener resumen de solicitudes:", error);
     }
@@ -24,7 +50,7 @@ const SolicitudesPorMascotaList = () => {
   }, []);
 
   const filtradas = solicitudes.filter((item) =>
-    item.nombre.toLowerCase().includes(filtro.toLowerCase())
+    (item.nombre || "").toLowerCase().includes(filtro.toLowerCase())
   );
 
   return (
@@ -57,34 +83,43 @@ const SolicitudesPorMascotaList = () => {
             </tr>
           </thead>
           <tbody>
-            {filtradas.map((item) => (
-              <tr key={item.mascotaId} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">
-                  <img
-                    src={`http://localhost:3000/uploads/${item.imagen}`}
-                    alt="mascota"
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                </td>
-                <td className="px-4 py-2">{item.nombre}</td>
-                <td className="px-4 py-2">{item.total}</td>
-                <td className="px-4 py-2">{item.pendientes}</td>
-                <td className="px-4 py-2">{item.enProceso}</td>
-                <td className="px-4 py-2">{item.rechazadas}</td>
-                <td className="px-4 py-2 text-center">
-                  <button
-                    className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    onClick={() =>
-                      navigate(`/dashboard/admin/solicitudes-adopcion/${item.mascotaId}`)
-                    }
-                  >
-                    Ver Solicitudes
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filtradas.map((item) => {
+              const imgSrc = getCloudinaryUrl(item.imagen);
+              return (
+                <tr key={item.mascotaId} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-2">
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt="mascota"
+                        className="w-12 h-12 rounded-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-200" />
+                    )}
+                  </td>
+                  <td className="px-4 py-2">{item.nombre}</td>
+                  <td className="px-4 py-2">{item.total}</td>
+                  <td className="px-4 py-2">{item.pendientes}</td>
+                  <td className="px-4 py-2">{item.enProceso}</td>
+                  <td className="px-4 py-2">{item.rechazadas}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
+                      onClick={() =>
+                        navigate(`/dashboard/admin/solicitudes-adopcion/${item.mascotaId}`)
+                      }
+                    >
+                      Ver Solicitudes
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+
         {filtradas.length === 0 && (
           <p className="text-center text-gray-500 py-6">No hay solicitudes encontradas.</p>
         )}

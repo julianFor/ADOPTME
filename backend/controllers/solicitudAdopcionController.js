@@ -32,8 +32,9 @@ exports.crearSolicitud = async (req, res) => {
       aceptaContrato
     } = req.body;
 
-    const documentoIdentidad = req.files?.documentoIdentidad?.[0]?.filename || null;
-    const pruebaResidencia = req.files?.pruebaResidencia?.[0]?.filename || null;
+    // ✅ Cloudinary: guardar URL pública (file.path) en lugar de filename local
+    const documentoIdentidad = req.files?.documentoIdentidad?.[0]?.path || null;
+    const pruebaResidencia = req.files?.pruebaResidencia?.[0]?.path || null;
 
     const solicitud = new SolicitudAdopcion({
       mascota,
@@ -91,6 +92,7 @@ exports.crearSolicitud = async (req, res) => {
     });
   }
 };
+
 // Obtener todas las solicitudes (solo admin y adminFundacion)
 exports.getAllSolicitudes = async (req, res) => {
   try {

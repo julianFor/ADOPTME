@@ -28,9 +28,7 @@ function DonationSection() {
           })
             .then((res) => res.json())
             .then((dons) => setDonaciones(dons))
-            .catch((err) =>
-              console.error("❌ Error al cargar donaciones:", err)
-            );
+            .catch((err) => console.error("❌ Error al cargar donaciones:", err));
         } else {
           console.warn("⚠️ No hay meta activa.");
         }
@@ -68,23 +66,52 @@ function DonationSection() {
   const total = donaciones.reduce((sum, d) => sum + Number(d.monto), 0);
 
   return (
-    <section className="flex flex-col items-center justify-center min-h-[70vh] px-4 py-8">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-        <DonationForm onDonate={handleDonation} goalId={meta?._id} />
-      </div>
+    <section className="px-2 py-4">
+      {/* Dos columnas que miden por el contenido (auto/auto) */}
+      <div
+        className="
+          grid grid-cols-1
+          lg:grid-cols-[auto_auto]   /* 👈 columnas del ancho del contenido */
+          gap-y-8 lg:gap-y-10
+          gap-x-4 lg:gap-x-6         /* separación real controlada */
+          items-start
+          justify-center             /* centro el conjunto */
+        "
+      >
+        {/* Columna izquierda: tarjeta PayPal + progreso (ESCALA y POSICIÓN intactas) */}
+        <div className="flex flex-col items-center lg:items-start">
+          <div className="inline-block origin-top lg:scale-[.88] md:scale-[.92] sm:scale-100">
+            <div className="w-[460px] max-w-full">
+              <DonationForm onDonate={handleDonation} goalId={meta?._id} />
+            </div>
+          </div>
 
-      {meta !== null ? (
-        <div className="mt-6 w-full max-w-lg text-center">
-          {meta.descripcion && (
-            <p className="italic text-gray-700 mb-2"> {meta.descripcion}</p>
+          {meta !== null ? (
+            <div className="mt-3 inline-block origin-top lg:scale-[.88] md:scale-[.92] sm:scale-100 w-[460px] max-w-full">
+              {meta.descripcion && (
+                <p className="italic text-gray-700 mb-2 text-center">
+                  {meta.descripcion}
+                </p>
+              )}
+              <DonationProgress total={total} meta={meta.monto} />
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-orange-500 font-medium">
+              ⚠️ No hay una meta activa.
+            </p>
           )}
-          <DonationProgress total={total} meta={meta.monto} />
         </div>
-      ) : (
-        <p className="mt-6 text-sm text-orange-500 font-medium">
-          ⚠️ No hay una meta activa.
-        </p>
-      )}
+
+        {/* Columna derecha: ilustración (sin márgenes extra) */}
+        <div className="hidden lg:block">
+          <img
+            src="/donar-illustration.svg"
+            alt="Ilustración donaciones"
+            className="w-[225px] h-auto select-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
+            draggable="false"
+          />
+        </div>
+      </div>
     </section>
   );
 }

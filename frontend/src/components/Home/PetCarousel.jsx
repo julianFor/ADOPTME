@@ -35,10 +35,41 @@ function PetCarousel() {
     }
   };
 
+  const CLOUDINARY_PLACEHOLDER = 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
+
+  const obtenerImagen = (imagenes) => {
+    if (!imagenes) return CLOUDINARY_PLACEHOLDER;
+
+    // Si viene como arreglo, usar el primer elemento
+    if (Array.isArray(imagenes)) {
+      const primera = imagenes[0];
+      if (!primera) return CLOUDINARY_PLACEHOLDER;
+      return typeof primera === 'string' && primera.startsWith('http')
+        ? primera
+        : CLOUDINARY_PLACEHOLDER;
+    }
+
+    // Si viene como string
+    if (typeof imagenes === 'string') {
+      // Ya migrado a Cloudinary (URL completa)
+      if (imagenes.startsWith('http')) return imagenes;
+
+      // Si por alguna razón llega un nombre antiguo, usar placeholder
+      return CLOUDINARY_PLACEHOLDER;
+    }
+
+    return CLOUDINARY_PLACEHOLDER;
+  };
+
   return (
     <section className="text-center mt-16">
       <h2 className="text-3xl font-extrabold text-purple-500 mb-6">
-        Peluditos Disponibles <span className="inline-block ml-2">🐾</span>
+        Peluditos Disponibles <span className="inline-block ml-2"><img
+            src="/paw-title.svg"
+            alt=""
+            className="h-7 sm:h-8 w-auto select-none"
+            draggable="false"
+          /></span>
       </h2>
 
       <div className="flex items-center justify-center gap-4 px-4">
@@ -63,7 +94,7 @@ function PetCarousel() {
                 edad={calcularEdad(mascota.fechaNacimiento)}
                 sexo={mascota.sexo}
                 descripcion={mascota.descripcion}
-                imagen={`http://localhost:3000/uploads/${mascota.imagenes}`}
+                imagen={obtenerImagen(mascota.imagenes)}  
                 redirigir={true} // ✅ solo en carrusel
                 onAdoptar={() => navigate('/adoptar')}
               />

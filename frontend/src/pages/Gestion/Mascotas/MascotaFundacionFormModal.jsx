@@ -101,7 +101,7 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
               <option value="hembra">Hembra</option>
               <option value="macho">Macho</option>
             </select>
-            <select name="tamaño" value={form.tamano} onChange={handleChange} className="w-full border rounded px-3 py-2">
+            <select name="tamano" value={form.tamano} onChange={handleChange} className="w-full border rounded px-3 py-2">
               <option value="pequeño">Pequeño</option>
               <option value="mediano">Mediano</option>
               <option value="grande">Grande</option>

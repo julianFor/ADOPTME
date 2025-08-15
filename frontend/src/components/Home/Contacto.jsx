@@ -7,7 +7,13 @@ function Contacto() {
         {/* Columna izquierda: formulario */}
         <div className="w-full md:w-1/2 mb-10 md:mb-0">
           <h2 className="text-4xl font-extrabold text-purple-500 mb-10">
-            Contactanos <span className="inline-block text-5xl ml-2">🐾</span>
+            Contactanos <span className="inline-block text-5xl ml-2">
+          <img
+          src="/paw-title.svg"
+          alt="Huellita"
+          className="h-7 sm:h-8 w-auto select-none"
+          draggable="false"
+        /></span>
           </h2>
 
           <form className="flex flex-col gap-6">
