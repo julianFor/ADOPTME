@@ -7,19 +7,15 @@ import {
   rechazarSolicitudPublicacion,
 } from '../../../services/solicitudPublicacionService';
 
-// 🔔 Toasts (nuevo)
+// ✅ importamos el hook de toasts
 import { useToast } from '../../../components/ui/ToastProvider';
 
-// Traducciones para mostrar claves legibles
 const traduccionesConfirmaciones = {
   esResponsable: 'Es responsable',
   noSolicitaPago: 'No solicita pago',
   aceptaVerificacion: 'Acepta verificación',
 };
 
-/** =========================
- *  Helpers Cloudinary
- *  ========================= */
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
 const isHttpUrl = (v) => typeof v === 'string' && /^https?:\/\//i.test(v);
@@ -31,12 +27,6 @@ const buildFromPublicId = (publicId) => {
   return `https://res.cloudinary.com/${CLOUD_NAME}/${resourceType}/upload/${publicId}`;
 };
 
-/**
- * Devuelve una URL utilizable desde:
- * - string con URL completa
- * - string con public_id
- * - objeto { secure_url | url | public_id }
- */
 const getAssetUrl = (asset) => {
   if (!asset) return '';
   if (typeof asset === 'string') {
@@ -50,7 +40,6 @@ const getAssetUrl = (asset) => {
 
 const isImageUrl = (url) => url && !isRawExt(url);
 
-/** Fecha segura YYYY-MM-DD */
 const fmtDate = (v) => {
   if (!v) return '';
   const d = new Date(v);
@@ -60,83 +49,48 @@ const fmtDate = (v) => {
 const DetalleSolicitudPublicacion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { success, error, info } = useToast(); // 👈 toasts
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [procesando, setProcesando] = useState(false); // evita doble click
+
+  const { success, error } = useToast(); // 👈 usamos toasts solo aquí
 
   useEffect(() => {
     const fetchSolicitud = async () => {
       try {
         const response = await obtenerSolicitudPublicacionPorId(id);
         setSolicitud(response.solicitud);
-      } catch (e) {
-        console.error('Error al obtener la solicitud:', e);
-        error(
-          e?.response?.data?.message || 'No se pudo cargar la solicitud.',
-          { duration: 6000, title: 'Error al cargar' }
-        );
+      } catch (err) {
+        console.error('Error al obtener la solicitud:', err);
+        error('No se pudo cargar la solicitud.', { title: 'Error' });
       } finally {
         setLoading(false);
       }
     };
-
-    if (!id) {
-      error('ID inválido.', { duration: 5000 });
-      return;
-    }
-
-    // Aviso informativo breve (opcional)
-    info('Cargando solicitud…', { duration: 1500 });
     fetchSolicitud();
-  }, [id, error, info]);
+  }, [id, error]);
 
   const handleAprobar = async () => {
-    if (!solicitud?._id) return;
     try {
-      setProcesando(true);
       await aprobarSolicitudPublicacion(solicitud._id);
-      success('Solicitud aprobada y mascota publicada.', {
-        duration: 3500,
-        title: 'Aprobada',
-      });
-      setTimeout(() => {
-        navigate('/dashboard/admin/solicitudes-publicacion');
-      }, 900); // pequeña espera para que el toast se vea
-    } catch (e) {
-      console.error('Error al aprobar la solicitud:', e);
-      error(
-        e?.response?.data?.message || 'No se pudo aprobar la solicitud.',
-        { duration: 6500, title: 'Error' }
-      );
-    } finally {
-      setProcesando(false);
+      success('Solicitud aprobada y mascota publicada.', { title: 'Aprobada' });
+      navigate('/dashboard/admin/solicitudes-publicacion');
+    } catch (err) {
+      console.error('Error al aprobar la solicitud:', err);
+      error('No se pudo aprobar la solicitud.', { title: 'Error' });
     }
   };
 
   const handleRechazar = async () => {
-    if (!solicitud?._id) return;
     try {
-      setProcesando(true);
       await rechazarSolicitudPublicacion(
         solicitud._id,
         'No cumple con los criterios de publicación'
       );
-      info('Solicitud rechazada.', {
-        duration: 3500,
-        title: 'Rechazada',
-      });
-      setTimeout(() => {
-        navigate('/dashboard/admin/solicitudes-publicacion');
-      }, 900);
-    } catch (e) {
-      console.error('Error al rechazar la solicitud:', e);
-      error(
-        e?.response?.data?.message || 'No se pudo rechazar la solicitud.',
-        { duration: 6500, title: 'Error' }
-      );
-    } finally {
-      setProcesando(false);
+      success('Solicitud rechazada.', { title: 'Rechazada' });
+      navigate('/dashboard/admin/solicitudes-publicacion');
+    } catch (err) {
+      console.error('Error al rechazar la solicitud:', err);
+      error('No se pudo rechazar la solicitud.', { title: 'Error' });
     }
   };
 
@@ -145,7 +99,6 @@ const DetalleSolicitudPublicacion = () => {
 
   const { mascota = {}, contacto = {} } = solicitud;
 
-  // Imagen principal (si es imagen). Si es PDF/RAW, mostramos botón/link.
   const mainAsset = solicitud.imagenes?.[0];
   const mainUrl = getAssetUrl(mainAsset);
   const mainIsImage = isImageUrl(mainUrl);
@@ -158,7 +111,6 @@ const DetalleSolicitudPublicacion = () => {
         Detalle de Solicitud de Publicación
       </h2>
 
-      {/* Imagen centrada y proporcional (solo si es imagen) */}
       {mainUrl && (
         <div className="flex justify-center mb-6">
           {mainIsImage ? (
@@ -230,7 +182,6 @@ const DetalleSolicitudPublicacion = () => {
         <p><strong>Estado:</strong> <span className="capitalize">{solicitud.estado}</span></p>
       </div>
 
-      {/* Documento de identidad (puede ser imagen o PDF) */}
       <div className="mt-8 flex gap-4 flex-wrap">
         {docIdentidadUrl && (
           <a
@@ -244,21 +195,18 @@ const DetalleSolicitudPublicacion = () => {
         )}
       </div>
 
-      {/* Botones de acción */}
       <div className="mt-10 flex gap-4 justify-end">
         <button
           onClick={handleRechazar}
-          disabled={procesando}
-          className={`px-5 py-2 rounded-lg transition text-white ${procesando ? 'bg-red-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
+          className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 transition"
         >
-          {procesando ? 'Procesando…' : 'Rechazar'}
+          Rechazar
         </button>
         <button
           onClick={handleAprobar}
-          disabled={procesando}
-          className={`px-5 py-2 rounded-lg transition text-white ${procesando ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
+          className="bg-green-500 text-white px-5 py-2 rounded-lg hover:bg-green-600 transition"
         >
-          {procesando ? 'Procesando…' : 'Aprobar'}
+          Aprobar
         </button>
       </div>
     </div>

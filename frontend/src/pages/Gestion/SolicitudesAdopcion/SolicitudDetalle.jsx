@@ -6,6 +6,9 @@ import {
 } from '../../../services/solicitudAdopcionService';
 import { crearProceso } from '../../../services/procesoService';
 
+// ✅ importar hook de toasts
+import { useToast } from '../../../components/ui/ToastProvider';
+
 /** Helper de respaldo SOLO para registros viejos (string/public_id).
  *  NO modificar secure_url de Cloudinary.
  */
@@ -54,6 +57,9 @@ const SolicitudDetalle = () => {
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ usar toasts
+  const { success, error } = useToast();
+
   useEffect(() => {
     const fetchSolicitud = async () => {
       try {
@@ -61,6 +67,7 @@ const SolicitudDetalle = () => {
         setSolicitud(response);
       } catch (error) {
         console.error('Error al cargar solicitud:', error);
+        // (No se muestran toasts aquí para respetar "solo cambiar alerts")
       } finally {
         setLoading(false);
       }
@@ -71,22 +78,26 @@ const SolicitudDetalle = () => {
   const handleAprobar = async () => {
     try {
       await crearProceso(solicitud._id);
-      alert('Solicitud aprobada y proceso de adopción creado.');
+      // alert('Solicitud aprobada y proceso de adopción creado.');
+      success('Solicitud aprobada y proceso de adopción creado.', { title: 'Aprobada' });
       navigate('/dashboard/admin/solicitudes-adopcion');
-    } catch (error) {
-      console.error('Error al aprobar solicitud:', error);
-      alert('No se pudo aprobar la solicitud.');
+    } catch (errorObj) {
+      console.error('Error al aprobar solicitud:', errorObj);
+      // alert('No se pudo aprobar la solicitud.');
+      error('No se pudo aprobar la solicitud.', { title: 'Error' });
     }
   };
 
   const handleRechazar = async () => {
     try {
       await rechazarSolicitud(solicitud._id);
-      alert('Solicitud rechazada.');
+      // alert('Solicitud rechazada.');
+      success('Solicitud rechazada.', { title: 'Rechazada' });
       navigate('/dashboard/admin/solicitudes-adopcion');
-    } catch (error) {
-      console.error('Error al rechazar solicitud:', error);
-      alert('No se pudo rechazar la solicitud.');
+    } catch (errorObj) {
+      console.error('Error al rechazar solicitud:', errorObj);
+      // alert('No se pudo rechazar la solicitud.');
+      error('No se pudo rechazar la solicitud.', { title: 'Error' });
     }
   };
 
