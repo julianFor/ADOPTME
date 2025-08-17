@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import SidebarAdoptante from '../components/dashboard/SidebarAdoptante';
 
-// Vistas del adoptante
+import AdoptanteHome from './Gestion/Dashboards/AdoptanteHome';
 import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
 import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/DetallesMiSolicitudAdopcion';
 
@@ -20,6 +20,7 @@ const DashboardAdoptante = () => {
       <SidebarAdoptante />
       <main className="flex-1 p-6">
         <Routes>
+          <Route index element={<AdoptanteHome />} />
           {/* Mi Actividad - Solicitudes de Adopción */}
           <Route path="mis-solicitudes" element={<MisSolicitudesAdopcion />} />
           <Route path="mis-solicitudes/:id" element={<DetallesMiSolicitudAdopcion />} />

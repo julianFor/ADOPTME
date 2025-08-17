@@ -1,6 +1,10 @@
+// src/pages/DashboardAdmin.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import SidebarAdmin from '../components/dashboard/SidebarAdmin';
+
+// 👇 nuevo import
+import AdminHome from './Gestion/Dashboards/AdminHome';
 
 import UsersList from './Gestion/Users/UsersList';
 import MascotaFundacionList from './Gestion/Mascotas/MascotaFundacionList';
@@ -11,12 +15,10 @@ import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/Soli
 import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
 import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/DetallesMiSolicitudAdopcion';
 
-
 import SolicitudDetalle from '../pages/Gestion/SolicitudesAdopcion/SolicitudDetalle';
 import ProcesosAdopcionList from '../pages/Gestion/Adopciones/ProcesosAdopcionList';
 import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAdopcion';
 import MisProcesosAdopcion from "../pages/Gestion/Adopciones/MisProcesosAdopcion";
-
 
 import ListaSolicitudesPublicacion from '../pages/Gestion/SolicitudesPublicacion/ListaSolicitudesPublicacion';
 import DetalleSolicitudPublicacion from '../pages/Gestion/SolicitudesPublicacion/DetalleSolicitudPublicacion';
@@ -32,6 +34,9 @@ const DashboardAdmin = () => {
       <SidebarAdmin />
       <main className="flex-1 p-6">
         <Routes>
+          {/* 👇 Ruta por defecto del dashboard */}
+          <Route index element={<AdminHome />} />
+
           {/* Usuarios */}
           <Route path="usuarios" element={<UsersList />} />
 
@@ -46,12 +51,10 @@ const DashboardAdmin = () => {
           <Route path="mis-solicitudes" element={<MisSolicitudesAdopcion />} />
           <Route path="mis-solicitudes/:id" element={<DetallesMiSolicitudAdopcion />} />
 
-
           {/* Procesos de Adopción */}
           <Route path="procesos-adopcion" element={<ProcesosAdopcionList />} />
           <Route path="procesos-adopcion/:procesoId" element={<DetalleProcesoAdopcion />} />
           <Route path="mis-procesos" element={<MisProcesosAdopcion />} />
-
 
           {/* Solicitudes de Publicación */}
           <Route path="solicitudes-publicacion" element={<ListaSolicitudesPublicacion />} />
@@ -62,7 +65,6 @@ const DashboardAdmin = () => {
 
           {/* Donaciones */}
           <Route path="donaciones/meta" element={<DonationGoalCRUD />} />
-
         </Routes>
       </main>
     </div>

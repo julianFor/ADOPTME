@@ -4,7 +4,7 @@ import SidebarAdminFundacion from '../components/dashboard/SidebarAdminFundacion
 
 import MascotaFundacionList from './Gestion/Mascotas/MascotaFundacionList';
 import MascotaExternaList from './Gestion/Mascotas/MascotaExternaList';
-
+import AdminHome from './Gestion/Dashboards/AdminHome';
 import SolicitudesPorMascotaList from '../pages/Gestion/SolicitudesAdopcion/SolicitudesPorMascotaList';
 import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/SolicitudesDetalleMascota';
 import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
@@ -29,6 +29,9 @@ const DashboardFundacion = () => {
       <SidebarAdminFundacion />
       <main className="flex-1 p-6">
         <Routes>
+
+          {/* resumen Dashboard */}
+          <Route index element={<AdminHome />} />
           {/* Mascotas */}
           <Route path="mascotas/fundacion" element={<MascotaFundacionList />} />
           <Route path="mascotas/externas" element={<MascotaExternaList />} />

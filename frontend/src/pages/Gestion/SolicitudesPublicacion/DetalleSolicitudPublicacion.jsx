@@ -7,6 +7,9 @@ import {
   rechazarSolicitudPublicacion,
 } from '../../../services/solicitudPublicacionService';
 
+// 🔔 Toasts (nuevo)
+import { useToast } from '../../../components/ui/ToastProvider';
+
 // Traducciones para mostrar claves legibles
 const traduccionesConfirmaciones = {
   esResponsable: 'Es responsable',
@@ -57,45 +60,83 @@ const fmtDate = (v) => {
 const DetalleSolicitudPublicacion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { success, error, info } = useToast(); // 👈 toasts
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [procesando, setProcesando] = useState(false); // evita doble click
 
   useEffect(() => {
     const fetchSolicitud = async () => {
       try {
         const response = await obtenerSolicitudPublicacionPorId(id);
         setSolicitud(response.solicitud);
-      } catch (error) {
-        console.error('Error al obtener la solicitud:', error);
+      } catch (e) {
+        console.error('Error al obtener la solicitud:', e);
+        error(
+          e?.response?.data?.message || 'No se pudo cargar la solicitud.',
+          { duration: 6000, title: 'Error al cargar' }
+        );
       } finally {
         setLoading(false);
       }
     };
+
+    if (!id) {
+      error('ID inválido.', { duration: 5000 });
+      return;
+    }
+
+    // Aviso informativo breve (opcional)
+    info('Cargando solicitud…', { duration: 1500 });
     fetchSolicitud();
-  }, [id]);
+  }, [id, error, info]);
 
   const handleAprobar = async () => {
+    if (!solicitud?._id) return;
     try {
+      setProcesando(true);
       await aprobarSolicitudPublicacion(solicitud._id);
-      alert('Solicitud aprobada y mascota publicada.');
-      navigate('/dashboard/admin/solicitudes-publicacion');
-    } catch (error) {
-      console.error('Error al aprobar la solicitud:', error);
-      alert('No se pudo aprobar la solicitud.');
+      success('Solicitud aprobada y mascota publicada.', {
+        duration: 3500,
+        title: 'Aprobada',
+      });
+      setTimeout(() => {
+        navigate('/dashboard/admin/solicitudes-publicacion');
+      }, 900); // pequeña espera para que el toast se vea
+    } catch (e) {
+      console.error('Error al aprobar la solicitud:', e);
+      error(
+        e?.response?.data?.message || 'No se pudo aprobar la solicitud.',
+        { duration: 6500, title: 'Error' }
+      );
+    } finally {
+      setProcesando(false);
     }
   };
 
   const handleRechazar = async () => {
+    if (!solicitud?._id) return;
     try {
+      setProcesando(true);
       await rechazarSolicitudPublicacion(
         solicitud._id,
         'No cumple con los criterios de publicación'
       );
-      alert('Solicitud rechazada.');
-      navigate('/dashboard/admin/solicitudes-publicacion');
-    } catch (error) {
-      console.error('Error al rechazar la solicitud:', error);
-      alert('No se pudo rechazar la solicitud.');
+      info('Solicitud rechazada.', {
+        duration: 3500,
+        title: 'Rechazada',
+      });
+      setTimeout(() => {
+        navigate('/dashboard/admin/solicitudes-publicacion');
+      }, 900);
+    } catch (e) {
+      console.error('Error al rechazar la solicitud:', e);
+      error(
+        e?.response?.data?.message || 'No se pudo rechazar la solicitud.',
+        { duration: 6500, title: 'Error' }
+      );
+    } finally {
+      setProcesando(false);
     }
   };
 
@@ -207,15 +248,17 @@ const DetalleSolicitudPublicacion = () => {
       <div className="mt-10 flex gap-4 justify-end">
         <button
           onClick={handleRechazar}
-          className="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 transition"
+          disabled={procesando}
+          className={`px-5 py-2 rounded-lg transition text-white ${procesando ? 'bg-red-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
         >
-          Rechazar
+          {procesando ? 'Procesando…' : 'Rechazar'}
         </button>
         <button
           onClick={handleAprobar}
-          className="bg-green-500 text-white px-5 py-2 rounded-lg hover:bg-green-600 transition"
+          disabled={procesando}
+          className={`px-5 py-2 rounded-lg transition text-white ${procesando ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
         >
-          Aprobar
+          {procesando ? 'Procesando…' : 'Aprobar'}
         </button>
       </div>
     </div>
