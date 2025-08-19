@@ -5,11 +5,15 @@ import {
   aprobarEtapa,
   rechazarEtapa,
 } from '../../services/procesoService';
+// toasts
+import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) => {
   const [fecha, setFecha] = useState(proceso?.entrevista?.fechaEntrevista?.split('T')[0] || '');
   const [enlace, setEnlace] = useState(proceso?.entrevista?.enlaceMeet || '');
   const [observaciones, setObservaciones] = useState(proceso?.entrevista?.observacionesEntrevista || '');
+
+  const { success, error, warning } = useToast();
 
   const handleGuardar = async () => {
     try {
@@ -20,10 +24,12 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
       };
       const res = await agendarEntrevista(procesoId, datos);
       setProceso(res.proceso);
-      alert('Entrevista guardada correctamente.');
-    } catch (error) {
-      console.error('Error al guardar entrevista:', error.response?.data || error);
-      alert('Error al guardar entrevista');
+      // alert('Entrevista guardada correctamente.');
+      success('Entrevista guardada correctamente.', { title: 'Guardado' });
+    } catch (err) {
+      console.error('Error al guardar entrevista:', err.response?.data || err);
+      // alert('Error al guardar entrevista');
+      error('Error al guardar entrevista.', { title: 'Error' });
     }
   };
 
@@ -31,9 +37,11 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
     try {
       const res = await aprobarEtapa(procesoId, 'entrevista');
       setProceso(res.proceso);
-      alert('Entrevista aprobada correctamente.');
-    } catch (error) {
-      console.error('Error al aprobar entrevista:', error);
+      // alert('Entrevista aprobada correctamente.');
+      success('Entrevista aprobada correctamente.', { title: 'Aprobada' });
+    } catch (err) {
+      console.error('Error al aprobar entrevista:', err);
+      error('No se pudo aprobar la entrevista.', { title: 'Error' });
     }
   };
 
@@ -44,15 +52,18 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
     try {
       const res = await rechazarEtapa(procesoId, 'entrevista', motivo);
       setProceso(res.proceso);
-      alert('Entrevista rechazada.');
-    } catch (error) {
-      console.error('Error al rechazar entrevista:', error);
+      // alert('Entrevista rechazada.');
+      success('Entrevista rechazada.', { title: 'Rechazada' });
+    } catch (err) {
+      console.error('Error al rechazar entrevista:', err);
+      error('No se pudo rechazar la entrevista.', { title: 'Error' });
     }
   };
 
   const generarGoogleCalendarURL = () => {
     if (!fecha) {
-      alert('Debes ingresar la fecha de la entrevista');
+      // alert('Debes ingresar la fecha de la entrevista');
+      warning('Debes ingresar la fecha de la entrevista.', { title: 'Advertencia' });
       return;
     }
 

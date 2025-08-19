@@ -1,17 +1,25 @@
-import { useState } from "react";
+// src/pages/Donar.jsx
+import { useState, useEffect } from "react";
 import DonationSection from "../components/donaciones/DonationSection";
-import DonationQRSection from "../components/donaciones/DonationQRSection"; 
+import DonationQRSection from "../components/donaciones/DonationQRSection";
+import NeedsCatalog from "../components/necesidades/NeedsCatalog";
 
 export default function Donar() {
-  const [tab, setTab] = useState("metas"); 
+  // 1) Recuperar la pestaña guardada en localStorage o usar "metas" por defecto
+  const [tab, setTab] = useState(() => {
+    return localStorage.getItem("donarTab") || "metas";
+  });
+
+  // 2) Guardar cada vez que cambie
+  useEffect(() => {
+    localStorage.setItem("donarTab", tab);
+  }, [tab]);
 
   return (
     <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Título */}
-      <h1 className="text-center text-2xl sm:text-3xl font-extrabold tracking-wide
-                     flex items-center justify-center gap-2 sm:gap-3">
-        <span className="bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400
-                         bg-clip-text text-transparent">
+      <h1 className="text-center text-2xl sm:text-3xl font-extrabold tracking-wide flex items-center justify-center gap-2 sm:gap-3">
+        <span className="bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 bg-clip-text text-transparent">
           Tu Huella en su Futuro
         </span>
         <img
@@ -36,15 +44,14 @@ export default function Donar() {
         />
       </div>
 
-      {/* Contenido por pestaña */}
       <section className="mt-8">
         {tab === "metas" ? (
           <>
             <DonationSection />
-            <DonationQRSection /> 
+            <DonationQRSection />
           </>
         ) : (
-          <div className="min-h-[520px]" />
+          <NeedsCatalog />
         )}
       </section>
     </main>
@@ -59,8 +66,7 @@ function TabButton({ active, label, onClick }) {
   if (active) {
     return (
       <div
-        className={`${widthWrap} rounded-full p-[2px] bg-gradient-to-r
-                    from-purple-600 to-purple-300 shadow-[0_6px_0_#E9E4FB]`}
+        className={`${widthWrap} rounded-full p-[2px] bg-gradient-to-r from-purple-600 to-purple-300 shadow-[0_6px_0_#E9E4FB]`}
       >
         <button
           type="button"
@@ -79,8 +85,7 @@ function TabButton({ active, label, onClick }) {
       type="button"
       aria-pressed="false"
       onClick={onClick}
-      className={`${widthWrap} ${commonText}
-                  bg-white shadow-[0_6px_0_#E9E4FB]`}
+      className={`${widthWrap} ${commonText} bg-white shadow-[0_6px_0_#E9E4FB]`}
     >
       {label}
     </button>

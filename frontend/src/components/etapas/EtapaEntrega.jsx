@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { aprobarEtapa, rechazarEtapa, registrarEntrega } from '../../services/procesoService';
 import useUser from '../../hooks/useUser';
+//  toasts
+import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
   const { user } = useUser();
+  const { success, error, warning } = useToast();
 
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [personaEntrega, setPersonaEntrega] = useState('');
@@ -25,57 +28,65 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
   }, [proceso]);
 
   const handleGuardar = async () => {
-  if (!fechaEntrega || !personaEntrega) {
-    alert('Por favor completa la fecha y el nombre de quien entrega.');
-    return;
-  }
+    if (!fechaEntrega || !personaEntrega) {
+      // alert('Por favor completa la fecha y el nombre de quien entrega.');
+      warning('Por favor completa la fecha y el nombre de quien entrega.', { title: 'Campos incompletos' });
+      return;
+    }
 
-  const datosEntrega = {
-    fechaEntrega,
-    personaEntrega,
-    observacionesEntrega,
+    const datosEntrega = {
+      fechaEntrega,
+      personaEntrega,
+      observacionesEntrega,
+    };
+
+    try {
+      const res = await registrarEntrega(procesoId, datosEntrega);
+      setProceso(res.proceso);
+      // alert('Entrega registrada exitosamente.');
+      success('Entrega registrada exitosamente.', { title: 'Guardado' });
+
+      // Guardar etapa actual como 4 (etapa entrega)
+      localStorage.setItem(`etapaActual-${procesoId}`, '4');
+
+      // Recargar para reflejar el cambio y avanzar en el componente padre
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      // alert('Error al registrar entrega.');
+      error('Error al registrar entrega.', { title: 'Error' });
+    }
   };
 
-  try {
-    const res = await registrarEntrega(procesoId, datosEntrega);
-    setProceso(res.proceso);
-    alert('Entrega registrada exitosamente.');
+  const handleAprobar = async () => {
+    try {
+      const res = await aprobarEtapa(procesoId, 'entrega');
+      setProceso(res.proceso);
+      // alert('Etapa de entrega aprobada.');
+      success('Etapa de entrega aprobada.', { title: 'Aprobada' });
 
-    // ✅ Guardar etapa actual como 4 (etapa entrega)
-    localStorage.setItem(`etapaActual-${procesoId}`, '4');
+      //  Guardar en localStorage y recargar
+      localStorage.setItem(`etapaActual-${procesoId}`, '4');
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      // alert('Error al aprobar etapa.');
+      error('Error al aprobar etapa.', { title: 'Error' });
+    }
+  };
 
-    // ✅ Recargar para reflejar el cambio y avanzar en el componente padre
-    window.location.reload();
-  } catch (error) {
-    console.error(error);
-    alert('Error al registrar entrega.');
-  }
-};
-
-const handleAprobar = async () => {
-  try {
-    const res = await aprobarEtapa(procesoId, 'entrega');
-    setProceso(res.proceso);
-    alert('Etapa de entrega aprobada.');
-
-    // ✅ Guardar en localStorage y recargar
-    localStorage.setItem(`etapaActual-${procesoId}`, '4');
-    window.location.reload();
-  } catch (error) {
-    console.error(error);
-    alert('Error al aprobar etapa.');
-  }
-};
   const handleRechazar = async () => {
     const motivo = prompt('¿Cuál es el motivo del rechazo?');
     if (!motivo) return;
     try {
       const res = await rechazarEtapa(procesoId, 'entrega', motivo);
       setProceso(res.proceso);
-      alert('Etapa rechazada.');
-    } catch (error) {
-      console.error(error);
-      alert('Error al rechazar etapa.');
+      // alert('Etapa rechazada.');
+      success('Etapa rechazada.', { title: 'Rechazada' });
+    } catch (err) {
+      console.error(err);
+      // alert('Error al rechazar etapa.');
+      error('Error al rechazar etapa.', { title: 'Error' });
     }
   };
 
@@ -117,7 +128,7 @@ const handleAprobar = async () => {
         </div>
       </div>
 
-            {(user?.role === 'admin' || user?.role === 'adminFundacion') && (
+      {(user?.role === 'admin' || user?.role === 'adminFundacion') && (
         <div className="flex justify-center mb-6">
           <button
             type="button"

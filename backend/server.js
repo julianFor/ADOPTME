@@ -56,7 +56,8 @@ const routes = [
   { path: './routes/donationRoutes.js', endpoint: '/api/donaciones' },
   { path: './routes/donationGoalRoutes.js', endpoint: '/api/donation-goals', endpoint: '/api/metas' },
   { path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
-  { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' }
+  { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' },
+  { path: './routes/necesidadRoutes.js', endpoint: '/api/necesidades' }
 ];
 
 for (const route of routes) {

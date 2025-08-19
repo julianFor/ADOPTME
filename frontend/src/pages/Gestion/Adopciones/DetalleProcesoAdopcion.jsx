@@ -13,7 +13,7 @@ import { UserContext } from '../../../context/UserContext';
 const DetalleProcesoAdopcion = () => {
   const { procesoId } = useParams();
   const [proceso, setProceso] = useState(null);
-  const [etapaActual, setEtapaActual] = useState(null); // inicia en null
+  const [etapaActual, setEtapaActual] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   const { user } = useContext(UserContext);
@@ -29,7 +29,7 @@ useEffect(() => {
     } catch (error) {
       console.error('Error al obtener el proceso:', error);
     } finally {
-      setLoading(false); // ✅ Aquí estaba el error: L mayúscula
+      setLoading(false); 
     }
   };
 

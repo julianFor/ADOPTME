@@ -3,12 +3,13 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import SidebarAdmin from '../components/dashboard/SidebarAdmin';
 
-// 👇 nuevo import
 import AdminHome from './Gestion/Dashboards/AdminHome';
 
 import UsersList from './Gestion/Users/UsersList';
 import MascotaFundacionList from './Gestion/Mascotas/MascotaFundacionList';
 import MascotaExternaList from './Gestion/Mascotas/MascotaExternaList';
+
+import NecesidadFundacionList from '../pages/Gestion/Necesidades/NecesidadFundacionList';
 
 import SolicitudesPorMascotaList from '../pages/Gestion/SolicitudesAdopcion/SolicitudesPorMascotaList';
 import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/SolicitudesDetalleMascota';
@@ -34,7 +35,7 @@ const DashboardAdmin = () => {
       <SidebarAdmin />
       <main className="flex-1 p-6">
         <Routes>
-          {/* 👇 Ruta por defecto del dashboard */}
+          {/* Ruta por defecto del dashboard */}
           <Route index element={<AdminHome />} />
 
           {/* Usuarios */}
@@ -43,6 +44,7 @@ const DashboardAdmin = () => {
           {/* Mascotas */}
           <Route path="mascotas/fundacion" element={<MascotaFundacionList />} />
           <Route path="mascotas/externas" element={<MascotaExternaList />} />
+          <Route path="necesidades" element={<NecesidadFundacionList />} />
 
           {/* Solicitudes de Adopción */}
           <Route path="solicitudes-adopcion" element={<SolicitudesPorMascotaList />} />

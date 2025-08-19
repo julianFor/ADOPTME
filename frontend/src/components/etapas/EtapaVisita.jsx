@@ -5,12 +5,16 @@ import {
   aprobarEtapa,
   rechazarEtapa
 } from '../../services/procesoService';
+// ✅ toasts
+import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
   const [fecha, setFecha] = useState(proceso?.visita?.fechaVisita?.split('T')[0] || '');
   const [hora, setHora] = useState(proceso?.visita?.horaVisita || '');
   const [responsable, setResponsable] = useState(proceso?.visita?.responsable || '');
   const [observaciones, setObservaciones] = useState(proceso?.visita?.observacionesVisita || '');
+
+  const { success, error, warning } = useToast();
 
   const puedeGestionarEtapa = () => {
     return proceso?.entrevista?.aprobada === true;
@@ -26,10 +30,12 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
       };
       const res = await registrarVisita(procesoId, datos);
       setProceso(res.proceso);
-      alert('Visita guardada correctamente.');
-    } catch (error) {
-      console.error('Error al guardar visita:', error.response?.data || error);
-      alert('Error al guardar visita');
+      // alert('Visita guardada correctamente.');
+      success('Visita guardada correctamente.', { title: 'Guardado' });
+    } catch (err) {
+      console.error('Error al guardar visita:', err?.response?.data || err);
+      // alert('Error al guardar visita');
+      error('Error al guardar visita.', { title: 'Error' });
     }
   };
 
@@ -37,9 +43,11 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
     try {
       const res = await aprobarEtapa(procesoId, 'visita');
       setProceso(res.proceso);
-      alert('Visita aprobada correctamente.');
-    } catch (error) {
-      console.error('Error al aprobar visita:', error);
+      // alert('Visita aprobada correctamente.');
+      success('Visita aprobada correctamente.', { title: 'Aprobada' });
+    } catch (err) {
+      console.error('Error al aprobar visita:', err);
+      error('No se pudo aprobar la visita.', { title: 'Error' });
     }
   };
 
@@ -50,15 +58,18 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
     try {
       const res = await rechazarEtapa(procesoId, 'visita', motivo);
       setProceso(res.proceso);
-      alert('Visita rechazada.');
-    } catch (error) {
-      console.error('Error al rechazar visita:', error);
+      // alert('Visita rechazada.');
+      success('Visita rechazada.', { title: 'Rechazada' });
+    } catch (err) {
+      console.error('Error al rechazar visita:', err);
+      error('No se pudo rechazar la visita.', { title: 'Error' });
     }
   };
 
   const generarGoogleCalendarURL = () => {
     if (!fecha || !hora || !responsable) {
-      alert('Debes ingresar fecha, hora y responsable para agendar.');
+      // alert('Debes ingresar fecha, hora y responsable para agendar.');
+      warning('Debes ingresar fecha, hora y responsable para agendar.', { title: 'Advertencia' });
       return;
     }
 

@@ -3,12 +3,15 @@ import { FaCheck, FaTimes, FaFileSignature } from 'react-icons/fa';
 import { aprobarEtapa, rechazarEtapa, subirCompromiso } from '../../services/procesoService';
 import useUser from '../../hooks/useUser';
 import { composeCertificado } from '../../utils/composeCertificado';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
   const { user } = useUser();
+  const { success, error, warning } = useToast();
+
   const firmaRef = useRef(null);
   const [nombre, setNombre] = useState('');
-  const [documento, setDocumento] = useState(''); // lo seguimos pidiendo aunque no se imprima
+  const [documento, setDocumento] = useState(''); 
   const [fecha, setFecha] = useState('');
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -57,44 +60,47 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
   };
 
   // === NUEVO: generar imagen y enviar ===
-const generarImagenYEnviar = async () => {
-  if (!nombre || !fecha) {
-    alert('Por favor completa nombre y fecha');
-    return;
-  }
+  const generarImagenYEnviar = async () => {
+    if (!nombre || !fecha) {
+      // alert('Por favor completa nombre y fecha');
+      warning('Por favor completa nombre y fecha.', { title: 'Campos incompletos' });
+      return;
+    }
 
-  try {
-    const { blob, dataUrl } = await composeCertificado({
-      // usa la plantilla que subiste a /public; el ?v=2 evita cache si la acabas de reemplazar
-      plantillaSrc: '/plantillas/certificado_adopcion.png?v=2',
-      W: 1600,
-      H: 1000,
-      datos: {
-        adoptante: nombre,
-        mascota: nombreMascota || '',
-        // Formato del certificado: dd - mm - yyyy
-        fecha: formatearFecha(fecha),
-        firmaCanvas: firmaRef.current
-      },
-      // ponlo en true para ver cajas guía rojas; cuando quede perfecto, pásalo a false
-      debug: false
-    });
+    try {
+      const { blob, dataUrl } = await composeCertificado({
+        // usa la plantilla que subiste a /public; el ?v=2 evita cache si la acabas de reemplazar
+        plantillaSrc: '/plantillas/certificado_adopcion.png?v=2',
+        W: 1600,
+        H: 1000,
+        datos: {
+          adoptante: nombre,
+          mascota: nombreMascota || '',
+          // Formato del certificado: dd - mm - yyyy
+          fecha: formatearFecha(fecha),
+          firmaCanvas: firmaRef.current
+        },
+        // ponlo en true para ver cajas guía rojas; cuando quede perfecto, pásalo a false
+        debug: false
+      });
 
-    const formData = new FormData();
-    formData.append('compromiso', blob, 'compromiso-firmado.png');
+      const formData = new FormData();
+      formData.append('compromiso', blob, 'compromiso-firmado.png');
 
-    const res = await subirCompromiso(procesoId, formData);
-    setProceso(res.proceso);
-    setPreviewUrl(dataUrl); // muestra enseguida
+      const res = await subirCompromiso(procesoId, formData);
+      setProceso(res.proceso);
+      setPreviewUrl(dataUrl); // muestra enseguida
 
-    alert('Compromiso enviado correctamente.');
-    localStorage.setItem(`etapaActual-${procesoId}`, '3');
-    // Si quieres recargar: window.location.reload();
-  } catch (error) {
-    console.error('Error al enviar compromiso:', error);
-    alert('Error al enviar compromiso.');
-  }
-};
+      // alert('Compromiso enviado correctamente.');
+      success('Compromiso enviado correctamente.', { title: 'Enviado' });
+      localStorage.setItem(`etapaActual-${procesoId}`, '3');
+      // Si quieres recargar: window.location.reload();
+    } catch (err) {
+      console.error('Error al enviar compromiso:', err);
+      // alert('Error al enviar compromiso.');
+      error('Error al enviar compromiso.', { title: 'Error' });
+    }
+  };
 
   // URL del asset (Cloudinary)
   const asset = proceso?.compromiso?.archivo;
@@ -106,9 +112,11 @@ const generarImagenYEnviar = async () => {
     try {
       const res = await aprobarEtapa(procesoId, 'compromiso');
       setProceso(res.proceso);
-      alert('Etapa de firma aprobada.');
-    } catch {
-      alert('Error al aprobar etapa.');
+      // alert('Etapa de firma aprobada.');
+      success('Etapa de firma aprobada.', { title: 'Aprobada' });
+    } catch (err) {
+      // alert('Error al aprobar etapa.');
+      error('Error al aprobar etapa.', { title: 'Error' });
     }
   };
 
@@ -117,9 +125,11 @@ const generarImagenYEnviar = async () => {
     try {
       const res = await rechazarEtapa(procesoId, 'compromiso', motivo);
       setProceso(res.proceso);
-      alert('Etapa rechazada.');
-    } catch {
-      alert('Error al rechazar etapa.');
+      // alert('Etapa rechazada.');
+      success('Etapa rechazada.', { title: 'Rechazada' });
+    } catch (err) {
+      // alert('Error al rechazar etapa.');
+      error('Error al rechazar etapa.', { title: 'Error' });
     }
   };
 

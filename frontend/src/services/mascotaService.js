@@ -16,7 +16,7 @@ export const getMascotasExternas = () =>
 
 export const getMascotaById = async (id) => {
   const response = await axiosClient.get(`/mascotas/${id}`);
-  return response.data; // ✅ NO response.data.mascota
+  return response.data; 
 };
 
 

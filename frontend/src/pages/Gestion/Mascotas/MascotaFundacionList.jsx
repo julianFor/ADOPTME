@@ -7,7 +7,6 @@ import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/
 import MascotaFundacionFormModal from "./MascotaFundacionFormModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 
-// 🧮 Calcular edad simplificada: solo días, meses o años
 const formatSimpleAge = (fechaNacimiento) => {
   if (!fechaNacimiento) return "No especificado";
 
