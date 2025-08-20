@@ -10,6 +10,8 @@ import SolicitudesDetalleMascota from '../pages/Gestion/SolicitudesAdopcion/Soli
 import MisSolicitudesAdopcion from '../pages/Gestion/SolicitudesAdopcion/MisSolicitudesAdopcion';
 import DetallesMiSolicitudAdopcion from '../pages/Gestion/SolicitudesAdopcion/DetallesMiSolicitudAdopcion';
 
+import NecesidadFundacionList from '../pages/Gestion/Necesidades/NecesidadFundacionList';
+
 import SolicitudDetalle from '../pages/Gestion/SolicitudesAdopcion/SolicitudDetalle';
 import ProcesosAdopcionList from '../pages/Gestion/Adopciones/ProcesosAdopcionList';
 import DetalleProcesoAdopcion from '../pages/Gestion/Adopciones/DetalleProcesoAdopcion';
@@ -35,6 +37,8 @@ const DashboardFundacion = () => {
           {/* Mascotas */}
           <Route path="mascotas/fundacion" element={<MascotaFundacionList />} />
           <Route path="mascotas/externas" element={<MascotaExternaList />} />
+
+          <Route path="necesidades" element={<NecesidadFundacionList />} />
 
           {/* Solicitudes de Adopción */}
           <Route path="solicitudes-adopcion" element={<SolicitudesPorMascotaList />} />

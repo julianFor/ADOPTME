@@ -124,13 +124,13 @@ const SidebarAdminFundacion = () => {
           </button>
           {openDonaciones && !collapsed && (
             <div className="pl-12 text-sm text-gray-700">
-              <Link to="/dashboard/adminfundacion/donaciones/necesidades" className="block py-1 hover:underline">Necesidades Fundación</Link>
+              <Link to="/dashboard/adminfundacion/necesidades" className="block py-1 hover:underline">Necesidades Fundación</Link>
               <Link to="/dashboard/adminfundacion/donaciones/meta" className="block py-1 hover:underline">Meta Monetaria</Link>
             </div>
           )}
           {openDonaciones && collapsed && (
             <div className="absolute left-20 top-[330px] bg-white shadow-md rounded-md w-56 z-50">
-              <Link to="/dashboard/adminfundacion/donaciones/necesidades" className="block px-4 py-2 hover:bg-purple-50">Necesidades Fundación</Link>
+              <Link to="/dashboard/adminfundacion/necesidades" className="block px-4 py-2 hover:bg-purple-50">Necesidades Fundación</Link>
               <Link to="/dashboard/adminfundacion/donaciones/meta" className="block px-4 py-2 hover:bg-purple-50">Meta Monetaria</Link>
             </div>
           )}
