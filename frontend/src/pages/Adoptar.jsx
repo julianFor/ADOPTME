@@ -174,8 +174,8 @@ function Adoptar() {
                 <input
                   type="radio"
                   name="origen"
-                  value="externa"
-                  checked={origen === "externa"}
+                  value="externo"
+                  checked={origen === "externo"}
                   onChange={(e) => setOrigen(e.target.value)}
                 />{" "}
                 Externa

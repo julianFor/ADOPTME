@@ -6,7 +6,7 @@ const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const User = require('../models/User');
 const Donation = require('../models/Donation');
 
-// --------- Helpers de tiempo / formato ---------
+
 const MESES_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
@@ -250,5 +250,126 @@ exports.getProcessesInProgress = async (req, res) => {
   } catch (err) {
     console.error('Dashboard.getProcessesInProgress error:', err);
     return res.status(500).json({ message: 'Error al obtener procesos', error: err.message });
+  }
+};
+
+
+// KPIs adoptante (tarjetas del dashboard de usuario)
+exports.getAdoptanteSummary = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Total de solicitudes de adopción del usuario
+    const totalSolAdopUser = await SolicitudAdopcion.countDocuments({ adoptante: userId });
+
+    // Total de solicitudes de publicación del usuario
+    const totalSolPubUser = await SolicitudPublicacion.countDocuments({ adoptante: userId });
+
+    // Publicaciones en AdoptMe (mascotas creadas/ligadas al usuario externo y publicadas)
+    // Assumption: cuando se aprueba una solicitud de publicación, se crea una Mascota con:
+    //   origen: 'externo', publicada: true, publicadaPor: userId
+    const totalPublicacionesUser = await Mascota.countDocuments({
+      origen: 'externo',
+      publicada: true,
+      publicadaPor: userId
+    });
+
+    return res.json({
+      solicitudesAdopcion: { total: totalSolAdopUser },
+      solicitudesPublicacion: { total: totalSolPubUser },
+      publicacionesAdoptMe: { total: totalPublicacionesUser }
+    });
+  } catch (err) {
+    console.error('Dashboard.getAdoptanteSummary error:', err);
+    return res.status(500).json({ message: 'Error al obtener resumen de adoptante', error: err.message });
+  }
+};
+
+// Tabla izquierda: "Mis Procesos de Adopción en Curso"
+exports.getMyProcessesInProgress = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const limit = Math.max(1, Math.min(50, Number(req.query.limit || 10)));
+
+    // Traemos procesos NO finalizados cuyos procesos pertenezcan a solicitudes de este usuario
+    const procesos = await ProcesoAdopcion.find({ finalizado: false })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'solicitud',
+        match: { adoptante: userId },
+        populate: [
+          { path: 'mascota', model: 'Mascota', select: 'nombre' },
+          { path: 'adoptante', model: 'User', select: 'username email' }
+        ],
+        select: 'mascota adoptante createdAt'
+      })
+      .limit(limit)
+      .lean();
+
+    // Filtra sólo los que sí correspondan al usuario (por el match de arriba)
+    const propios = procesos.filter(p => p.solicitud);
+
+    const rows = propios.map(p => {
+      const aprobadas =
+        (p?.entrevista?.aprobada ? 1 : 0) +
+        (p?.visita?.aprobada ? 1 : 0) +
+        (p?.compromiso?.aprobada ? 1 : 0) +
+        (p?.entrega?.aprobada ? 1 : 0);
+
+      let etapaActualIndex = 0;
+      if (!p?.entrevista?.aprobada) etapaActualIndex = 0;
+      else if (!p?.visita?.aprobada) etapaActualIndex = 1;
+      else if (!p?.compromiso?.aprobada) etapaActualIndex = 2;
+      else etapaActualIndex = 3;
+
+      const mascota = p?.solicitud?.mascota
+        ? { _id: p.solicitud.mascota._id, nombre: p.solicitud.mascota.nombre }
+        : { _id: null, nombre: '—' };
+
+      const adoptante = p?.solicitud?.adoptante
+        ? { _id: p.solicitud.adoptante._id, nombre: p.solicitud.adoptante.username }
+        : { _id: null, nombre: '—' };
+
+      return {
+        _id: String(p._id),
+        mascota,
+        adoptante,
+        etapaActualIndex,
+        aprobadas,   // reales (el front suma +1 por "Solicitud")
+        fecha: p.createdAt
+      };
+    });
+
+    return res.json({ totalEtapas: 4, rows });
+  } catch (err) {
+    console.error('Dashboard.getMyProcessesInProgress error:', err);
+    return res.status(500).json({ message: 'Error al obtener procesos del adoptante', error: err.message });
+  }
+};
+
+// Tabla derecha: "Mis Solicitudes de Publicación"
+exports.getMyPublicationRequests = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const limit = Math.max(1, Math.min(50, Number(req.query.limit || 10)));
+
+    const solicitudes = await SolicitudPublicacion.find({ adoptante: userId })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    // Normaliza las filas para la tabla (mascota, especie, estado, fecha, id)
+    const rows = solicitudes.map(s => ({
+      _id: String(s._id),
+      mascota: s?.mascota?.nombre || '—',
+      especie: s?.mascota?.especie || '—',
+      estado: s?.estado || 'pendiente',
+      fecha: s?.createdAt
+    }));
+
+    return res.json({ rows });
+  } catch (err) {
+    console.error('Dashboard.getMyPublicationRequests error:', err);
+    return res.status(500).json({ message: 'Error al obtener solicitudes de publicación del adoptante', error: err.message });
   }
 };

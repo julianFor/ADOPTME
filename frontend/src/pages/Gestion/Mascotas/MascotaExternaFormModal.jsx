@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
-import {
-  createMascota,
-  updateMascota
-} from "../../../services/mascotaService";
+import { createMascota, updateMascota } from "../../../services/mascotaService";
 
 const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [formData, setFormData] = useState({
@@ -11,40 +8,44 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
     especie: "",
     tamano: "",
     sexo: "",
-    estado: "Disponible",
     estadoSalud: "",
     fechaNacimiento: "",
-    contactoExterno: {
-      nombre: "",
-      telefono: "",
-      email: ""
-    },
-    imagen: null
+    origen: "externo",
+    contactoExterno: { nombre: "", telefono: "", correo: "" },
+    imagen: null,
+    disponible: true
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        ...initialData,
+        nombre: initialData.nombre || "",
+        especie: initialData.especie || "",
+        tamano: initialData.tamano || initialData["tamaño"] || "",
+        sexo: initialData.sexo || "",
+        estadoSalud: initialData.estadoSalud || "",
         fechaNacimiento: initialData.fechaNacimiento?.split("T")[0] || "",
+        origen: initialData.origen || "externo",
         contactoExterno: {
           nombre: initialData.contactoExterno?.nombre || "",
           telefono: initialData.contactoExterno?.telefono || "",
-          email: initialData.contactoExterno?.email || "",
+          correo: initialData.contactoExterno?.correo || ""
         },
-        imagen: null
+        imagen: null,
+        disponible: typeof initialData.disponible === "boolean" ? initialData.disponible : true
       });
     } else {
       setFormData({
         nombre: "",
         especie: "",
-        tamaño: "",
+        tamano: "",
         sexo: "",
-        estado: "Disponible",
         estadoSalud: "",
         fechaNacimiento: "",
-        contactoExterno: { nombre: "", telefono: "", email: "" },
-        imagen: null
+        origen: "externo",
+        contactoExterno: { nombre: "", telefono: "", correo: "" },
+        imagen: null,
+        disponible: true
       });
     }
   }, [initialData]);
@@ -52,37 +53,46 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (["nombre", "telefono", "email"].includes(name)) {
-      setFormData({
-        ...formData,
-        contactoExterno: { ...formData.contactoExterno, [name]: value }
-      });
+    // Nombres anidados: contactoExterno.nombre, contactoExterno.telefono, contactoExterno.correo
+    if (name.startsWith("contactoExterno.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        contactoExterno: { ...prev.contactoExterno, [key]: value }
+      }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, imagen: e.target.files[0] });
+    setFormData((prev) => ({ ...prev, imagen: e.target.files[0] || null }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "contactoExterno") {
-          data.append("contactoExterno[nombre]", value.nombre);
-          data.append("contactoExterno[telefono]", value.telefono);
-          data.append("contactoExterno[email]", value.email);
-        } else if (key === "imagen" && value) {
-          data.append("imagenes", value);
-        } else {
-          data.append(key, value);
-        }
-      });
 
-      if (initialData) {
+      // Campos simples
+      data.append("nombre", formData.nombre);
+      data.append("especie", formData.especie);
+      data.append("tamano", formData.tamano); // <-- SIN ñ
+      data.append("sexo", formData.sexo);
+      data.append("estadoSalud", formData.estadoSalud);
+      data.append("fechaNacimiento", formData.fechaNacimiento);
+      data.append("origen", formData.origen || "externo");
+      data.append("disponible", String(!!formData.disponible));
+
+      // Contacto externo (bracketed)
+      data.append("contactoExterno[nombre]", formData.contactoExterno.nombre);
+      data.append("contactoExterno[telefono]", formData.contactoExterno.telefono);
+      data.append("contactoExterno[correo]", formData.contactoExterno.correo);
+
+      // Imagen (opcional)
+      if (formData.imagen) data.append("imagenes", formData.imagen);
+
+      if (initialData?._id) {
         await updateMascota(initialData._id, data);
       } else {
         await createMascota(data);
@@ -102,45 +112,126 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
           <Dialog.Title className="text-xl font-semibold mb-4">
             {initialData ? "Editar Mascota Externa" : "Crear Mascota Externa"}
           </Dialog.Title>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Nombre, Especie, Tamaño, Sexo */}
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre" required className="input" />
-              <input type="text" name="especie" value={formData.especie} onChange={handleChange} placeholder="Especie" required className="input" />
-              <input type="text" name="tamaño" value={formData.tamaño} onChange={handleChange} placeholder="Tamaño" required className="input" />
-              <select name="sexo" value={formData.sexo} onChange={handleChange} required className="input">
+              <input
+                type="text"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                placeholder="Nombre de la mascota"
+                required
+                className="input"
+              />
+
+              <select
+                name="especie"
+                value={formData.especie}
+                onChange={handleChange}
+                required
+                className="input"
+              >
+                <option value="">Especie</option>
+                <option value="perro">Perro</option>
+                <option value="gato">Gato</option>
+                <option value="otro">Otro</option>
+              </select>
+
+              <select
+                name="tamano"
+                value={formData.tamano}
+                onChange={handleChange}
+                required
+                className="input"
+              >
+                <option value="">Tamaño</option>
+                <option value="pequeño">Pequeño</option>
+                <option value="mediano">Mediano</option>
+                <option value="grande">Grande</option>
+              </select>
+
+              <select
+                name="sexo"
+                value={formData.sexo}
+                onChange={handleChange}
+                required
+                className="input"
+              >
                 <option value="">Sexo</option>
                 <option value="macho">Macho</option>
                 <option value="hembra">Hembra</option>
               </select>
             </div>
 
-            {/* Estado y Estado de salud */}
+            {/* Estado de salud */}
             <div className="grid grid-cols-2 gap-4">
-              <select name="estado" value={formData.estado} onChange={handleChange} className="input">
-                <option value="Disponible">Disponible</option>
-                <option value="En proceso">En proceso</option>
-                <option value="Adoptado">Adoptado</option>
+              <select
+                name="estadoSalud"
+                value={formData.estadoSalud}
+                onChange={handleChange}
+                required
+                className="input"
+              >
+                <option value="">Estado de Salud</option>
+                <option value="saludable">Saludable</option>
+                <option value="en tratamiento">En tratamiento</option>
+                <option value="otro">Otro</option>
               </select>
-              <input type="text" name="estadoSalud" value={formData.estadoSalud} onChange={handleChange} placeholder="Estado de Salud" required className="input" />
+
+              <input
+                type="date"
+                name="fechaNacimiento"
+                value={formData.fechaNacimiento}
+                onChange={handleChange}
+                required
+                className="input"
+              />
             </div>
 
-            {/* Fecha de nacimiento */}
-            <input type="date" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} required className="input w-full" />
-
-            {/* Datos de contacto */}
+            {/* Contacto externo */}
             <div className="grid grid-cols-3 gap-4">
-              <input type="text" name="nombre" value={formData.contactoExterno.nombre} onChange={handleChange} placeholder="Nombre contacto" required className="input" />
-              <input type="text" name="telefono" value={formData.contactoExterno.telefono} onChange={handleChange} placeholder="Teléfono" required className="input" />
-              <input type="email" name="email" value={formData.contactoExterno.email} onChange={handleChange} placeholder="Correo electrónico" required className="input" />
+              <input
+                type="text"
+                name="contactoExterno.nombre"
+                value={formData.contactoExterno.nombre}
+                onChange={handleChange}
+                placeholder="Nombre contacto"
+                required
+                className="input"
+              />
+              <input
+                type="text"
+                name="contactoExterno.telefono"
+                value={formData.contactoExterno.telefono}
+                onChange={handleChange}
+                placeholder="Teléfono"
+                required
+                className="input"
+              />
+              <input
+                type="email"
+                name="contactoExterno.correo"
+                value={formData.contactoExterno.correo}
+                onChange={handleChange}
+                placeholder="Correo"
+                required
+                className="input"
+              />
             </div>
 
             {/* Imagen */}
             <input type="file" accept="image/*" onChange={handleFileChange} className="input w-full" />
 
+            {/* Oculto: origen */}
+            <input type="hidden" name="origen" value={formData.origen} />
+
             {/* Botones */}
             <div className="flex justify-end gap-4 pt-4">
-              <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-400 rounded-md">Cancelar</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-400 rounded-md">
+                Cancelar
+              </button>
               <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-md">
                 {initialData ? "Guardar Cambios" : "Crear Mascota"}
               </button>

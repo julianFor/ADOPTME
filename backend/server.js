@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 // Configuración de ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +19,7 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Conexión a MongoDB
 const connectDB = async () => {
@@ -58,7 +58,8 @@ const routes = [
   { path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
   { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' },
   { path: './routes/necesidadRoutes.js', endpoint: '/api/necesidades' },
-  { path: './routes/dashboardRoutes.js', endpoint: '/api/dashboard' }
+  { path: './routes/dashboardRoutes.js', endpoint: '/api/dashboard' },
+  { path: './routes/contactRoutes.js', endpoint: '/api/contact' } 
 ];
 
 for (const route of routes) {

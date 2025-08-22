@@ -1,5 +1,6 @@
 // src/pages/Gestion/AdminHome.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { FiUsers, FiFilePlus, FiCheckCircle } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
@@ -13,11 +14,9 @@ import {
 } from '../../../services/dashboardService';
 
 const AdminHome = () => {
-  // ----- KPIs -----
   const [summary, setSummary] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
 
-  // ----- Procesos en curso -----
   const [procesos, setProcesos] = useState([]);
   const [loadingProc, setLoadingProc] = useState(true);
 
@@ -53,7 +52,6 @@ const AdminHome = () => {
 
   return (
     <div className="space-y-6">
-      {/* Saludo */}
       <h1 className="text-[28px] sm:text-[30px] font-medium tracking-tight text-gray-700">
         Hola Admin <span className="align-middle">👋</span>,
       </h1>
@@ -136,19 +134,15 @@ function StatCard({ color = 'purple', icon, title, value, delta, loading = false
 }
 
 function ActivityCard() {
-  const [tab, setTab] = useState('adopcion'); // adopcion | publicacion | donaciones
-  const [rango] = useState('Mensual');
+  const [tab, setTab] = useState('adopcion');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // cache simple por pestaña para no reconsultar si ya se cargó
   const [cache, setCache] = useState({});
 
   useEffect(() => {
     let alive = true;
 
     const load = async () => {
-      // si tenemos cache, úsalo
       if (cache[tab]) {
         setData(cache[tab]);
         setLoading(false);
@@ -159,7 +153,7 @@ function ActivityCard() {
         let resp;
         if (tab === 'adopcion') resp = await getSeriesAdopcion({ months: 6 });
         else if (tab === 'publicacion') resp = await getSeriesPublicacion({ months: 6 });
-        else resp = await getSeriesDonaciones({ months: 6 }); // { currency, series }
+        else resp = await getSeriesDonaciones({ months: 6 });
         const series = resp?.series || [];
         if (!alive) return;
         setData(series);
@@ -188,29 +182,20 @@ function ActivityCard() {
     </button>
   );
 
-  // Fallback suave si no hay datos
   const chartData = useMemo(() => (data?.length ? data : [{ name: '—', val: 0 }]), [data]);
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-gray-900 font-bold">Actividad de Adopciones</h3>
-        <button className="inline-flex items-center gap-2 text-sm text-gray-600 border rounded-lg px-3 py-1.5 hover:bg-gray-50">
-          {rango}
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="mt-0.5">
-            <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-2 mb-5">
         <Tab id="adopcion">Solicitudes Adopción</Tab>
         <Tab id="publicacion">Solicitudes Publicación</Tab>
         <Tab id="donaciones">Donaciones</Tab>
       </div>
 
-      {/* Chart */}
       <div className="h-[280px] -mx-2 sm:mx-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
@@ -234,7 +219,8 @@ function ActivityCard() {
               stroke="#8B5CF6"
               fill="url(#colorP)"
               strokeWidth={3}
-              isAnimationActive={false}
+              isAnimationActive={true}     
+              animationDuration={1500}     
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -244,6 +230,8 @@ function ActivityCard() {
 }
 
 function ProcesosEnCurso({ rows = [], loading = false }) {
+  const navigate = useNavigate();
+
   const fmt = (iso) => {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -251,17 +239,25 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
-    // Si quieres al estilo de tu captura: '13/08/2025'
   };
 
   const data = rows?.length ? rows : (loading ? [] : []);
   const empty = !loading && !rows?.length;
 
+  const goList = () => navigate('/dashboard/admin/procesos-adopcion');
+  const goDetail = (id) => {
+    if (!id) return;
+    navigate(`/dashboard/admin/procesos-adopcion/${id}`);
+  };
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-gray-900 font-bold">Procesos de Adopción en Curso</h3>
-        <button className="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition">
+        <button
+          onClick={goList}
+          className="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
+        >
           Ver Todos
         </button>
       </div>
@@ -272,8 +268,8 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
             <tr className="text-gray-500 font-semibold">
               <th className="text-left py-3 px-3">Mascota</th>
               <th className="text-left py-3 px-3">Adoptante</th>
-              <th className="text-left py-3 px-3">etapa</th>
-              <th className="text-left py-3 px-3">fecha</th>
+              <th className="text-left py-3 px-3">Etapa</th>
+              <th className="text-left py-3 px-3">Fecha</th>
               <th className="text-left py-3 px-3">Detalles</th>
             </tr>
           </thead>
@@ -290,8 +286,9 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
             )}
             {data.map((r, i) => {
               const etapaVisual = `${(r.aprobadas ?? 0) + 1}/5`;
+              const id = r?._id;
               return (
-                <tr key={r._id || i} className="border-t border-gray-100">
+                <tr key={id || i} className="border-t border-gray-100">
                   <td className="py-3 px-3 text-gray-800">{r?.mascota?.nombre || '—'}</td>
                   <td className="py-3 px-3 text-gray-800">{r?.adoptante?.nombre || '—'}</td>
                   <td className="py-3 px-3">
@@ -301,7 +298,14 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
                   </td>
                   <td className="py-3 px-3 text-gray-800">{fmt(r?.fecha)}</td>
                   <td className="py-3 px-3">
-                    <button className="text-xs font-semibold bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 transition">
+                    <button
+                      disabled={!id}
+                      onClick={() => goDetail(id)}
+                      className={[
+                        "text-xs font-semibold px-3 py-1.5 rounded-lg transition",
+                        id ? "bg-purple-600 text-white hover:bg-purple-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      ].join(' ')}
+                    >
                       Ver
                     </button>
                   </td>

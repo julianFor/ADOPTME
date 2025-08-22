@@ -90,12 +90,6 @@ const MascotaExternaList = () => {
             />
             <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
           </div>
-          <button
-            onClick={handleCrear}
-            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600"
-          >
-            Añadir Mascota
-          </button>
         </div>
       </div>
 

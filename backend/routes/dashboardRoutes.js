@@ -27,4 +27,18 @@ router.get('/activity/donaciones', withAuth, DashboardController.getActivityDona
 /** Tabla: procesos en curso */
 router.get('/processes/in-progress', withAuth, DashboardController.getProcessesInProgress);
 
+
+
+/** ---- ADOPTANTE DASHBOARD ---- */
+const withAuthAdoptante = [verifyToken, allowRoles('adoptante', 'admin', 'adminFundacion')];
+
+// KPIs adoptante
+router.get('/adoptante/summary', withAuthAdoptante, DashboardController.getAdoptanteSummary);
+
+// Tabla: mis procesos en curso
+router.get('/adoptante/processes/in-progress', withAuthAdoptante, DashboardController.getMyProcessesInProgress);
+
+// Tabla: mis solicitudes de publicación
+router.get('/adoptante/solicitudes-publicacion', withAuthAdoptante, DashboardController.getMyPublicationRequests);
+
 module.exports = router;

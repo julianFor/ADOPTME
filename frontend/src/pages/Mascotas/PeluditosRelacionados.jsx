@@ -67,15 +67,21 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
 };
 
 function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return 'Edad desconocida';
+  if (!fechaNacimiento) return "N/A";
   const nacimiento = new Date(fechaNacimiento);
   const hoy = new Date();
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const mesDiferencia = hoy.getMonth() - nacimiento.getMonth();
-  if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < nacimiento.getDate())) {
-    edad--;
+  let años = hoy.getFullYear() - nacimiento.getFullYear();
+  const m = hoy.getMonth() - nacimiento.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) años--;
+  if (años <= 0) {
+    const meses = Math.max(
+      1,
+      (hoy.getMonth() + 12 * hoy.getFullYear()) -
+      (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
+    );
+    return `${meses} mes${meses !== 1 ? "es" : ""}`;
   }
-  return `${edad} año${edad !== 1 ? 's' : ''}`;
+  return `${años} año${años !== 1 ? "s" : ""}`;
 }
 
 export default PeluditosRelacionados;
