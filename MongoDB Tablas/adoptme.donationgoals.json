@@ -1,0 +1,32 @@
+[{
+  "_id": {
+    "$oid": "68d70dad4ab0353d345bd765"
+  },
+  "descripcion": "ADSO EDITADA",
+  "monto": 350,
+  "moneda": "USD",
+  "activa": true,
+  "createdAt": {
+    "$date": "2025-09-26T22:03:25.911Z"
+  },
+  "updatedAt": {
+    "$date": "2025-09-26T22:05:37.116Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68e026c07159e385042c4394"
+  },
+  "descripcion": "Gato herido",
+  "monto": 300,
+  "moneda": "USD",
+  "activa": true,
+  "createdAt": {
+    "$date": "2025-10-03T19:40:48.646Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-03T19:40:48.646Z"
+  },
+  "__v": 0
+}]

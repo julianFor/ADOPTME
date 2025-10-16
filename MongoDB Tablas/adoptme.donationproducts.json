@@ -1,0 +1,70 @@
+[{
+  "_id": {
+    "$oid": "686bf32e91f36ca8decd6b98"
+  },
+  "product": "Alimento para perros",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "phone": "+56912345678",
+  "createdAt": {
+    "$date": "2025-07-07T16:17:50.678Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "686bfb6c91f36ca8decd6c69"
+  },
+  "product": "Alimento para perros",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "phone": "+56912345678",
+  "createdAt": {
+    "$date": "2025-07-07T16:53:00.716Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "686bfb7b91f36ca8decd6c6b"
+  },
+  "product": "Alimento para perros",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "phone": "+56912345678",
+  "createdAt": {
+    "$date": "2025-07-07T16:53:15.297Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "686c027dceecddec7725295b"
+  },
+  "product": "Alimento para perros",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "phone": "+56912345678",
+  "createdAt": {
+    "$date": "2025-07-07T17:23:09.644Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "686c0316ceecddec77252964"
+  },
+  "product": "Alimento para perros",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "phone": "+56912345678",
+  "createdAt": {
+    "$date": "2025-07-07T17:25:42.284Z"
+  },
+  "__v": 0
+}]

@@ -1,0 +1,255 @@
+[{
+  "_id": {
+    "$oid": "68a8790d1125ea1e2f331ec8"
+  },
+  "adoptante": {
+    "$oid": "68995385b8ee2efc4e1c1c53"
+  },
+  "documentoIdentidad": "https://res.cloudinary.com/dmjejknkt/image/upload/v1755871500/adoptme/publicaciones/1755871499662-cedula3.webp",
+  "contacto": {
+    "nombre": "Felipe Celis",
+    "cedula": "102346437643",
+    "correo": "adoptante@gmail.com",
+    "telefono": "3053987689",
+    "ciudad": "Bogota",
+    "barrio": "Usaquen",
+    "direccion": "Calle 69 "
+  },
+  "mascota": {
+    "nombre": "boris ",
+    "especie": "otro",
+    "raza": "nose",
+    "fechaNacimiento": {
+      "$date": "2025-07-31T00:00:00.000Z"
+    },
+    "sexo": "hembra",
+    "estadoSalud": "en tratamiento",
+    "personalidad": "nose es raro",
+    "historia": "mordio a una mujer"
+  },
+  "imagenes": [
+    "https://res.cloudinary.com/dmjejknkt/image/upload/v1755871500/adoptme/publicaciones/1755871499662-postulacion1.jpg"
+  ],
+  "condiciones": {
+    "aceptaVisita": true,
+    "aceptaVerificacion": false,
+    "tieneCondiciones": false
+  },
+  "confirmaciones": {
+    "esResponsable": false,
+    "noSolicitaPago": true,
+    "aceptaVerificacion": false
+  },
+  "estado": "aprobada",
+  "createdAt": {
+    "$date": "2025-06-22T14:05:01.939Z"
+  },
+  "updatedAt": {
+    "$date": "2025-08-22T14:15:38.864Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68a879c31125ea1e2f331ed9"
+  },
+  "adoptante": {
+    "$oid": "68995385b8ee2efc4e1c1c53"
+  },
+  "documentoIdentidad": "https://res.cloudinary.com/dmjejknkt/image/upload/v1755871682/adoptme/publicaciones/1755871681644-cedula3.webp",
+  "contacto": {
+    "nombre": "Esteban Cedano",
+    "cedula": "1029140801",
+    "correo": "adoptante@gmail.com",
+    "telefono": "3106666652",
+    "ciudad": "Bogota",
+    "barrio": "Santa Fe",
+    "direccion": "CRA 13"
+  },
+  "mascota": {
+    "nombre": "Ciruela",
+    "especie": "gato",
+    "raza": "Siames",
+    "fechaNacimiento": {
+      "$date": "2025-01-14T00:00:00.000Z"
+    },
+    "sexo": "hembra",
+    "estadoSalud": "saludable",
+    "personalidad": "juguetona y tragona",
+    "historia": "duerme mucho"
+  },
+  "imagenes": [
+    "https://res.cloudinary.com/dmjejknkt/image/upload/v1755871682/adoptme/publicaciones/1755871681644-postulacion67.jpg"
+  ],
+  "condiciones": {
+    "aceptaVisita": true,
+    "aceptaVerificacion": true,
+    "tieneCondiciones": true
+  },
+  "confirmaciones": {
+    "esResponsable": true,
+    "noSolicitaPago": true,
+    "aceptaVerificacion": true
+  },
+  "estado": "aprobada",
+  "createdAt": {
+    "$date": "2025-04-22T14:08:03.551Z"
+  },
+  "updatedAt": {
+    "$date": "2025-08-22T14:15:07.526Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68a8aac4e2b71b9c2c55ac2b"
+  },
+  "adoptante": {
+    "$oid": "686d3b79ceecddec77252d00"
+  },
+  "documentoIdentidad": "https://res.cloudinary.com/dmjejknkt/image/upload/v1755884230/adoptme/publicaciones/1755884225832-cedula3.webp",
+  "contacto": {
+    "nombre": "Esteban Cedano",
+    "cedula": "7568578",
+    "correo": "admin@gmail.com",
+    "telefono": "3106666652",
+    "ciudad": "Bogota",
+    "barrio": "Santa Fe",
+    "direccion": "CRA 13"
+  },
+  "mascota": {
+    "nombre": "Ciruela",
+    "especie": "perro",
+    "raza": "Siames",
+    "fechaNacimiento": {
+      "$date": "2025-01-14T00:00:00.000Z"
+    },
+    "sexo": "macho",
+    "estadoSalud": "saludable",
+    "personalidad": "jugueton",
+    "historia": "hola"
+  },
+  "imagenes": [
+    "https://res.cloudinary.com/dmjejknkt/image/upload/v1755884231/adoptme/publicaciones/1755884225834-boris.jpg"
+  ],
+  "condiciones": {
+    "aceptaVisita": true,
+    "aceptaVerificacion": true,
+    "tieneCondiciones": true
+  },
+  "confirmaciones": {
+    "esResponsable": true,
+    "noSolicitaPago": true,
+    "aceptaVerificacion": true
+  },
+  "estado": "aprobada",
+  "createdAt": {
+    "$date": "2025-08-22T17:37:08.844Z"
+  },
+  "updatedAt": {
+    "$date": "2025-08-22T17:37:20.344Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68a8af57e2b71b9c2c55adac"
+  },
+  "adoptante": {
+    "$oid": "686d3b79ceecddec77252d00"
+  },
+  "documentoIdentidad": "https://res.cloudinary.com/dmjejknkt/image/upload/v1755885401/adoptme/publicaciones/1755885397866-cedula3.webp",
+  "contacto": {
+    "nombre": "JULIÁN ALEJANDRO FORERO AREVALO",
+    "cedula": "78867",
+    "correo": "admin@gmail.com",
+    "telefono": "573024529227",
+    "ciudad": "Bogota",
+    "barrio": "Bogota",
+    "direccion": "Calle 69 b #122 a 33"
+  },
+  "mascota": {
+    "nombre": "gris",
+    "especie": "gato",
+    "raza": "Criollo",
+    "fechaNacimiento": {
+      "$date": "2025-08-13T00:00:00.000Z"
+    },
+    "sexo": "macho",
+    "estadoSalud": "saludable",
+    "personalidad": "tyrite",
+    "historia": "gbnf"
+  },
+  "imagenes": [
+    "https://res.cloudinary.com/dmjejknkt/image/upload/v1755885401/adoptme/publicaciones/1755885397866-78470f6a22fefe7320bdc38b2c0c0cb8.jpg"
+  ],
+  "condiciones": {
+    "aceptaVisita": true,
+    "aceptaVerificacion": true,
+    "tieneCondiciones": true
+  },
+  "confirmaciones": {
+    "esResponsable": true,
+    "noSolicitaPago": true,
+    "aceptaVerificacion": true
+  },
+  "estado": "aprobada",
+  "createdAt": {
+    "$date": "2025-08-22T17:56:39.597Z"
+  },
+  "updatedAt": {
+    "$date": "2025-08-22T17:56:55.927Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68a8c718e2b71b9c2c55af88"
+  },
+  "adoptante": {
+    "$oid": "686d3b79ceecddec77252d00"
+  },
+  "documentoIdentidad": "https://res.cloudinary.com/dmjejknkt/image/upload/v1755891482/adoptme/publicaciones/1755891478377-cedula3.webp",
+  "contacto": {
+    "nombre": "JULIÁN ALEJANDRO FORERO AREVALO",
+    "cedula": "5665",
+    "correo": "admin@gmail.com",
+    "telefono": "573024529227",
+    "ciudad": "Bogota",
+    "barrio": "Bogota",
+    "direccion": "Calle 69 b #122 a 33"
+  },
+  "mascota": {
+    "nombre": "MANGO",
+    "especie": "perro",
+    "raza": "Criollo",
+    "fechaNacimiento": {
+      "$date": "2025-08-22T00:00:00.000Z"
+    },
+    "sexo": "macho",
+    "estadoSalud": "saludable",
+    "personalidad": "jugueton",
+    "historia": "mi"
+  },
+  "imagenes": [
+    "https://res.cloudinary.com/dmjejknkt/image/upload/v1755891482/adoptme/publicaciones/1755891478377-caballo.jpg"
+  ],
+  "condiciones": {
+    "aceptaVisita": true,
+    "aceptaVerificacion": true,
+    "tieneCondiciones": true
+  },
+  "confirmaciones": {
+    "esResponsable": true,
+    "noSolicitaPago": true,
+    "aceptaVerificacion": true
+  },
+  "estado": "aprobada",
+  "createdAt": {
+    "$date": "2025-08-22T19:38:00.053Z"
+  },
+  "updatedAt": {
+    "$date": "2025-08-22T19:38:09.023Z"
+  },
+  "__v": 0
+}]
