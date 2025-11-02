@@ -63,9 +63,9 @@ const AdoptanteHome = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-7">
       {/* Saludo */}
-      <h1 className="text-[28px] sm:text-[30px] font-medium tracking-tight text-gray-700">
+      <h1 className="text-[22px] sm:text-[28px] md:text-[30px] font-medium tracking-tight text-gray-700">
         Hola Adoptante <span className="align-middle">👋</span>,
       </h1>
 
@@ -78,14 +78,14 @@ const AdoptanteHome = () => {
               <img
                 src="/adoptante-cat.svg"
                 alt="AdoptMe cat"
-                className="w-[200px] sm:w-[180px] drop-shadow-[0_15px_40px_rgba(139,92,246,0.12)]"
+                className="w-[160px] sm:w-[180px] md:w-[200px] drop-shadow-[0_15px_40px_rgba(139,92,246,0.12)]"
               />
             </div>
           </div>
         </div>
 
         {/* KPIs (3) */}
-        <div className="xl:col-span-9 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="xl:col-span-9 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <StatCard
             color="emerald"
             icon={<FaRegClipboard className="text-emerald-600" />}
@@ -128,14 +128,14 @@ const ringMap = {
 
 function StatCard({ color = 'purple', icon, title, value }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex items-center gap-5">
-      <div className={`h-16 w-16 rounded-full flex items-center justify-center bg-gradient-to-br ${ringMap[color]} shadow-inner`}>
-        <div className="text-2xl">{icon}</div>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-6 flex items-center gap-4 sm:gap-5">
+      <div className={`h-12 w-12 sm:h-16 sm:w-16 rounded-full flex items-center justify-center bg-gradient-to-br ${ringMap[color]} shadow-inner`}>
+        <div className="text-xl sm:text-2xl">{icon}</div>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <div className="flex items-end gap-3">
-          <span className="text-3xl font-medium text-gray-900 leading-none">{value}</span>
+        <p className="text-xs sm:text-sm text-gray-500 font-medium">{title}</p>
+        <div className="flex items-end gap-2 sm:gap-3">
+          <span className="text-2xl sm:text-3xl font-medium text-gray-900 leading-none">{value}</span>
         </div>
       </div>
     </div>
@@ -163,25 +163,25 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
   const goDetail = (id) => id && navigate(`/dashboard/adoptante/mis-procesos/${id}`);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-gray-900 font-bold">Mis Procesos de Adopcion en Curso</h3>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="text-gray-900 font-bold text-base sm:text-lg">Mis Procesos de Adopción en Curso</h3>
         <button
           onClick={goList}
-          className="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
+          className="text-xs sm:text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
         >
           Ver Todos
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-xs sm:text-sm">
           <thead>
             <tr className="text-gray-500 font-semibold">
               <th className="text-left py-3 px-3">Mascota</th>
-              <th className="text-left py-3 px-3">Adoptante</th>
-              <th className="text-left py-3 px-3">etapa</th>
-              <th className="text-left py-3 px-3">fecha</th>
+              <th className="text-left py-3 px-3 hidden sm:table-cell">Adoptante</th>
+              <th className="text-left py-3 px-3">Etapa</th>
+              <th className="text-left py-3 px-3 hidden md:table-cell">Fecha</th>
               <th className="text-left py-3 px-3">Detalles</th>
             </tr>
           </thead>
@@ -201,19 +201,19 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
               return (
                 <tr key={r._id || i} className="border-t border-gray-100">
                   <td className="py-3 px-3 text-gray-800">{r?.mascota?.nombre || '—'}</td>
-                  <td className="py-3 px-3 text-gray-800">{r?.adoptante?.nombre || '—'}</td>
+                  <td className="py-3 px-3 text-gray-800 hidden sm:table-cell">{r?.adoptante?.nombre || '—'}</td>
                   <td className="py-3 px-3">
-                    <span className="inline-flex items-center justify-center rounded-lg bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1">
+                    <span className="inline-flex items-center justify-center rounded-lg bg-purple-50 text-purple-700 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1">
                       {etapaVisual}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-gray-800">{fmt(r?.fecha)}</td>
+                  <td className="py-3 px-3 text-gray-800 hidden md:table-cell">{fmt(r?.fecha)}</td>
                   <td className="py-3 px-3">
                     <button
                       onClick={() => goDetail(r?._id)}
                       disabled={!r?._id}
                       className={[
-                        "text-xs font-semibold px-3 py-1.5 rounded-lg transition",
+                        "text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-lg transition",
                         r?._id ? "bg-purple-600 text-white hover:bg-purple-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       ].join(' ')}
                     >
@@ -253,25 +253,25 @@ function MisSolicitudesPublicacion({ rows = [], loading = false }) {
   const goDetail = (id) => id && navigate(`/dashboard/adoptante/mis-solicitudes-publicacion/${id}`);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-gray-900 font-bold">Mis Solicitudes de Publicación</h3>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="text-gray-900 font-bold text-base sm:text-lg">Mis Solicitudes de Publicación</h3>
         <button
           onClick={goList}
-          className="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
+          className="text-xs sm:text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
         >
           Ver Todos
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-xs sm:text-sm">
           <thead>
             <tr className="text-gray-500 font-semibold">
               <th className="text-left py-3 px-3">Mascota</th>
-              <th className="text-left py-3 px-3">Especie</th>
+              <th className="text-left py-3 px-3 hidden sm:table-cell">Especie</th>
               <th className="text-left py-3 px-3">Estado</th>
-              <th className="text-left py-3 px-3">fecha</th>
+              <th className="text-left py-3 px-3 hidden md:table-cell">Fecha</th>
               <th className="text-left py-3 px-3">Detalles</th>
             </tr>
           </thead>
@@ -289,15 +289,15 @@ function MisSolicitudesPublicacion({ rows = [], loading = false }) {
             {data.map((r, i) => (
               <tr key={r._id || i} className="border-t border-gray-100">
                 <td className="py-3 px-3 text-gray-800">{r.mascota || '—'}</td>
-                <td className="py-3 px-3 text-gray-800">{r.especie || '—'}</td>
+                <td className="py-3 px-3 text-gray-800 hidden sm:table-cell">{r.especie || '—'}</td>
                 <td className={`py-3 px-3 font-semibold ${estadoColor(r.estado)}`}>{r.estado || 'Pendiente'}</td>
-                <td className="py-3 px-3 text-gray-800">{fmt(r.fecha)}</td>
+                <td className="py-3 px-3 text-gray-800 hidden md:table-cell">{fmt(r.fecha)}</td>
                 <td className="py-3 px-3">
                   <button
                     onClick={() => goDetail(r?._id)}
                     disabled={!r?._id}
                     className={[
-                      "text-xs font-semibold px-3 py-1.5 rounded-lg transition",
+                      "text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-lg transition",
                       r?._id ? "bg-purple-600 text-white hover:bg-purple-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     ].join(' ')}
                   >
