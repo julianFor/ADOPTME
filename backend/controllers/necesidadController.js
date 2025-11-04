@@ -30,11 +30,19 @@ const isPlain = (s) => {
   return !s.includes("$") && !s.includes("{") && !s.includes("}") && !s.includes("[") && !s.includes("]");
 };
 
-// 🔐 Saneador de textos de entrada (corta y valida que sea “plano”)
+// Sanitiza texto y limita longitud
 const sanitizeText = (v, maxLen = 200) => {
   const s = safeString(v);
   if (!s || !isPlain(s)) return null;
   return s.length > maxLen ? s.slice(0, maxLen) : s;
+};
+
+// Convierte a Date válida o null
+const toDate = (v) => {
+  const s = safeString(v);
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 };
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -72,42 +80,43 @@ exports.crearNecesidad = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // 🔐 S5147: sanitizar entradas string antes de persistir
+    // S5147: sanitizar y forzar tipos PRIMITIVOS antes de persistir
     const sTitulo = sanitizeText(titulo, 140);
     const sCategoria = sanitizeText(categoria, 60);
     const sUrgencia = sanitizeText(urgencia, 30);
-    const sDesc = sanitizeText(descripcionBreve, 600);
+    const sDesc = sanitizeText(descripcionBreve, 600); // opcional
 
-    if (!sTitulo) {
-      return res.status(400).json({ ok: false, message: "Título inválido" });
-    }
-    if (!sCategoria) {
-      return res.status(400).json({ ok: false, message: "Categoría inválida" });
-    }
-    if (!sUrgencia) {
-      return res.status(400).json({ ok: false, message: "Urgencia inválida" });
-    }
-    // descripción puede ser opcional, si viene mal la descartamos
+    if (!sTitulo) return res.status(400).json({ ok: false, message: "Título inválido" });
+    if (!sCategoria) return res.status(400).json({ ok: false, message: "Categoría inválida" });
+    if (!sUrgencia) return res.status(400).json({ ok: false, message: "Urgencia inválida" });
+
     const sEstado = safeString(estado);
     const estadoFinal = allowedEstados.has(sEstado) ? sEstado : "activa";
 
-    const need = await Need.create({
-      titulo: sTitulo,
-      categoria: sCategoria,
-      urgencia: sUrgencia,
-      descripcionBreve: sDesc ?? undefined,
-      objetivo: toNumber(objetivo, 1),
-      recibido: toNumber(recibido, 0),
-      fechaLimite: toNullable(fechaLimite),
-      estado: estadoFinal,
-      visible: toBool(visible, true),
+    // Objeto plano con coerción explícita de cada campo
+    const doc = {
+      titulo: String(sTitulo),
+      categoria: String(sCategoria),
+      urgencia: String(sUrgencia),
+      descripcionBreve: sDesc != null ? String(sDesc) : undefined,
+
+      objetivo: Number(toNumber(objetivo, 1)),
+      recibido: Number(toNumber(recibido, 0)),
+      fechaLimite: toDate(fechaLimite), // Date | null
+
+      estado: String(estadoFinal),
+      visible: Boolean(toBool(visible, true)),
+
       imagenPrincipal: {
-        url: req.file.path,          // secure_url
-        publicId: req.file.filename, // public_id
+        url: String(req.file.path), // secure_url
+        publicId: String(req.file.filename), // public_id
       },
-      creadaPor: req.userId,
+
+      creadaPor: String(req.userId),
       fechaPublicacion: new Date(),
-    });
+    };
+
+    const need = await Need.create(doc);
 
     return res.status(201).json({ ok: true, data: need });
   } catch (err) {
@@ -178,21 +187,24 @@ exports.obtenerPorId = async (req, res) => {
 // Extraemos construcción del patch para reducir complejidad (S3776)
 function buildPatch(body, current) {
   const patch = {};
-  if (body.titulo) patch.titulo = body.titulo;
-  if (body.categoria) patch.categoria = body.categoria;
-  if (body.urgencia) patch.urgencia = body.urgencia;
-  if (body.descripcionBreve) patch.descripcionBreve = body.descripcionBreve;
+  if (body.titulo) patch.titulo = String(sanitizeText(body.titulo, 140) || current.titulo);
+  if (body.categoria) patch.categoria = String(sanitizeText(body.categoria, 60) || current.categoria);
+  if (body.urgencia) patch.urgencia = String(sanitizeText(body.urgencia, 30) || current.urgencia);
+  if (body.descripcionBreve !== undefined) {
+    const s = sanitizeText(body.descripcionBreve, 600);
+    patch.descripcionBreve = s != null ? String(s) : undefined;
+  }
 
-  if (body.objetivo !== undefined) patch.objetivo = toNumber(body.objetivo, current.objetivo);
-  if (body.recibido !== undefined) patch.recibido = toNumber(body.recibido, current.recibido);
-  if (body.fechaLimite !== undefined) patch.fechaLimite = toNullable(body.fechaLimite);
+  if (body.objetivo !== undefined) patch.objetivo = Number(toNumber(body.objetivo, current.objetivo));
+  if (body.recibido !== undefined) patch.recibido = Number(toNumber(body.recibido, current.recibido));
+  if (body.fechaLimite !== undefined) patch.fechaLimite = toDate(body.fechaLimite);
 
   if (body.estado !== undefined) {
     const e = safeString(body.estado);
-    if (allowedEstados.has(e)) patch.estado = e; // Set.has() – S7776
+    if (allowedEstados.has(e)) patch.estado = String(e);
   }
 
-  if (body.visible !== undefined) patch.visible = toBool(body.visible, current.visible);
+  if (body.visible !== undefined) patch.visible = Boolean(toBool(body.visible, current.visible));
 
   return patch;
 }
@@ -213,7 +225,7 @@ exports.actualizar = async (req, res) => {
     // ¿Llega nueva imagen? (req.file vía multer)
     if (req.file?.path && req.file?.filename) {
       const oldPublicId = need?.imagenPrincipal?.publicId;
-      patch.imagenPrincipal = { url: req.file.path, publicId: req.file.filename };
+      patch.imagenPrincipal = { url: String(req.file.path), publicId: String(req.file.filename) };
 
       // eliminar asset anterior en Cloudinary (best effort)
       if (oldPublicId) {
@@ -252,7 +264,7 @@ exports.cambiarEstado = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Estado no válido" });
     }
 
-    const need = await Need.findByIdAndUpdate(id, { estado }, { new: true });
+    const need = await Need.findByIdAndUpdate(id, { estado: String(estado) }, { new: true });
     if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
     return res.json({ ok: true, data: need });
