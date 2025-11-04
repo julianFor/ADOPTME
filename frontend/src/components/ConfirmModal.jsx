@@ -1,5 +1,6 @@
 // src/components/ConfirmModal.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -25,6 +26,14 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel }) => {
       </div>
     </div>
   );
+};
+
+// Validación de props con prop-types
+ConfirmModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,      // Controla si el modal está abierto
+  message: PropTypes.string.isRequired,   // Mensaje que se mostrará en el modal
+  onConfirm: PropTypes.func.isRequired,   // Función a ejecutar al confirmar
+  onCancel: PropTypes.func.isRequired,    // Función a ejecutar al cancelar
 };
 
 export default ConfirmModal;

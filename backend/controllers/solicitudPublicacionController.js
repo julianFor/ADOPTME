@@ -21,7 +21,7 @@ const fromBracketed = (body, prefix) => {
   const obj = {};
   const re = new RegExp(`^${prefix}\\[(.+?)\\]$`);
   for (const k of Object.keys(body || {})) {
-    const m = k.match(re);
+    const m = re.exec(k); // ✅ Reemplazo de k.match(re) → re.exec(k)
     if (m) obj[m[1]] = body[k];
   }
   return Object.keys(obj).length ? obj : null;
@@ -45,7 +45,6 @@ exports.crearSolicitud = async (req, res) => {
       asJSON(req.body?.confirmaciones) || fromBracketed(req.body, 'confirmaciones') || {};
 
     // 2) Archivos subidos a Cloudinary por el middleware uploadPublicacionDocs
-    //    req.cloudinaryPublicacion = { documentoIdentidad: {secure_url,...} | null, imagenes: [{secure_url,...}] }
     const doc  = req.cloudinaryPublicacion?.documentoIdentidad || null;
     const imgs = Array.isArray(req.cloudinaryPublicacion?.imagenes)
       ? req.cloudinaryPublicacion.imagenes
@@ -180,7 +179,7 @@ exports.aprobarYPublicar = async (req, res) => {
       estadoSalud: solicitud.mascota?.estadoSalud,
       sexo: solicitud.mascota?.sexo,
       descripcion: `${solicitud.mascota?.personalidad || ''}\n\nHistoria: ${solicitud.mascota?.historia || ''}`,
-      imagenes: solicitud.imagenes,  // URLs Cloudinary
+      imagenes: solicitud.imagenes,
       origen: 'externo',
       publicadaPor: solicitud.adoptante?._id || req.userId,
       publicada: true,

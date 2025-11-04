@@ -1,5 +1,5 @@
 const multer = require('multer');
-const path = require('path');
+const path = require('node:path'); // ✅ Sonar fix: S7772
 
 // Almacenamiento para documentos (PDF, JPG, PNG)
 const storage = multer.diskStorage({
@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
+    // ❌ Eliminado 'ext' innecesario (S1854, S1481)
     const uniqueName = `${timestamp}-${file.originalname}`;
     cb(null, uniqueName);
   }

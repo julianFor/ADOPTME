@@ -7,7 +7,6 @@ const path = require('path');
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-    const ext = (path.extname(file.originalname) || '').replace('.', '').toLowerCase();
     const base = path.basename(file.originalname, path.extname(file.originalname)); // sin extensión
     return {
       folder: 'adoptme',
