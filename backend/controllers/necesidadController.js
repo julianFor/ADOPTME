@@ -24,16 +24,23 @@ const safeString = (v) => {
   return typeof v === "string" ? v.trim() : String(v).trim();
 };
 
+// Rechaza strings con caracteres que suelen usarse para inyección de operadores
+const isPlain = (s) => {
+  if (typeof s !== "string") return false;
+  return !s.includes("$") && !s.includes("{") && !s.includes("}") && !s.includes("[") && !s.includes("]");
+};
+
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-const allowedEstados = ["activa", "pausada", "cumplida", "vencida"];
-const allowedSortFields = ["fechaPublicacion", "urgencia", "objetivo", "recibido", "titulo"];
+// Conjuntos (mejor rendimiento que includes) – S7776
+const allowedEstados = new Set(["activa", "pausada", "cumplida", "vencida"]);
+const allowedSortFields = new Set(["fechaPublicacion", "urgencia", "objetivo", "recibido", "titulo"]);
 
 const parseSort = (rawSort = "-fechaPublicacion") => {
   const s = safeString(rawSort);
   const desc = s.startsWith("-");
   const field = desc ? s.slice(1) : s;
-  if (!allowedSortFields.includes(field)) return "-fechaPublicacion";
+  if (!allowedSortFields.has(field)) return "-fechaPublicacion";
   return (desc ? "-" : "") + field;
 };
 
@@ -66,10 +73,10 @@ exports.crearNecesidad = async (req, res) => {
       objetivo: toNumber(objetivo, 1),
       recibido: toNumber(recibido, 0),
       fechaLimite: toNullable(fechaLimite),
-      estado: allowedEstados.includes(estado) ? estado : "activa",
+      estado: allowedEstados.has( safeString(estado) ) ? safeString(estado) : "activa",
       visible: toBool(visible, true),
       imagenPrincipal: {
-        url: req.file.path,      // secure_url
+        url: req.file.path,          // secure_url
         publicId: req.file.filename, // public_id
       },
       creadaPor: req.userId,
@@ -86,10 +93,10 @@ exports.crearNecesidad = async (req, res) => {
 exports.listarPublicas = async (req, res) => {
   try {
     // Saneamos query params para evitar NoSQL injection (S5147)
-    const q = safeString(req.query.q);
-    const categoria = safeString(req.query.categoria);
-    const urgencia = safeString(req.query.urgencia);
-    const estado = allowedEstados.includes(safeString(req.query.estado)) ? safeString(req.query.estado) : "activa";
+    const qRaw = safeString(req.query.q);
+    const categoriaRaw = safeString(req.query.categoria);
+    const urgenciaRaw = safeString(req.query.urgencia);
+    const estadoRaw = safeString(req.query.estado);
     const sort = parseSort(req.query.sort);
 
     const lim = Number(req.query.limit) > 0 ? Number(req.query.limit) : 12;
@@ -97,10 +104,10 @@ exports.listarPublicas = async (req, res) => {
     const skip = (pag - 1) * lim;
 
     // Solo agregamos filtros simples (strings planos)
-    const filter = { visible: true, estado };
-    if (categoria) filter.categoria = categoria;
-    if (urgencia) filter.urgencia = urgencia;
-    if (q) filter.titulo = { $regex: q, $options: "i" };
+    const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
+    if (categoriaRaw && isPlain(categoriaRaw)) filter.categoria = categoriaRaw;
+    if (urgenciaRaw && isPlain(urgenciaRaw)) filter.urgencia = urgenciaRaw;
+    if (qRaw) filter.titulo = { $regex: qRaw, $options: "i" };
 
     const [data, total] = await Promise.all([
       Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
@@ -156,7 +163,7 @@ function buildPatch(body, current) {
 
   if (body.estado !== undefined) {
     const e = safeString(body.estado);
-    if (allowedEstados.includes(e)) patch.estado = e;
+    if (allowedEstados.has(e)) patch.estado = e; // Set.has() – S7776
   }
 
   if (body.visible !== undefined) patch.visible = toBool(body.visible, current.visible);
@@ -215,7 +222,7 @@ exports.cambiarEstado = async (req, res) => {
     }
 
     const estado = safeString(req.body.estado);
-    if (!allowedEstados.includes(estado)) {
+    if (!allowedEstados.has(estado)) {
       return res.status(400).json({ ok: false, message: "Estado no válido" });
     }
 
