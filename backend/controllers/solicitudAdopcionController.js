@@ -1,6 +1,7 @@
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
 const { enviarNotificacionesPorRol } = require('../utils/notificaciones'); //  Importar utilidades
 const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
+const mongoose = require('mongoose'); // ✅ para validar/castear ObjectId
 
 // Crear nueva solicitud de adopción
 exports.crearSolicitud = async (req, res) => {
@@ -141,9 +142,6 @@ exports.getSolicitudById = async (req, res) => {
       }
     }
 
-    // Los roles admin y adminFundacion pueden ver cualquier solicitud
-    // No se necesita validación extra
-
     res.status(200).json(solicitud);
   } catch (error) {
     res.status(500).json({
@@ -157,7 +155,16 @@ exports.getSolicitudById = async (req, res) => {
 // Obtener todas las solicitudes agrupadas por mascota
 exports.obtenerSolicitudesPorMascota = async (req, res) => {
   try {
-    const { idMascota } = req.params;
+    const idMascotaRaw = String(req.params.idMascota || '');
+
+    // ✅ S5147: validar y castear a ObjectId ANTES de usar en la consulta
+    if (!mongoose.Types.ObjectId.isValid(idMascotaRaw)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de mascota inválido'
+      });
+    }
+    const idMascota = new mongoose.Types.ObjectId(idMascotaRaw);
 
     const solicitudes = await SolicitudAdopcion.find({ mascota: idMascota })
       .populate('adoptante', 'username email role') //  trae datos del adoptante
@@ -218,9 +225,7 @@ exports.getMascotasConSolicitudes = async (req, res) => {
           as: "mascota"
         }
       },
-      {
-        $unwind: "$mascota"
-      },
+      { $unwind: "$mascota" },
       {
         $project: {
           _id: 0,

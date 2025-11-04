@@ -30,6 +30,13 @@ const isPlain = (s) => {
   return !s.includes("$") && !s.includes("{") && !s.includes("}") && !s.includes("[") && !s.includes("]");
 };
 
+// 🔐 Saneador de textos de entrada (corta y valida que sea “plano”)
+const sanitizeText = (v, maxLen = 200) => {
+  const s = safeString(v);
+  if (!s || !isPlain(s)) return null;
+  return s.length > maxLen ? s.slice(0, maxLen) : s;
+};
+
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // Conjuntos (mejor rendimiento que includes) – S7776
@@ -65,15 +72,34 @@ exports.crearNecesidad = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
+    // 🔐 S5147: sanitizar entradas string antes de persistir
+    const sTitulo = sanitizeText(titulo, 140);
+    const sCategoria = sanitizeText(categoria, 60);
+    const sUrgencia = sanitizeText(urgencia, 30);
+    const sDesc = sanitizeText(descripcionBreve, 600);
+
+    if (!sTitulo) {
+      return res.status(400).json({ ok: false, message: "Título inválido" });
+    }
+    if (!sCategoria) {
+      return res.status(400).json({ ok: false, message: "Categoría inválida" });
+    }
+    if (!sUrgencia) {
+      return res.status(400).json({ ok: false, message: "Urgencia inválida" });
+    }
+    // descripción puede ser opcional, si viene mal la descartamos
+    const sEstado = safeString(estado);
+    const estadoFinal = allowedEstados.has(sEstado) ? sEstado : "activa";
+
     const need = await Need.create({
-      titulo,
-      categoria,
-      urgencia,
-      descripcionBreve,
+      titulo: sTitulo,
+      categoria: sCategoria,
+      urgencia: sUrgencia,
+      descripcionBreve: sDesc ?? undefined,
       objetivo: toNumber(objetivo, 1),
       recibido: toNumber(recibido, 0),
       fechaLimite: toNullable(fechaLimite),
-      estado: allowedEstados.has( safeString(estado) ) ? safeString(estado) : "activa",
+      estado: estadoFinal,
       visible: toBool(visible, true),
       imagenPrincipal: {
         url: req.file.path,          // secure_url

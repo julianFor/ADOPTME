@@ -1,6 +1,7 @@
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
 const { enviarNotificacionPersonalizada } = require('../utils/notificaciones'); 
+const mongoose = require('mongoose'); // ✅ para validar/castear ObjectId
 
 // Crear un nuevo proceso (solo si la solicitud está aprobada)
 exports.crearProceso = async (req, res) => {
@@ -110,7 +111,9 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     const solicitud = await SolicitudAdopcion.findById(proceso.solicitud);
-    if (!solicitud || solicitud.adoptante.toString() !== req.userId) {
+    // ✅ Optional chaining para acceso seguro
+    const esDueno = solicitud?.adoptante?.toString?.() === req.userId;
+    if (!esDueno) {
       return res.status(403).json({ success: false, message: 'No tienes permisos para subir el compromiso.' });
     }
 
@@ -203,7 +206,15 @@ exports.getAllProcesos = async (req, res) => {
 // Obtener proceso por ID de solicitud
 exports.getProcesoPorSolicitud = async (req, res) => {
   try {
-    const proceso = await ProcesoAdopcion.findOne({ solicitud: req.params.solicitudId }).populate({
+    const raw = String(req.params.solicitudId || '');
+
+    // ✅ S5147: validar/castear el parámetro antes de usarlo en la query
+    if (!mongoose.Types.ObjectId.isValid(raw)) {
+      return res.status(400).json({ success: false, message: 'ID de solicitud inválido' });
+    }
+    const solicitudId = new mongoose.Types.ObjectId(raw);
+
+    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
     });
@@ -332,11 +343,9 @@ exports.getProcesoPorId = async (req, res) => {
       return res.status(404).json({ message: 'Proceso no encontrado' });
     }
 
-    // 🔐 Validación para que el adoptante solo vea sus propios procesos
-    if (
-      req.userRole === 'adoptante' &&
-      proceso.solicitud.adoptante._id.toString() !== req.userId
-    ) {
+    // 🔐 Validación para que el adoptante solo vea sus propios procesos (con optional chaining)
+    const ownerId = proceso?.solicitud?.adoptante?._id?.toString?.();
+    if (req.userRole === 'adoptante' && ownerId !== req.userId) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
@@ -346,8 +355,6 @@ exports.getProcesoPorId = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener el proceso' });
   }
 };
-
-
 
 // Obtener procesos de adopción del usuario autenticado 
 exports.getMisProcesos = async (req, res) => {
