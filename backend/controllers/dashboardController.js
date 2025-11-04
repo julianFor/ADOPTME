@@ -222,11 +222,22 @@ exports.getProcessesInProgress = async (req, res) => {
         (p?.entrega?.aprobada ? 1 : 0);
 
       // Índice de etapa actual (0..3). Si todas aprobadas, nos quedamos en la última.
-      let etapaActualIndex = 0;
-      if (!p?.entrevista?.aprobada) etapaActualIndex = 0;
-      else if (!p?.visita?.aprobada) etapaActualIndex = 1;
-      else if (!p?.compromiso?.aprobada) etapaActualIndex = 2;
-      else etapaActualIndex = 3;
+      let etapaActualIndex;
+      if (p?.entrevista?.aprobada) {
+        // entrevista aprobada -> revisar visita
+        if (p?.visita?.aprobada) {
+          // visita aprobada -> revisar compromiso
+          if (p?.compromiso?.aprobada) {
+            etapaActualIndex = 3;
+          } else {
+            etapaActualIndex = 2;
+          }
+        } else {
+          etapaActualIndex = 1;
+        }
+      } else {
+        etapaActualIndex = 0;
+      }
 
       const mascota = p?.solicitud?.mascota
         ? { _id: p.solicitud.mascota._id, nombre: p.solicitud.mascota.nombre }
@@ -316,11 +327,20 @@ exports.getMyProcessesInProgress = async (req, res) => {
         (p?.compromiso?.aprobada ? 1 : 0) +
         (p?.entrega?.aprobada ? 1 : 0);
 
-      let etapaActualIndex = 0;
-      if (!p?.entrevista?.aprobada) etapaActualIndex = 0;
-      else if (!p?.visita?.aprobada) etapaActualIndex = 1;
-      else if (!p?.compromiso?.aprobada) etapaActualIndex = 2;
-      else etapaActualIndex = 3;
+      let etapaActualIndex;
+      if (p?.entrevista?.aprobada) {
+        if (p?.visita?.aprobada) {
+          if (p?.compromiso?.aprobada) {
+            etapaActualIndex = 3;
+          } else {
+            etapaActualIndex = 2;
+          }
+        } else {
+          etapaActualIndex = 1;
+        }
+      } else {
+        etapaActualIndex = 0;
+      }
 
       const mascota = p?.solicitud?.mascota
         ? { _id: p.solicitud.mascota._id, nombre: p.solicitud.mascota.nombre }
