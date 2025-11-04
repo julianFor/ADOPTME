@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import PropTypes from "prop-types";
 import { useNotificaciones } from "../context/NotificationContext";
 import { FaCheck, FaTimes, FaClipboardList, FaHeart } from "react-icons/fa";
 
@@ -17,11 +18,14 @@ function NotificationModal({ visible, onClose }) {
 
   useEffect(() => {
     if (visible) {
-      notificaciones.forEach((n) => {
-        if (!n.leida) marcarUnaComoLeida(n._id);
-      });
+      // Reemplazamos forEach por for...of para mejor rendimiento y compatibilidad con async/await
+      for (const n of notificaciones) {
+        if (!n.leida) {
+          marcarUnaComoLeida(n._id);
+        }
+      }
     }
-  }, [visible]);
+  }, [visible, notificaciones, marcarUnaComoLeida]);
 
   if (!visible) return null;
 
@@ -40,9 +44,7 @@ function NotificationModal({ visible, onClose }) {
             <div className="pt-1">{iconos[n.tipo]}</div>
 
             <div className="flex-1 text-sm">
-              <div className="font-bold text-gray-800">
-                {getTitulo(n.tipo)}
-              </div>
+              <div className="font-bold text-gray-800">{getTitulo(n.tipo)}</div>
               <div className="text-gray-600 text-xs">{n.mensaje}</div>
             </div>
 
@@ -75,6 +77,12 @@ const getTitulo = (tipo) => {
     default:
       return "Notificación";
   }
+};
+
+// Validación de props con PropTypes
+NotificationModal.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 export default NotificationModal;

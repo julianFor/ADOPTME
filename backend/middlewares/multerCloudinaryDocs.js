@@ -2,17 +2,18 @@
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
-const path = require('path');
+const path = require('node:path');
 
 const sanitizeBaseName = (name) =>
   (name || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9-_. ]/g, '')
-    .replace(/\s+/g, '_')
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036f]/g, '')
+    .replaceAll(/[^a-zA-Z0-9-_. ]/g, '')
+    .replaceAll(/\s+/g, '_')
     .slice(0, 120);
 
 // Solo IMÁGENES permitidas para estos campos
-const ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
+const ALLOWED_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const ALLOWED_MIME = /^(image\/jpeg|image\/png|image\/webp)$/i;
 
 const docsStorage = new CloudinaryStorage({
@@ -35,7 +36,7 @@ const docsStorage = new CloudinaryStorage({
 // Filtro duro (bloquea PDFs y otros tipos)
 const fileFilter = (_req, file, cb) => {
   const ext = path.extname(file.originalname || '').toLowerCase();
-  if (!ALLOWED_EXT.includes(ext) || !ALLOWED_MIME.test(file.mimetype || '')) {
+  if (!ALLOWED_EXT.has(ext) || !ALLOWED_MIME.test(file.mimetype || '')) {
     return cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP en estos campos.'));
   }
   cb(null, true);

@@ -1,5 +1,6 @@
 import { FaVenus, FaMars, FaClock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 function PetCard({ nombre, edad, sexo, descripcion, imagen, redirigir = false }) {
   const navigate = useNavigate();
@@ -14,7 +15,9 @@ function PetCard({ nombre, edad, sexo, descripcion, imagen, redirigir = false })
   const genero = typeof sexo === 'string' ? sexo.toLowerCase() : 'desconocido';
   const nombreSeguro = nombre || 'Sin nombre';
   const edadSegura = edad || 'N/A';
-  const descripcionCorta = descripcion ? descripcion.substring(0, 50) + '...' : 'Sin descripción.';
+  const descripcionCorta = descripcion
+    ? descripcion.substring(0, 50) + '...'
+    : 'Sin descripción.';
 
   return (
     <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-72 flex-shrink-0 transform transition duration-300 hover:scale-105 hover:shadow-2xl">
@@ -59,5 +62,23 @@ function PetCard({ nombre, edad, sexo, descripcion, imagen, redirigir = false })
     </div>
   );
 }
+
+// Validación de props
+PetCard.propTypes = {
+  nombre: PropTypes.string.isRequired,
+  edad: PropTypes.string,
+  sexo: PropTypes.string,
+  descripcion: PropTypes.string,
+  imagen: PropTypes.string.isRequired,
+  redirigir: PropTypes.bool,
+};
+
+// Valores por defecto
+PetCard.defaultProps = {
+  edad: 'N/A',
+  sexo: 'desconocido',
+  descripcion: 'Sin descripción',
+  redirigir: false,
+};
 
 export default PetCard;

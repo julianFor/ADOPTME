@@ -3,7 +3,6 @@ import { AuthContext } from '../context/AuthContext';
 import { IoClose } from 'react-icons/io5';
 import authService from '../services/authService';
 
-
 const AuthModal = () => {
   const {
     isModalOpen,
@@ -32,7 +31,7 @@ const AuthModal = () => {
       console.log('LOGIN ÉXITO', response);
 
       closeModal();
-      window.location.reload(); // 🔁 Forzamos recarga para que Navbar cambie según el rol
+      globalThis.location.reload(); // 🔁 recarga para actualizar Navbar
     } catch (error) {
       console.error('LOGIN ERROR', error);
       setErrorMsg(error.response?.data?.message || 'Error al iniciar sesión');
@@ -102,10 +101,11 @@ const AuthModal = () => {
             <h2 className="text-2xl font-bold mb-4">Inicia sesión</h2>
             <form className="space-y-3" onSubmit={handleLogin}>
               <div>
-                <label className="block text-xs mb-1 font-medium">
+                <label htmlFor="emailOrUsername" className="block text-xs mb-1 font-medium">
                   Escribe tu correo o usuario
                 </label>
                 <input
+                  id="emailOrUsername"
                   type="text"
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
@@ -114,10 +114,11 @@ const AuthModal = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1 font-medium">
+                <label htmlFor="passwordLogin" className="block text-xs mb-1 font-medium">
                   Escribe tu contraseña
                 </label>
                 <input
+                  id="passwordLogin"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -143,10 +144,11 @@ const AuthModal = () => {
             <h2 className="text-2xl font-bold mb-4">Registrarse</h2>
             <form className="space-y-3" onSubmit={handleRegister}>
               <div>
-                <label className="block text-xs mb-1 font-medium">
+                <label htmlFor="emailRegister" className="block text-xs mb-1 font-medium">
                   Correo electrónico
                 </label>
                 <input
+                  id="emailRegister"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -155,10 +157,11 @@ const AuthModal = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1 font-medium">
+                <label htmlFor="usernameRegister" className="block text-xs mb-1 font-medium">
                   Nombre de usuario
                 </label>
                 <input
+                  id="usernameRegister"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -167,10 +170,11 @@ const AuthModal = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1 font-medium">
+                <label htmlFor="passwordRegister" className="block text-xs mb-1 font-medium">
                   Contraseña
                 </label>
                 <input
+                  id="passwordRegister"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

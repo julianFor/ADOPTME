@@ -7,6 +7,7 @@ exports.crearMeta = async (req, res) => {
     const metaGuardada = await nuevaMeta.save();
     res.status(201).json(metaGuardada);
   } catch (err) {
+    console.error('Error al crear meta:', err); // ✅ Log del error
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -17,6 +18,7 @@ exports.obtenerMetas = async (req, res) => {
     const metas = await DonationGoal.find().sort({ createdAt: -1 });
     res.json(metas);
   } catch (err) {
+    console.error('Error al obtener metas:', err); // ✅ Log del error
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -28,6 +30,7 @@ exports.obtenerMetaActual = async (req, res) => {
     if (!meta) return res.status(404).json({ message: 'No hay metas activas' });
     res.json(meta);
   } catch (err) {
+    console.error('Error al obtener la meta actual:', err); // ✅ Log del error
     res.status(500).json({ message: 'Error al obtener la meta actual' });
   }
 };
@@ -39,6 +42,7 @@ exports.editarMeta = async (req, res) => {
     if (!meta) return res.status(404).json({ message: 'Meta no encontrada' });
     res.json(meta);
   } catch (err) {
+    console.error('Error al editar meta:', err); // ✅ Log del error
     res.status(500).json({ message: err.message });
   }
 };
@@ -50,6 +54,7 @@ exports.eliminarMeta = async (req, res) => {
     if (!eliminada) return res.status(404).json({ message: 'Meta no encontrada' });
     res.json({ message: 'Meta eliminada' });
   } catch (err) {
+    console.error('Error al eliminar meta:', err); // ✅ Log del error
     res.status(500).json({ message: err.message });
   }
 };

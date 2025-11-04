@@ -19,12 +19,15 @@ const UserDropdown = () => {
     password: ''
   });
 
-  const avatar =
-    user.role === 'admin'
-      ? defaultAdmin
-      : user.role === 'adminFundacion'
-      ? defaultFundacion
-      : defaultAdoptante;
+  // Evitamos el ternario anidado usando if-else
+  let avatar;
+  if (user.role === 'admin') {
+    avatar = defaultAdmin;
+  } else if (user.role === 'adminFundacion') {
+    avatar = defaultFundacion;
+  } else {
+    avatar = defaultAdoptante;
+  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,9 +54,36 @@ const UserDropdown = () => {
     }
   };
 
+  // Refactorizamos la condición negada en JSX (no había if-else con negación)
   return (
     <div className="absolute right-2 top-16 z-50 bg-white shadow-xl rounded-2xl p-6 w-[340px] max-w-full transition-all duration-300">
-      {!showEdit ? (
+      {showEdit ? (
+        <div className="flex flex-col">
+          <h2 className="text-lg font-bold mb-4 text-center">Editar Perfil</h2>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            placeholder="Escribe tu usuario"
+            onChange={handleChange}
+            className="w-full mb-3 border border-gray-300 p-2 rounded-md"
+          />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            placeholder="Escribe tu contraseña"
+            onChange={handleChange}
+            className="w-full mb-4 border border-gray-300 p-2 rounded-md"
+          />
+          <button
+            onClick={handleUpdate}
+            className="bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 w-full"
+          >
+            Guardar cambios
+          </button>
+        </div>
+      ) : (
         <div className="flex flex-col items-center text-center">
           <img
             src={avatar}
@@ -81,32 +111,6 @@ const UserDropdown = () => {
             className="mt-3 border border-gray-400 rounded-md px-5 py-2 text-gray-800 hover:bg-gray-100 w-full"
           >
             Cerrar Sesión
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          <h2 className="text-lg font-bold mb-4 text-center">Editar Perfil</h2>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            placeholder="Escribe tu usuario"
-            onChange={handleChange}
-            className="w-full mb-3 border border-gray-300 p-2 rounded-md"
-          />
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            placeholder="Escribe tu contraseña"
-            onChange={handleChange}
-            className="w-full mb-4 border border-gray-300 p-2 rounded-md"
-          />
-          <button
-            onClick={handleUpdate}
-            className="bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 w-full"
-          >
-            Guardar cambios
           </button>
         </div>
       )}
