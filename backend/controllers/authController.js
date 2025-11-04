@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth.config');
+const validator = require('validator'); // <-- añadido
 
 // Roles permitidos en AdoptMe
 const ROLES = {
@@ -28,8 +29,8 @@ exports.signup = async (req, res) => {
     }
 
     const user = new User({
-      username: username.trim(),
-      email: email.toLowerCase().trim(),
+      username: String(username).trim(),
+      email: String(email).toLowerCase().trim(),
       password,
       role: role || ROLES.ADOPTANTE
     });
@@ -75,7 +76,7 @@ exports.signup = async (req, res) => {
 // Login (signin)
 exports.signin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -83,6 +84,25 @@ exports.signin = async (req, res) => {
         message: "Email y contraseña son requeridos"
       });
     }
+
+    // --- Mitigación NoSQL Injection (simple y sin romper flujo) ---
+    // Evita objetos/arrays en la consulta: fuerza a string + sanea
+    if (typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Email inválido"
+      });
+    }
+    email = email.trim().toLowerCase();
+
+    // Validación básica de formato (evita payloads maliciosos tipo {$ne:""})
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Formato de email inválido"
+      });
+    }
+    // ---------------------------------------------------------------
 
     const user = await User.findOne({ email }).select('+password');
 
@@ -169,6 +189,7 @@ exports.getUserById = async (req, res) => {
     });
   }
 };
+
 // Actualizar usuario
 exports.updateUser = async (req, res) => {
   try {
@@ -207,13 +228,16 @@ exports.updateUser = async (req, res) => {
     const filteredUpdates = {};
     for (const key of allowedFields) {
       if (updates[key]) {
-        filteredUpdates[key] = updates[key];
+        // Sanea mínimamente strings de entrada
+        filteredUpdates[key] = typeof updates[key] === 'string'
+          ? updates[key].trim()
+          : updates[key];
       }
     }
 
     // Si se actualiza password
     if (updates.password) {
-      filteredUpdates.password = bcrypt.hashSync(updates.password, 10);
+      filteredUpdates.password = bcrypt.hashSync(String(updates.password), 10);
     }
 
     const updatedUser = await User.findByIdAndUpdate(id, filteredUpdates, { new: true }).select('-password');
@@ -232,6 +256,7 @@ exports.updateUser = async (req, res) => {
     });
   }
 };
+
 // Eliminar usuario (solo admin)
 exports.deleteUser = async (req, res) => {
   try {
