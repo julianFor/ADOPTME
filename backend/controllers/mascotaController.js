@@ -14,7 +14,8 @@ const fromBracketed = (body, prefix) => {
   const obj = {};
   const re = new RegExp(`^${prefix}\\[(.+?)\\]$`);
   for (const k of Object.keys(body || {})) {
-    const m = k.match(re);
+    // ✅ S6594: usar RegExp.exec() en lugar de match()
+    const m = re.exec(k);
     if (m) obj[m[1]] = body[k];
   }
   return Object.keys(obj).length ? obj : null;
@@ -42,7 +43,7 @@ function normalizeMascotaPayload(body = {}) {
     delete contactoExterno.email;
   }
 
-  // origen por defecto (para este CRUD es externo)
+  // origen por defecto
   const origen = body.origen || 'externo';
 
   const payload = {
@@ -53,22 +54,24 @@ function normalizeMascotaPayload(body = {}) {
     fechaNacimiento: body.fechaNacimiento,
     estadoSalud: body.estadoSalud,
     sexo: body.sexo,
-    tamano, // <-- clave correcta en el modelo
+    tamano,
     origen,
     publicadaPor: body.publicadaPor,
     contactoExterno,
   };
 
-  // Si el frontend envía "estado" string, lo traducimos a boolean disponible
+  // ✅ S3358: evitar ternario anidado
   if (typeof body.estado === 'string') {
-    payload.disponible =
-      body.estado.toLowerCase() === 'disponible'
-        ? true
-        : body.estado.toLowerCase() === 'adoptado'
-        ? false
-        : undefined;
+    const estado = body.estado.toLowerCase();
+    if (estado === 'disponible') {
+      payload.disponible = true;
+    } else if (estado === 'adoptado') {
+      payload.disponible = false;
+    } else {
+      payload.disponible = undefined;
+    }
   }
-  // Si envían disponible boolean, respetarlo
+
   if (typeof body.disponible === 'boolean') {
     payload.disponible = body.disponible;
   }
@@ -83,19 +86,19 @@ exports.createMascota = async (req, res) => {
 
     const payload = normalizeMascotaPayload(req.body);
 
-    // Soportar 1 o varias imágenes (Cloudinary .path)
+    // ✅ Reescrito para mayor claridad y sin ternarios anidados
+    let imagenes = [];
     const files = Array.isArray(req.files) ? req.files : (req.files?.imagenes || []);
-    const imagenes =
-      files.length > 0
-        ? files.map(f => f.path || f.secure_url).filter(Boolean)
-        : (Array.isArray(req.body.imagenes) ? req.body.imagenes : [])
-            .filter(u => typeof u === 'string' && u.startsWith('http'));
+
+    if (files.length > 0) {
+      imagenes = files.map(f => f.path || f.secure_url).filter(Boolean);
+    } else if (Array.isArray(req.body.imagenes)) {
+      imagenes = req.body.imagenes.filter(u => typeof u === 'string' && u.startsWith('http'));
+    }
 
     const nuevaMascota = new Mascota({
       ...payload,
       imagenes,
-      // publicada se calcula en el modelo con default según origen,
-      // pero si viene explícito desde admin también se respeta:
       ...(typeof req.body.publicada === 'boolean' ? { publicada: req.body.publicada } : {})
     });
 
@@ -142,16 +145,20 @@ exports.getMascotaById = async (req, res) => {
 /* ===================== ACTUALIZAR ===================== */
 exports.updateMascota = async (req, res) => {
   try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID inválido' });
+    }
+
     const updates = normalizeMascotaPayload(req.body);
 
-    // Imágenes nuevas (si las hay)
     const files = Array.isArray(req.files) ? req.files : (req.files?.imagenes || []);
     if (files.length > 0) {
       updates.imagenes = files.map(f => f.path || f.secure_url).filter(Boolean);
     }
 
     const mascotaActualizada = await Mascota.findByIdAndUpdate(
-      req.params.id,
+      id,
       { $set: updates },
       { new: true }
     );
@@ -174,7 +181,12 @@ exports.updateMascota = async (req, res) => {
 /* ===================== ELIMINAR ===================== */
 exports.deleteMascota = async (req, res) => {
   try {
-    const mascota = await Mascota.findByIdAndDelete(req.params.id);
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID inválido' });
+    }
+
+    const mascota = await Mascota.findByIdAndDelete(id);
     if (!mascota) {
       return res.status(404).json({ success: false, message: 'Mascota no encontrada' });
     }
@@ -187,10 +199,18 @@ exports.deleteMascota = async (req, res) => {
 /* ===================== FILTRO POR ORIGEN ===================== */
 exports.getMascotasPorOrigen = async (req, res) => {
   try {
-    const origen = req.params.origen;
+    let origen = req.params.origen;
+
+    // ✅ S5147: sanitizar entrada controlada por usuario
+    if (typeof origen !== 'string') {
+      return res.status(400).json({ success: false, message: 'Formato de origen inválido' });
+    }
+
+    origen = origen.toLowerCase().trim();
     if (!['fundacion', 'externo'].includes(origen)) {
       return res.status(400).json({ success: false, message: 'Origen no válido' });
     }
+
     const mascotas = await Mascota.find({ origen, publicada: true });
     res.status(200).json(mascotas);
   } catch (error) {

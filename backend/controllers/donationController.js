@@ -12,24 +12,48 @@ exports.crearDonacion = async (req, res) => {
   }
 };
 
-// ✅ Obtener donaciones por goalId
+// ✅ Obtener donaciones por goalId (mitigación NoSQL injection)
 exports.obtenerPorMeta = async (req, res) => {
   try {
-    const donaciones = await Donation.find({ goalId: req.params.goalId });
+    let { goalId } = req.params;
+
+    // Forzar a string y validar ObjectId
+    if (typeof goalId !== 'string') {
+      return res.status(400).json({ message: 'goalId inválido' });
+    }
+    goalId = goalId.trim();
+    if (!mongoose.Types.ObjectId.isValid(goalId)) {
+      return res.status(400).json({ message: 'goalId no es un ObjectId válido' });
+    }
+
+    const goalObjectId = new mongoose.Types.ObjectId(goalId);
+    const donaciones = await Donation.find({ goalId: goalObjectId });
+
     res.status(200).json(donaciones);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// ✅ Obtener total recaudado por goalId
+// ✅ Obtener total recaudado por goalId (mitigación NoSQL injection)
 exports.totalRecaudado = async (req, res) => {
   try {
-    const goalObjectId = new mongoose.Types.ObjectId(req.params.goalId);
+    let { goalId } = req.params;
+
+    if (typeof goalId !== 'string') {
+      return res.status(400).json({ message: 'goalId inválido' });
+    }
+    goalId = goalId.trim();
+    if (!mongoose.Types.ObjectId.isValid(goalId)) {
+      return res.status(400).json({ message: 'goalId no es un ObjectId válido' });
+    }
+
+    const goalObjectId = new mongoose.Types.ObjectId(goalId);
     const total = await Donation.aggregate([
       { $match: { goalId: goalObjectId } },
-      { $group: { _id: null, total: { $sum: "$monto" } } }
+      { $group: { _id: null, total: { $sum: '$monto' } } }
     ]);
+
     res.json({ total: total[0]?.total || 0 });
   } catch (err) {
     res.status(500).json({ message: err.message });
