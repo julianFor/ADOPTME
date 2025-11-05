@@ -1,3 +1,4 @@
+// src/controllers/procesoAdopcionController.js
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
 const { enviarNotificacionPersonalizada } = require('../utils/notificaciones'); 
@@ -9,7 +10,8 @@ exports.crearProceso = async (req, res) => {
 
     const solicitud = await SolicitudAdopcion.findById(solicitudId);
 
-    if (!solicitud || solicitud.estado !== 'pendiente') {
+    // S6582: preferir encadenamiento opcional
+    if (solicitud?.estado !== 'pendiente') {
       return res.status(400).json({ success: false, message: 'La solicitud no es válida o ya está en proceso.' });
     }
 
@@ -110,7 +112,8 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     const solicitud = await SolicitudAdopcion.findById(proceso.solicitud);
-    if (!solicitud || solicitud.adoptante.toString() !== req.userId) {
+    // S6582: preferir encadenamiento opcional
+    if (solicitud?.adoptante?.toString() !== req.userId) {
       return res.status(403).json({ success: false, message: 'No tienes permisos para subir el compromiso.' });
     }
 
@@ -132,7 +135,6 @@ exports.subirCompromiso = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al subir compromiso firmado.', error: error.message });
   }
 };
-
 
 // Registrar entrega de la mascota
 exports.registrarEntrega = async (req, res) => {
@@ -218,7 +220,6 @@ exports.getProcesoPorSolicitud = async (req, res) => {
   }
 };
 
-
 // Aprobar etapa del proceso: entrevista, visita, compromiso o entrega
 exports.aprobarEtapa = async (req, res) => {
   const { id, etapa } = req.params;
@@ -270,7 +271,6 @@ exports.aprobarEtapa = async (req, res) => {
     });
   }
 };
-
 
 // Rechazar etapa del proceso: entrevista, visita, compromiso o entrega
 exports.rechazarEtapa = async (req, res) => {
@@ -346,8 +346,6 @@ exports.getProcesoPorId = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener el proceso' });
   }
 };
-
-
 
 // Obtener procesos de adopción del usuario autenticado 
 exports.getMisProcesos = async (req, res) => {
