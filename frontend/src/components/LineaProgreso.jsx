@@ -55,22 +55,35 @@ const LineaProgreso = ({ proceso }) => {
     return 'bg-gray-100 text-gray-500';
   };
 
+  const getWidth = (etapa) => {
+    switch (etapa) {
+      case 0:
+        return 'w-0';
+      case 1:
+        return 'w-[25%]';
+      case 2:
+        return 'w-[50%]';
+      case 3:
+        return 'w-[75%]';
+      default:
+        return 'w-full';
+    }
+  };
+
+  const getEstadoTexto = (estado) => {
+    if (estado === 'aprobado') return 'Aprobado';
+    if (estado === 'en proceso') return 'En proceso';
+    return 'Pendiente';
+  };
+
   return (
     <div className="relative bg-white shadow-md rounded-xl px-4 py-6 mb-8">
       {/* Línea de progreso */}
       <div className="absolute top-11 left-[10%] w-[80%] h-1 bg-gray-300 z-0">
         <div
-          className={`h-full transition-all duration-300 ${
-            etapaActual === 0
-              ? 'w-0'
-              : etapaActual === 1
-              ? 'w-[25%]'
-              : etapaActual === 2
-              ? 'w-[50%]'
-              : etapaActual === 3
-              ? 'w-[75%]'
-              : 'w-full'
-          } bg-green-500`}
+          className={`h-full transition-all duration-300 ${getWidth(
+            etapaActual
+          )} bg-green-500`}
         ></div>
       </div>
 
@@ -79,8 +92,12 @@ const LineaProgreso = ({ proceso }) => {
         {etapas.map((etapa) => {
           const estado = getEstadoEtapa(etapa.titulo === 'Formulario' ? 0 : etapas.indexOf(etapa));
           return (
-            <div key={index} className="flex flex-col items-center w-1/5">
-              <div className={`rounded-full border-4 p-3 text-xl bg-white ${getColor(estado)}`}>
+            <div key={etapa.titulo} className="flex flex-col items-center w-1/5">
+              <div
+                className={`rounded-full border-4 p-3 text-xl bg-white ${getColor(
+                  estado
+                )}`}
+              >
                 {etapa.icono}
               </div>
               <span className="text-xs text-gray-500 mt-1">
@@ -88,11 +105,7 @@ const LineaProgreso = ({ proceso }) => {
               </span>
               <h3 className="text-sm font-semibold text-center">{etapa.titulo}</h3>
               <span className={`text-xs px-2 py-1 rounded-full mt-1 ${getBadge(estado)}`}>
-                {estado === 'aprobado'
-                  ? 'Aprobado'
-                  : estado === 'en proceso'
-                  ? 'En proceso'
-                  : 'Pendiente'}
+                {getEstadoTexto(estado)}
               </span>
             </div>
           );
@@ -100,6 +113,15 @@ const LineaProgreso = ({ proceso }) => {
       </div>
     </div>
   );
+};
+
+// Validación de props con PropTypes
+LineaProgreso.propTypes = {
+  proceso: PropTypes.objectOf(
+    PropTypes.shape({
+      aprobada: PropTypes.bool,
+    })
+  ).isRequired,
 };
 
 export default LineaProgreso;
