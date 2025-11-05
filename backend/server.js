@@ -1,11 +1,16 @@
-
 // server.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+<<<<<<< HEAD
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+=======
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+>>>>>>> 738d9e6b60b14e6c6fee1dce7291bd9074938a09
 // Configuración de ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,29 +28,30 @@ app.use(express.urlencoded({ extended: true }));
 
 // Conexión a MongoDB
 const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Conectado a MongoDB Atlas');
-  } catch (err) {
-    console.error('❌ Error de conexión a MongoDB:', err.message);
-    process.exit(1);
-  }
+try {
+await mongoose.connect(process.env.MONGODB_URI);
+console.log('✅ Conectado a MongoDB Atlas');
+} catch (err) {
+console.error('❌ Error de conexión a MongoDB:', err.message);
+process.exit(1);
+}
 };
 await connectDB();
 
 // Importar rutas dinámicamente con manejo de errores
 const importRoute = async (routePath) => {
-  try {
-    const module = await import(routePath);
-    return module.default;
-  } catch (err) {
-    console.error(`❌ Error cargando ruta ${routePath}:`, err);
-    return null;
-  }
+try {
+const module = await import(routePath);
+return module.default;
+} catch (err) {
+console.error(`❌ Error cargando ruta ${routePath}:`, err);
+return null;
+}
 };
 
 // Cargar rutas dinámicamente
 const routes = [
+<<<<<<< HEAD
   { path: './routes/authRoutes.js', endpoint: '/api/auth' },
   { path: './routes/userRoutes.js', endpoint: '/api/users' },
   { path: './routes/mascotaRoutes.js', endpoint: '/api/mascotas' },
@@ -72,6 +78,35 @@ for (const route of routes) {
   } catch (err) {
     console.error(`✗ No se pudo cargar la ruta ${route.path}:`, err.message);
   }
+=======
+{ path: './routes/authRoutes.js', endpoint: '/api/auth' },
+{ path: './routes/userRoutes.js', endpoint: '/api/users' },
+{ path: './routes/mascotaRoutes.js', endpoint: '/api/mascotas' },
+{ path: './routes/solicitudAdopcionRoutes.js', endpoint: '/api/solicitudesAdopcion' },
+{ path: './routes/procesoAdopcionRoutes.js', endpoint: '/api/proceso' },
+{ path: './routes/solicitudPublicacionRoutes.js', endpoint: '/api/publicaciones' },
+{ path: './routes/notificacionRoutes.js', endpoint: '/api/notificaciones' },
+{ path: './routes/donationRoutes.js', endpoint: '/api/donaciones' },
+// 🔧 Corregido: se eliminó el endpoint duplicado
+{ path: './routes/donationGoalRoutes.js', endpoint: '/api/donation-goals' },
+{ path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
+{ path: './routes/paypalRoutes.js', endpoint: '/api/paypal' },
+{ path: './routes/necesidadRoutes.js', endpoint: '/api/necesidades' },
+{ path: './routes/dashboardRoutes.js', endpoint: '/api/dashboard' },
+{ path: './routes/contactRoutes.js', endpoint: '/api/contact' }
+];
+
+for (const route of routes) {
+try {
+const routeModule = await import(route.path);
+if (routeModule && routeModule.default) {
+app.use(route.endpoint, routeModule.default);
+console.log(`✓ Ruta ${route.endpoint} cargada correctamente`);
+}
+} catch (err) {
+console.error(`✗ No se pudo cargar la ruta ${route.path}:`, err.message);
+}
+>>>>>>> 738d9e6b60b14e6c6fee1dce7291bd9074938a09
 }
 
 // Middleware para PayPal IPN
@@ -82,17 +117,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Ruta base
 app.get('/', (_, res) => {
-  res.send('API de AdoptMe funcionando');
+res.send('API de AdoptMe funcionando');
 });
 
 // Manejo de errores centralizado
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Algo salió mal en el servidor' });
+console.error(err.stack);
+res.status(500).json({ message: 'Algo salió mal en el servidor' });
 });
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
+console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
 });
