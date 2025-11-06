@@ -1,4 +1,6 @@
+// src/components/DonationForm.jsx
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import ThankYouModal from "./ThankYouModal";
 
 function DonationForm({ onDonate, goalId }) {
@@ -22,72 +24,82 @@ function DonationForm({ onDonate, goalId }) {
   };
 
   useEffect(() => {
+    // --- Callbacks extraídos para reducir anidamiento (S2004) ---
+    const createOrder = (data, actions) => {
+      if (!form.monto || form.monto <= 0) {
+        alert("Por favor, ingresa un monto válido");
+        return;
+      }
+      return actions.order.create({
+        purchase_units: [
+          {
+            amount: { value: form.monto.toString() },
+          },
+        ],
+      });
+    };
+
+    const onApprove = (data, actions) => {
+      return actions.order.capture().then((details) => {
+        return fetch("http://localhost:3000/api/donaciones", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-access-token": globalThis.localStorage?.getItem("token"), // uso de globalThis (S7764)
+          },
+          body: JSON.stringify({
+            nombre: details?.payer?.name?.given_name,
+            monto: form.monto || 1,
+            tipo: "dinero",
+            descripcion: "Donación vía PayPal",
+            goalId: goalId,
+          }),
+        })
+          .then((res) => res.json())
+          .then(() => {
+            setShowModal(true);
+            setForm({ monto: "" });
+          })
+          .catch((err) => {
+            console.error("❌ Error:", err);
+            alert("❌ Error al guardar la donación.");
+          });
+      });
+    };
+
+    const onError = (err) => {
+      console.error("❌ Error en PayPal:", err);
+      alert("❌ Error al procesar el pago.");
+    };
+
     const renderPayPalButton = () => {
-      if (!window.paypal) return;
+      if (!globalThis.paypal) return; // uso de globalThis (S7764)
 
       const container = document.getElementById("paypal-button-container");
       if (container) container.innerHTML = "";
 
-      window.paypal.Buttons({
-        createOrder: (data, actions) => {
-          if (!form.monto || form.monto <= 0) {
-            alert("Por favor, ingresa un monto válido");
-            return;
-          }
-
-          return actions.order.create({
-            purchase_units: [
-              {
-                amount: { value: form.monto.toString() },
-              },
-            ],
-          });
-        },
-        onApprove: (data, actions) => {
-          return actions.order.capture().then((details) => {
-            fetch("http://localhost:3000/api/donaciones", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-access-token": localStorage.getItem("token"), // ✅ si tu backend requiere token
-              },
-              body: JSON.stringify({
-                nombre: details.payer.name.given_name,
-                monto: form.monto || 1,
-                tipo: "dinero",
-                descripcion: "Donación vía PayPal",
-                goalId: goalId,
-              }),
-            })
-              .then((res) => res.json())
-              .then(() => {
-                setShowModal(true);
-                setForm({ monto: "" });
-              })
-              .catch((err) => {
-                console.error("❌ Error:", err);
-                alert("❌ Error al guardar la donación.");
-              });
-          });
-        },
-        onError: (err) => {
-          console.error("❌ Error en PayPal:", err);
-          alert("❌ Error al procesar el pago.");
-        },
-      }).render("#paypal-button-container");
+      globalThis.paypal
+        .Buttons({
+          createOrder,
+          onApprove,
+          onError,
+        })
+        .render("#paypal-button-container");
     };
 
-    if (!document.getElementById("paypal-sdk")) {
+    // Evitar condición negada con else (S7735)
+    const hasSdk = document.getElementById("paypal-sdk");
+    if (hasSdk) {
+      renderPayPalButton();
+    } else {
       const script = document.createElement("script");
       script.id = "paypal-sdk";
       script.src =
         "https://www.paypal.com/sdk/js?client-id=AUtOaREOtmKNYh6mECP1T7oB6uMUFhJXDmMHv3sU_qEZgQj2MwUQGtayeNlsJnA2uYt8HsIbWjXNv0Ct&currency=USD";
       script.onload = renderPayPalButton;
       document.body.appendChild(script);
-    } else {
-      renderPayPalButton();
     }
-  }, [form.monto]);
+  }, [form.monto, goalId]); // mantener comportamiento; se añade goalId por coherencia
 
   return (
     <>
@@ -114,5 +126,10 @@ function DonationForm({ onDonate, goalId }) {
     </>
   );
 }
+
+DonationForm.propTypes = {
+  onDonate: PropTypes.func.isRequired,
+  goalId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
 
 export default DonationForm;

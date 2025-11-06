@@ -1,5 +1,6 @@
 // src/pages/Gestion/Necesidades/NecesidadFormModal.jsx
 import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import {
   crearNecesidad,
   actualizarNecesidad,
@@ -12,7 +13,8 @@ const CATEGORIAS = ["comida", "camas", "juguetes", "arena", "medicina", "higiene
 const URGENCIAS = ["alta", "media", "baja"];
 const ESTADOS   = ["activa", "pausada", "cumplida", "vencida"];
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// S7776: usar Set para comprobación de existencia
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export default function NecesidadFormModal({
@@ -45,7 +47,7 @@ export default function NecesidadFormModal({
 
   const validateImageFile = (file) => {
     if (!file) return "Archivo inválido.";
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "Solo JPG/PNG/WEBP.";
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) return "Solo JPG/PNG/WEBP.";
     if (file.size > MAX_IMAGE_BYTES) return "La imagen supera el tamaño máximo de 5 MB.";
     return null;
   };
@@ -207,8 +209,17 @@ export default function NecesidadFormModal({
 
   return (
     <div className="fixed inset-0 z-[80]">
-      {/* overlay */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      {/* overlay - S6848/S1082: elemento no interactivo con onClick => role + tabIndex + teclado */}
+      <div
+        className="absolute inset-0 bg-black/40"
+        role="button"
+        tabIndex={0}
+        aria-label="Cerrar modal"
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" || e.key === "Enter" || e.key === " ") onClose?.();
+        }}
+      />
       {/* modal */}
       <div className="absolute inset-0 flex items-start justify-center overflow-auto pt-8 pb-10">
         <div className="w-full max-w-[560px] bg-white rounded-2xl shadow-xl p-6 relative">
@@ -217,6 +228,7 @@ export default function NecesidadFormModal({
             onClick={onClose}
             className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
             type="button"
+            aria-label="Cerrar"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -227,8 +239,9 @@ export default function NecesidadFormModal({
           <form onSubmit={submit} encType="multipart/form-data" className="space-y-4">
             {/* Título */}
             <div>
-              <label className="block text-sm mb-1">Título *</label>
+              <label htmlFor="titulo" className="block text-sm mb-1">Título *</label>
               <input
+                id="titulo"
                 value={form.titulo}
                 onChange={(e) => onChange("titulo", e.target.value)}
                 className="w-full border rounded-md px-3 py-2"
@@ -240,7 +253,7 @@ export default function NecesidadFormModal({
 
             {/* Urgencia */}
             <div>
-              <label className="block text-sm mb-1">Prioridad *</label>
+              <span className="block text-sm mb-1">Prioridad *</span>
               <div className="flex gap-6 items-center">
                 {URGENCIAS.map((u) => (
                   <label key={u} className="flex items-center gap-2 cursor-pointer">
@@ -259,8 +272,9 @@ export default function NecesidadFormModal({
 
             {/* Descripción */}
             <div>
-              <label className="block text-sm mb-1">Descripción *</label>
+              <label htmlFor="descripcionBreve" className="block text-sm mb-1">Descripción *</label>
               <textarea
+                id="descripcionBreve"
                 rows={3}
                 value={form.descripcionBreve}
                 onChange={(e) => onChange("descripcionBreve", e.target.value)}
@@ -274,8 +288,9 @@ export default function NecesidadFormModal({
             {/* Objetivo / Recibido */}
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
-                <label className="block text-sm mb-1">Meta *</label>
+                <label htmlFor="objetivo" className="block text-sm mb-1">Meta *</label>
                 <input
+                  id="objetivo"
                   type="number"
                   min={1}
                   value={form.objetivo}
@@ -288,8 +303,9 @@ export default function NecesidadFormModal({
                 </span>
               </div>
               <div className="relative">
-                <label className="block text-sm mb-1">Recibido</label>
+                <label htmlFor="recibido" className="block text-sm mb-1">Recibido</label>
                 <input
+                  id="recibido"
                   type="number"
                   min={0}
                   value={form.recibido}
@@ -305,8 +321,9 @@ export default function NecesidadFormModal({
             {/* Categoría / Estado */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm mb-1">Categoría *</label>
+                <label htmlFor="categoria" className="block text-sm mb-1">Categoría *</label>
                 <select
+                  id="categoria"
                   value={form.categoria}
                   onChange={(e) => onChange("categoria", e.target.value)}
                   className="w-full border rounded-md px-3 py-2 capitalize"
@@ -319,8 +336,9 @@ export default function NecesidadFormModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm mb-1">Estado *</label>
+                <label htmlFor="estado" className="block text-sm mb-1">Estado *</label>
                 <select
+                  id="estado"
                   value={form.estado}
                   onChange={(e) => onChange("estado", e.target.value)}
                   className="w-full border rounded-md px-3 py-2 capitalize"
@@ -337,14 +355,16 @@ export default function NecesidadFormModal({
             {/* Fechas */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm mb-1">Fecha de Publicación</label>
-                <div className="w-full border rounded-md px-3 py-2 bg-gray-50 text-gray-600">
+                {/* No usar label aquí porque no hay control asociado */}
+                <span className="block text-sm mb-1">Fecha de Publicación</span>
+                <div className="w-full border rounded-md px-3 py-2 bg-gray-50 text-gray-600" aria-readonly="true">
                   {fechaPubText}
                 </div>
               </div>
               <div>
-                <label className="block text-sm mb-1">Fecha Límite</label>
+                <label htmlFor="fechaLimite" className="block text-sm mb-1">Fecha Límite</label>
                 <input
+                  id="fechaLimite"
                   type="date"
                   value={form.fechaLimite || ""}
                   onChange={(e) => onChange("fechaLimite", e.target.value)}
@@ -355,7 +375,7 @@ export default function NecesidadFormModal({
 
             {/* Imagen principal (única) */}
             <div className="border rounded-md p-3">
-              <label className="block text-sm mb-2">Imagen principal *</label>
+              <label htmlFor="imagenPrincipal" className="block text-sm mb-2">Imagen principal *</label>
 
               {/* preview en edición */}
               {form.imagenPrincipalUrl && (
@@ -367,6 +387,7 @@ export default function NecesidadFormModal({
               )}
 
               <input
+                id="imagenPrincipal"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleFileChange}
@@ -399,3 +420,26 @@ export default function NecesidadFormModal({
     </div>
   );
 }
+
+NecesidadFormModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSaved: PropTypes.func, // opcional: se usa con optional chaining
+  initialData: PropTypes.shape({
+    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    titulo: PropTypes.string,
+    categoria: PropTypes.string,
+    urgencia: PropTypes.string,
+    descripcionBreve: PropTypes.string,
+    objetivo: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    recibido: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    fechaLimite: PropTypes.string,
+    estado: PropTypes.string,
+    visible: PropTypes.bool,
+    imagenPrincipal: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({ url: PropTypes.string }),
+    ]),
+    fechaPublicacion: PropTypes.string,
+  }),
+};

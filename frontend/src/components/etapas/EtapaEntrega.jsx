@@ -1,8 +1,10 @@
+// frontend/src/components/etapas/EtapaEntrega.jsx
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { aprobarEtapa, rechazarEtapa, registrarEntrega } from '../../services/procesoService';
 import useUser from '../../hooks/useUser';
-//  toasts
+// toasts
 import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
@@ -13,9 +15,7 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
   const [personaEntrega, setPersonaEntrega] = useState('');
   const [observacionesEntrega, setObservacionesEntrega] = useState('');
 
-  const puedeGestionarEtapa = () => {
-    return proceso?.compromiso?.aprobada === true;
-  };
+  const puedeGestionarEtapa = () => proceso?.compromiso?.aprobada === true;
 
   useEffect(() => {
     if (proceso?.entrega) {
@@ -29,7 +29,6 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
 
   const handleGuardar = async () => {
     if (!fechaEntrega || !personaEntrega) {
-      // alert('Por favor completa la fecha y el nombre de quien entrega.');
       warning('Por favor completa la fecha y el nombre de quien entrega.', { title: 'Campos incompletos' });
       return;
     }
@@ -43,17 +42,16 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
     try {
       const res = await registrarEntrega(procesoId, datosEntrega);
       setProceso(res.proceso);
-      // alert('Entrega registrada exitosamente.');
       success('Entrega registrada exitosamente.', { title: 'Guardado' });
 
       // Guardar etapa actual como 4 (etapa entrega)
-      localStorage.setItem(`etapaActual-${procesoId}`, '4');
+      globalThis.localStorage?.setItem(`etapaActual-${procesoId}`, '4');
 
       // Recargar para reflejar el cambio y avanzar en el componente padre
-      window.location.reload();
+      globalThis.location?.reload();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(err);
-      // alert('Error al registrar entrega.');
       error('Error al registrar entrega.', { title: 'Error' });
     }
   };
@@ -62,30 +60,28 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
     try {
       const res = await aprobarEtapa(procesoId, 'entrega');
       setProceso(res.proceso);
-      // alert('Etapa de entrega aprobada.');
       success('Etapa de entrega aprobada.', { title: 'Aprobada' });
 
-      //  Guardar en localStorage y recargar
-      localStorage.setItem(`etapaActual-${procesoId}`, '4');
-      window.location.reload();
+      // Guardar en localStorage y recargar
+      globalThis.localStorage?.setItem(`etapaActual-${procesoId}`, '4');
+      globalThis.location?.reload();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(err);
-      // alert('Error al aprobar etapa.');
       error('Error al aprobar etapa.', { title: 'Error' });
     }
   };
 
   const handleRechazar = async () => {
-    const motivo = prompt('¿Cuál es el motivo del rechazo?');
+    const motivo = globalThis.prompt?.('¿Cuál es el motivo del rechazo?');
     if (!motivo) return;
     try {
       const res = await rechazarEtapa(procesoId, 'entrega', motivo);
       setProceso(res.proceso);
-      // alert('Etapa rechazada.');
       success('Etapa rechazada.', { title: 'Rechazada' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(err);
-      // alert('Error al rechazar etapa.');
       error('Error al rechazar etapa.', { title: 'Error' });
     }
   };
@@ -96,8 +92,11 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Fecha de Entrega:</label>
+          <label className="font-semibold mb-1" htmlFor="fecha-entrega">
+            Fecha de Entrega:
+          </label>
           <input
+            id="fecha-entrega"
             type="date"
             className="border border-gray-300 rounded-md px-4 py-2"
             value={fechaEntrega}
@@ -106,8 +105,11 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Nombre de Quien Recibe la Mascota:</label>
+          <label className="font-semibold mb-1" htmlFor="persona-entrega">
+            Nombre de Quien Recibe la Mascota:
+          </label>
           <input
+            id="persona-entrega"
             type="text"
             placeholder="Nombre"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -117,8 +119,11 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Observaciones:</label>
+          <label className="font-semibold mb-1" htmlFor="observaciones-entrega">
+            Observaciones:
+          </label>
           <input
+            id="observaciones-entrega"
             type="text"
             placeholder="Notas u observaciones"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -139,6 +144,7 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
           </button>
         </div>
       )}
+
       {user?.role !== 'adoptante' && (
         <div className="flex gap-4 justify-end">
           <button
@@ -162,6 +168,21 @@ const EtapaEntrega = ({ procesoId, setProceso, proceso }) => {
       )}
     </div>
   );
+};
+
+EtapaEntrega.propTypes = {
+  procesoId: PropTypes.string.isRequired,
+  setProceso: PropTypes.func.isRequired,
+  proceso: PropTypes.shape({
+    compromiso: PropTypes.shape({
+      aprobada: PropTypes.bool,
+    }),
+    entrega: PropTypes.shape({
+      fechaEntrega: PropTypes.string, // ISO date string (YYYY-MM-DD or ISO)
+      personaEntrega: PropTypes.string,
+      observacionesEntrega: PropTypes.string,
+    }),
+  }).isRequired,
 };
 
 export default EtapaEntrega;
