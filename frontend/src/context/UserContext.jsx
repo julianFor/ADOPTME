@@ -1,5 +1,6 @@
 // src/context/UserContext.jsx
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
 
 export const UserContext = createContext();
 
@@ -38,9 +39,18 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const value = useMemo(
+    () => ({ user, token, loginUser, logoutUser, updateUser }),
+    [user, token]
+  );
+
   return (
-    <UserContext.Provider value={{ user, token, loginUser, logoutUser, updateUser }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
+};
+
+UserProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

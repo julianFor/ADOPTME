@@ -73,9 +73,9 @@ const ComoAdoptar = () => {
         {/* Fundación */}
         <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center hover:shadow-md transition transform scale-90">
           <img
-            src="/public/gaticueva-logo.png"
+            src="/gaticueva-logo.png"
             alt="La Gaticueva"
-            className="h-30 object-contain mb-4"
+            className="h-28 object-contain mb-4"
           />
           <h3 className="text-lg font-bold text-gray-800 mb-2">
             <span className="text-purple-600"> Opción 1:</span> Adopción con la Fundación Gaticueva
@@ -94,9 +94,9 @@ const ComoAdoptar = () => {
         {/* Persona externa */}
         <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center hover:shadow-md transition transform scale-90">
           <img
-            src="/public/persona-externa.png"
+            src="/persona-externa.png"
             alt="Persona externa"
-            className="h-30 object-contain mb-4"
+            className="h-28 object-contain mb-4"
           />
           <h3 className="text-lg font-bold text-gray-800 mb-2">
             <span className="text-purple-600"> Opción 2:</span> Adopción desde una Persona Externa

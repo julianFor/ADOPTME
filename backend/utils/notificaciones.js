@@ -2,7 +2,7 @@ const Notificacion = require('../models/Notificacion');
 const User = require('../models/User');
 
 // Lista de tipos permitidos (importante mantener en sincronía)
-const tiposPermitidos = [
+const tiposPermitidos = new Set([
   'solicitud-adopcion-creada',
   'solicitud-adopcion-aprobada',
   'solicitud-adopcion-rechazada',
@@ -10,7 +10,7 @@ const tiposPermitidos = [
   'nueva-solicitud-publicacion',
   'solicitud-publicacion-aprobada',
   'solicitud-publicacion-rechazada'
-];
+]);
 
 /**
  * Envía notificación a usuarios por ID
@@ -20,7 +20,7 @@ const tiposPermitidos = [
  * @param {Object} datosAdicionales - Objeto con info útil (opcional)
  */
 const enviarNotificacionPersonalizada = async (userIds, tipo, mensaje, datosAdicionales = {}) => {
-  if (!tiposPermitidos.includes(tipo)) {
+  if (!tiposPermitidos.has(tipo)) {
     throw new Error(`Tipo de notificación inválido: ${tipo}`);
   }
 
