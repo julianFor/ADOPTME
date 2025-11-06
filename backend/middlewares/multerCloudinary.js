@@ -2,7 +2,7 @@
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
-const path = require('path');
+const path = require('node:path'); // corregido: usa node: para módulo integrado
 
 const storage = new CloudinaryStorage({
   cloudinary,

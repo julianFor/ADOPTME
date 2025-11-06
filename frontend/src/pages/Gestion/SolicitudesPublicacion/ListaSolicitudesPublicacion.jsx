@@ -20,9 +20,9 @@ const getAssetUrl = (asset) => {
   if (typeof asset === "string") {
     return isHttpUrl(asset) ? asset : buildFromPublicId(asset);
   }
-  if (asset.secure_url) return asset.secure_url;
-  if (asset.url) return asset.url;
-  if (asset.public_id) return buildFromPublicId(asset.public_id);
+  if (asset?.secure_url) return asset.secure_url;
+  if (asset?.url) return asset.url;
+  if (asset?.public_id) return buildFromPublicId(asset.public_id);
   return "";
 };
 
@@ -50,7 +50,7 @@ const ListaSolicitudesPublicacion = () => {
     const fetchSolicitudes = async () => {
       try {
         const response = await getSolicitudes();
-        setSolicitudes(response.solicitudes || []);
+        setSolicitudes(response?.solicitudes || []);
       } catch (error) {
         console.error("Error al obtener solicitudes:", error);
       }
@@ -60,8 +60,6 @@ const ListaSolicitudesPublicacion = () => {
 
   const norm = (v) => (v || "").toString().trim().toLowerCase();
 
-  // Toma la PRIMERA imagen de la solicitud (igual que en el detalle) y, si no hay,
-  // intenta con la de la mascota como fallback.
   const getThumbFromSolicitud = (s) => {
     const placeholder = "https://via.placeholder.com/56?text=🐾";
     const asset =
@@ -74,7 +72,6 @@ const ListaSolicitudesPublicacion = () => {
     const raw = getAssetUrl(asset);
     if (!raw) return placeholder;
 
-    // Aplica transformación de avatar si es Cloudinary
     return toAvatar(raw) || raw || placeholder;
   };
 
@@ -94,9 +91,9 @@ const ListaSolicitudesPublicacion = () => {
       );
       const coincideTexto =
         !f ||
-        contactoNombre.includes(f) ||
-        mascotaNombre.includes(f) ||
-        publicador.includes(f);
+        contactoNombre?.includes(f) ||
+        mascotaNombre?.includes(f) ||
+        publicador?.includes(f);
       const coincideEstado = estadoFiltro ? s?.estado === estadoFiltro : true;
       return coincideTexto && coincideEstado;
     });
@@ -184,7 +181,7 @@ const ListaSolicitudesPublicacion = () => {
                   <td className="px-4 py-2 text-center align-middle">
                     <button
                       onClick={() =>
-                        navigate(`/dashboard/admin/solicitudes-publicacion/${solicitud._id}`)
+                        navigate(`/dashboard/admin/solicitudes-publicacion/${solicitud?._id}`)
                       }
                       className="border border-purple-500 text-purple-500 px-4 py-1 rounded-full hover:bg-purple-100 transition text-sm"
                     >

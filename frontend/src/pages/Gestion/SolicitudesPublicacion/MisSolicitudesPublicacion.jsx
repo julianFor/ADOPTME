@@ -87,6 +87,12 @@ const MisSolicitudesPublicacion = () => {
     item?.mascota?.nombre?.toLowerCase().includes(filtro.toLowerCase())
   );
 
+  const getRutaBase = () => {
+    if (user?.role === "admin") return "/dashboard/admin";
+    if (user?.role === "adminFundacion") return "/dashboard/adminFundacion";
+    return "/dashboard/adoptante";
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -122,6 +128,8 @@ const MisSolicitudesPublicacion = () => {
                 pickFirstImageUrl(item?.mascota?.imagenes) ||
                 PLACEHOLDER;
 
+              const rutaBase = getRutaBase();
+
               return (
                 <tr key={item._id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">
@@ -142,15 +150,9 @@ const MisSolicitudesPublicacion = () => {
                   <td className="px-4 py-2 capitalize">{item?.estado}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      onClick={() => {
-                        const rutaBase =
-                          user?.role === "admin"
-                            ? "/dashboard/admin"
-                            : user?.role === "adminFundacion"
-                            ? "/dashboard/adminFundacion"
-                            : "/dashboard/adoptante";
-                        navigate(`${rutaBase}/mis-solicitudes-publicacion/${item._id}`);
-                      }}
+                      onClick={() =>
+                        navigate(`${rutaBase}/mis-solicitudes-publicacion/${item._id}`)
+                      }
                       className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
                     >
                       Ver detalles

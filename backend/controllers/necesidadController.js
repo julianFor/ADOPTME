@@ -74,43 +74,44 @@ exports.crearNecesidad = async (req, res) => {
       visible,
     } = req.body;
 
-    if (req.file?.path && req.file?.filename) {
-      // sanitizar antes de guardar (S5147)
-      const sTitulo = sanitizeText(titulo, 140);
-      const sCategoria = sanitizeText(categoria, 60);
-      const sUrgencia = sanitizeText(urgencia, 30);
-      const sDesc = sanitizeText(descripcionBreve, 600);
-
-      if (!sTitulo) return res.status(400).json({ ok: false, message: "Título inválido" });
-      if (!sCategoria) return res.status(400).json({ ok: false, message: "Categoría inválida" });
-      if (!sUrgencia) return res.status(400).json({ ok: false, message: "Urgencia inválida" });
-
-      const sEstado = safeString(estado);
-      const estadoFinal = allowedEstados.has(sEstado) ? sEstado : "activa";
-
-      const doc = {
-        titulo: String(sTitulo),
-        categoria: String(sCategoria),
-        urgencia: String(sUrgencia),
-        descripcionBreve: sDesc != null ? String(sDesc) : undefined,
-        objetivo: Number(toNumber(objetivo, 1)),
-        recibido: Number(toNumber(recibido, 0)),
-        fechaLimite: toDate(fechaLimite),
-        estado: String(estadoFinal),
-        visible: Boolean(toBool(visible, true)),
-        imagenPrincipal: {
-          url: String(req.file.path),
-          publicId: String(req.file.filename),
-        },
-        creadaPor: String(req.userId),
-        fechaPublicacion: new Date(),
-      };
-
-      const need = await Need.create(doc);
-      return res.status(201).json({ ok: true, data: need });
-    } else {
+    // ✅ Evitamos condición negada con else y simplificamos lectura
+    if (!(req.file?.path && req.file?.filename)) {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
+
+    // Sanitización segura (S5147)
+    const sTitulo = sanitizeText(titulo, 140);
+    const sCategoria = sanitizeText(categoria, 60);
+    const sUrgencia = sanitizeText(urgencia, 30);
+    const sDesc = sanitizeText(descripcionBreve, 600);
+
+    if (!sTitulo) return res.status(400).json({ ok: false, message: "Título inválido" });
+    if (!sCategoria) return res.status(400).json({ ok: false, message: "Categoría inválida" });
+    if (!sUrgencia) return res.status(400).json({ ok: false, message: "Urgencia inválida" });
+
+    const sEstado = safeString(estado);
+    const estadoFinal = allowedEstados.has(sEstado) ? sEstado : "activa";
+
+    const doc = {
+      titulo: String(sTitulo),
+      categoria: String(sCategoria),
+      urgencia: String(sUrgencia),
+      descripcionBreve: sDesc != null ? String(sDesc) : undefined,
+      objetivo: Number(toNumber(objetivo, 1)),
+      recibido: Number(toNumber(recibido, 0)),
+      fechaLimite: toDate(fechaLimite),
+      estado: String(estadoFinal),
+      visible: Boolean(toBool(visible, true)),
+      imagenPrincipal: {
+        url: String(req.file.path),
+        publicId: String(req.file.filename),
+      },
+      creadaPor: String(req.userId),
+      fechaPublicacion: new Date(),
+    };
+
+    const need = await Need.create(doc);
+    return res.status(201).json({ ok: true, data: need });
   } catch (err) {
     console.error("💥 crearNecesidad:", err);
     return res.status(500).json({ ok: false, message: "Error al crear necesidad" });
@@ -119,11 +120,12 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
-    const qRaw = safeString(req.query.q);
-    const categoriaRaw = safeString(req.query.categoria);
-    const urgenciaRaw = safeString(req.query.urgencia);
-    const estadoRaw = safeString(req.query.estado);
-    const sort = parseSort(req.query.sort);
+    // ✅ Sanitización segura (S5147)
+    const qRaw = safeString(req.query.q?.toString());
+    const categoriaRaw = safeString(req.query.categoria?.toString());
+    const urgenciaRaw = safeString(req.query.urgencia?.toString());
+    const estadoRaw = safeString(req.query.estado?.toString());
+    const sort = parseSort(req.query.sort?.toString());
 
     const lim = Number(req.query.limit) > 0 ? Number(req.query.limit) : 12;
     const pag = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
@@ -152,30 +154,124 @@ exports.listarPublicas = async (req, res) => {
   }
 };
 
+// ✅ Refactor de complejidad cognitiva (S3776)
+async function actualizarImagenSiExiste(need, req) {
+  if (req.file?.path && req.file?.filename) {
+    const oldPublicId = need?.imagenPrincipal?.publicId;
+    need.imagenPrincipal = {
+      url: String(req.file.path),
+      publicId: String(req.file.filename),
+    };
+    if (oldPublicId) {
+      try {
+        await cloudinary.uploader.destroy(oldPublicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("No se pudo eliminar imagen anterior:", e?.message);
+      }
+    }
+  }
+}
+
+exports.actualizar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ ok: false, message: "ID inválido" });
+    }
+
+    const need = await Need.findById(id);
+    if (!need) {
+      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    const body = req.body || {};
+    const patch = buildPatch(body, need);
+    await actualizarImagenSiExiste(need, req);
+
+    Object.assign(need, patch);
+    if (typeof need.syncEstado === "function") need.syncEstado();
+
+    await need.save();
+    return res.json({ ok: true, data: need });
+  } catch (err) {
+    console.error("💥 actualizar:", err);
+    return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
+  }
+};
+
 exports.obtenerPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    if (isValidObjectId(id)) {
-      const need = await Need.findById(id);
-      if (need) {
-        if (typeof need.syncEstado === "function") {
-          need.syncEstado();
-          await need.save();
-        }
-        return res.json({ ok: true, data: need });
-      } else {
-        return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-      }
-    } else {
+    if (!isValidObjectId(id)) {
       return res.status(400).json({ ok: false, message: "ID inválido" });
     }
+
+    const need = await Need.findById(id);
+    if (!need) {
+      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    if (typeof need.syncEstado === "function") {
+      need.syncEstado();
+      await need.save();
+    }
+    return res.json({ ok: true, data: need });
   } catch (err) {
     console.error("💥 obtenerPorId:", err);
     return res.status(500).json({ ok: false, message: "Error al obtener necesidad" });
   }
 };
 
-// buildPatch auxiliar
+exports.cambiarEstado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const estado = safeString(req.body.estado);
+    if (!isValidObjectId(id) || !allowedEstados.has(estado)) {
+      return res.status(400).json({ ok: false, message: "Parámetros inválidos" });
+    }
+
+    const need = await Need.findByIdAndUpdate(id, { estado: String(estado) }, { new: true });
+    if (!need) {
+      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    return res.json({ ok: true, data: need });
+  } catch (err) {
+    console.error("💥 cambiarEstado:", err);
+    return res.status(500).json({ ok: false, message: "Error al cambiar estado" });
+  }
+};
+
+exports.eliminar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ ok: false, message: "ID inválido" });
+    }
+
+    const need = await Need.findById(id);
+    if (!need) {
+      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    const publicId = need?.imagenPrincipal?.publicId;
+    if (publicId) {
+      try {
+        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("No se pudo eliminar imagen:", e?.message);
+      }
+    }
+
+    await Need.findByIdAndDelete(id);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("💥 eliminar:", err);
+    return res.status(500).json({ ok: false, message: "Error al eliminar necesidad" });
+  }
+};
+
+// auxiliar
 function buildPatch(body, current) {
   const patch = {};
   if (body.titulo) patch.titulo = String(sanitizeText(body.titulo, 140) || current.titulo);
@@ -195,91 +291,3 @@ function buildPatch(body, current) {
   if (body.visible !== undefined) patch.visible = Boolean(toBool(body.visible, current.visible));
   return patch;
 }
-
-exports.actualizar = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (isValidObjectId(id)) {
-      const need = await Need.findById(id);
-      if (need) {
-        const body = req.body || {};
-        const patch = buildPatch(body, need);
-
-        if (req.file?.path && req.file?.filename) {
-          const oldPublicId = need?.imagenPrincipal?.publicId;
-          patch.imagenPrincipal = { url: String(req.file.path), publicId: String(req.file.filename) };
-
-          if (oldPublicId) {
-            try {
-              await cloudinary.uploader.destroy(oldPublicId, { resource_type: "image" });
-            } catch (e) {
-              console.warn("No se pudo eliminar imagen anterior:", e?.message);
-            }
-          }
-        }
-
-        Object.assign(need, patch);
-        if (typeof need.syncEstado === "function") need.syncEstado();
-
-        await need.save();
-        return res.json({ ok: true, data: need });
-      } else {
-        return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-      }
-    } else {
-      return res.status(400).json({ ok: false, message: "ID inválido" });
-    }
-  } catch (err) {
-    console.error("💥 actualizar:", err);
-    return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
-  }
-};
-
-exports.cambiarEstado = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const estado = safeString(req.body.estado);
-
-    if (isValidObjectId(id) && allowedEstados.has(estado)) {
-      const need = await Need.findByIdAndUpdate(id, { estado: String(estado) }, { new: true });
-      if (need) {
-        return res.json({ ok: true, data: need });
-      } else {
-        return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-      }
-    } else {
-      return res.status(400).json({ ok: false, message: "Parámetros inválidos" });
-    }
-  } catch (err) {
-    console.error("💥 cambiarEstado:", err);
-    return res.status(500).json({ ok: false, message: "Error al cambiar estado" });
-  }
-};
-
-exports.eliminar = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (isValidObjectId(id)) {
-      const need = await Need.findById(id);
-      if (need) {
-        const publicId = need?.imagenPrincipal?.publicId;
-        if (publicId) {
-          try {
-            await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
-          } catch (e) {
-            console.warn("No se pudo eliminar imagen:", e?.message);
-          }
-        }
-        await Need.findByIdAndDelete(id);
-        return res.json({ ok: true });
-      } else {
-        return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-      }
-    } else {
-      return res.status(400).json({ ok: false, message: "ID inválido" });
-    }
-  } catch (err) {
-    console.error("💥 eliminar:", err);
-    return res.status(500).json({ ok: false, message: "Error al eliminar necesidad" });
-  }
-};
