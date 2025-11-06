@@ -6,9 +6,14 @@ import { useParams, useNavigate } from "react-router-dom";
 // 🔔 Toasts personalizados
 import { useToast } from "../../../components/ui/ToastProvider";
 
-// ✅ Set para check de tipos
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+// ✅ Set para check de tipos (permitimos imágenes y PDF, ver nota)
+const ALLOWED_FILE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+]);
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const FormularioAdopcion = () => {
   const { user } = useContext(AuthContext);
@@ -16,20 +21,20 @@ const FormularioAdopcion = () => {
   const navigate = useNavigate();
   const { success, error, info } = useToast();
 
-  // --- Sanitizadores (sin replace global) ---
+  // --- Sanitizadores ---
   const onlyDigits = (v) =>
-    Array.from((v || "")).filter((ch) => ch >= "0" && ch <= "9").join("");
+    Array.from((v ?? "")).filter((ch) => ch >= "0" && ch <= "9").join("");
 
   // letras Unicode + espacios
   const onlyLettersSpaces = (v) =>
-    (v || "").match(/[\p{L}\s]/gu)?.join("") ?? "";
+    (v ?? "").match(/[\p{L}\s]/gu)?.join("") ?? "";
 
   // letras, números, espacios y # - . ,
   const addressSafe = (v) =>
-    (v || "").match(/[\p{L}\p{N}\s#\-,.]/gu)?.join("") ?? "";
+    (v ?? "").match(/[\p{L}\p{N}\s#\-,.]/gu)?.join("") ?? "";
 
   // quita < y >
-  const textSafe = (v) => (v || "").replaceAll("<", "").replaceAll(">", "");
+  const textSafe = (v) => (v ?? "").replaceAll("<", "").replaceAll(">", "");
 
   const SANITIZE = {
     nombreCompleto: onlyLettersSpaces,
@@ -52,7 +57,7 @@ const FormularioAdopcion = () => {
     barrio: "",
     ciudad: "",
     telefono: "",
-    correo: user?.email || "",
+    correo: user?.email ?? "",
     tipoVivienda: "",
     tenenciaVivienda: "",
     acuerdoFamiliar: "",
@@ -88,7 +93,7 @@ const FormularioAdopcion = () => {
 
   // Bloqueos extra para números
   const preventNonDigitsBeforeInput = (e) => {
-    if (/\D/.test(e.data || "")) e.preventDefault();
+    if (/\D/.test(e.data ?? "")) e.preventDefault();
   };
   const preventNonDigitsKeyDown = (e) => {
     const allowed = [
@@ -105,26 +110,26 @@ const FormularioAdopcion = () => {
   };
   const handlePasteDigitsOnly = (e, field, maxLen) => {
     e.preventDefault();
-    const pasted = (e.clipboardData.getData("text") || "").replaceAll(/\D+/g, "");
+    const pasted = (e.clipboardData.getData("text") ?? "").replace(/\D+/g, "");
     const next = maxLen ? pasted.slice(0, maxLen) : pasted;
     setForm((prev) => ({ ...prev, [field]: next }));
   };
 
-  // --- Validación de imágenes (solo JPG/PNG/WEBP, máx 5MB) ---
-  const handleImageOnly = (setter) => (e) => {
+  // --- Validación de archivos (JPG/PNG/WEBP/PDF, máx 5MB) ---
+  const handleFileValidated = (setter) => (e) => {
     const file = e.target.files?.[0];
     if (!file) {
       setter(null);
       return;
     }
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      error("Solo se permiten imágenes JPG, PNG o WEBP.", { duration: 5000 });
+    if (!ALLOWED_FILE_TYPES.has(file.type)) {
+      error("Tipo de archivo no permitido. Usa JPG, PNG, WEBP o PDF.", { duration: 5000 });
       e.target.value = "";
       setter(null);
       return;
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      error("La imagen supera el tamaño máximo de 5 MB.", { duration: 6000 });
+    if (file.size > MAX_FILE_BYTES) {
+      error("El archivo supera el tamaño máximo de 5 MB.", { duration: 6000 });
       e.target.value = "";
       setter(null);
       return;
@@ -142,7 +147,7 @@ const FormularioAdopcion = () => {
       barrio: "",
       ciudad: "",
       telefono: "",
-      correo: user?.email || "",
+      correo: user?.email ?? "",
       tipoVivienda: "",
       tenenciaVivienda: "",
       acuerdoFamiliar: "",
@@ -217,7 +222,7 @@ const FormularioAdopcion = () => {
     } catch (e) {
       console.error("Error al enviar solicitud:", e);
       error(
-        e?.response?.data?.message || "Error al enviar la solicitud. Intenta nuevamente.",
+        e?.response?.data?.message ?? "Error al enviar la solicitud. Intenta nuevamente.",
         { duration: 7000 }
       );
     } finally {
@@ -381,7 +386,7 @@ const FormularioAdopcion = () => {
       {/* Adopción */}
       <section>
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Información sobre la Adopción</h3>
-        <div className="grid grid-cols-1 md-grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <textarea
             name="motivoAdopcion"
             placeholder="¿Por qué deseas adoptar?"
@@ -472,19 +477,19 @@ const FormularioAdopcion = () => {
         </div>
       </section>
 
-      {/* Archivos (solo imágenes) */}
+      {/* Archivos (imágenes o PDF) */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
           <span>Documento de identidad:</span>{" "}
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleImageOnly(setDocumentoIdentidad)}
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={handleFileValidated(setDocumentoIdentidad)}
             className="mt-1"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            * Sube una <span className="font-medium">imagen</span> (JPG/PNG/WEBP) clara del documento. Máx. 5&nbsp;MB.
+            * Sube una <span className="font-medium">imagen o PDF</span> legible del documento. Máx. 5&nbsp;MB.
           </p>
         </label>
 
@@ -492,13 +497,13 @@ const FormularioAdopcion = () => {
           <span>Prueba de residencia:</span>{" "}
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleImageOnly(setPruebaResidencia)}
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={handleFileValidated(setPruebaResidencia)}
             className="mt-1"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            * Adjunta una <span className="font-medium">imagen</span> (JPG/PNG/WEBP) del recibo o certificado. Máx. 5&nbsp;MB.
+            * Adjunta <span className="font-medium">imagen o PDF</span> del recibo/certificado. Máx. 5&nbsp;MB.
           </p>
         </label>
       </section>

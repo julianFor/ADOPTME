@@ -1,3 +1,4 @@
+// src/components/home/PetCarousel.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PetCard from './PetCard';
@@ -129,7 +130,7 @@ function PetCarousel() {
   );
 }
 
-// ✅ Evita condiciones negadas y mejora legibilidad
+/* ------------------ Edad legible (sin negaciones) ------------------ */
 function calcularEdad(fechaNacimiento) {
   if (!fechaNacimiento) {
     return 'N/A';
@@ -137,14 +138,26 @@ function calcularEdad(fechaNacimiento) {
 
   const nacimiento = new Date(fechaNacimiento);
   const hoy = new Date();
-  const años = hoy.getFullYear() - nacimiento.getFullYear();
-  const meses = hoy.getMonth() - nacimiento.getMonth();
 
-  if (años > 0) {
-    return `${años} año${años !== 1 ? 's' : ''}`;
+  // meses totales transcurridos
+  let totalMeses = (hoy.getFullYear() - nacimiento.getFullYear()) * 12 + (hoy.getMonth() - nacimiento.getMonth());
+
+  // si aún no ha pasado el día del mes, restar 1 mes
+  const diaHoy = hoy.getDate();
+  const diaNac = nacimiento.getDate();
+  if (diaHoy < diaNac) {
+    totalMeses -= 1;
   }
 
-  return `${Math.max(meses, 1)} mes${meses !== 1 ? 'es' : ''}`;
+  if (totalMeses >= 12) {
+    const años = Math.floor(totalMeses / 12);
+    const etiqueta = años === 1 ? 'año' : 'años';
+    return `${años} ${etiqueta}`;
+  }
+
+  const meses = Math.max(totalMeses, 1);
+  const etiquetaMes = meses === 1 ? 'mes' : 'meses';
+  return `${meses} ${etiquetaMes}`;
 }
 
 export default PetCarousel;
