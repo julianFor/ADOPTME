@@ -4,35 +4,29 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/UserContext";
 
-// Helper: resuelve URL (Cloudinary u otra) desde string/objeto/array/public_id
+const buildCloudinaryUrl = (id) => {
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  return cloud
+    ? `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${id}`
+    : `/uploads/${id}`;
+};
+
+const handleStringImage = (img) => {
+  return /^https?:\/\//i.test(img) ? img : buildCloudinaryUrl(img);
+};
+
+const handleObjectImage = (img) => {
+  if (img.secure_url) return img.secure_url;
+  if (img.url) return img.url;
+  if (img.public_id) return buildCloudinaryUrl(img.public_id);
+  return "";
+};
+
 const getCloudinaryUrl = (img) => {
   if (!img) return "";
-
-  // si viene como array, usar el primero
   if (Array.isArray(img)) return getCloudinaryUrl(img[0]);
-
-  // string: ya puede ser URL o public_id
-  if (typeof img === "string") {
-    if (/^https?:\/\//i.test(img)) return img; // ya es URL completa
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (cloud) {
-      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img}`;
-    }
-    return `/uploads/${img}`; // compat temporal
-  }
-
-  // objeto: de Cloudinary o similar
-  if (typeof img === "object" && img !== null) {
-    if (img.secure_url) return img.secure_url;
-    if (img.url) return img.url;
-    if (img.public_id) {
-      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      if (cloud) {
-        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img.public_id}`;
-      }
-    }
-  }
-
+  if (typeof img === "string") return handleStringImage(img);
+  if (typeof img === "object" && img !== null) return handleObjectImage(img);
   return "";
 };
 

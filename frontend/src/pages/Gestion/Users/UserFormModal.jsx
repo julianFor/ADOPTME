@@ -1,5 +1,6 @@
 // src/pages/Gestion/Users/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { createUser, updateUser } from "../../../services/userService";
 
 // Solo los roles válidos del sistema AdoptMe
@@ -54,6 +55,13 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
   if (!isOpen) return null;
 
+  // ✅ Separa el ternario anidado en una función simple
+  const getRoleLabel = (role) => {
+    if (role === "admin") return "Administrador";
+    if (role === "adminFundacion") return "Administrador Fundación";
+    return "Adoptante";
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md">
@@ -98,14 +106,9 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             className="w-full border border-gray-300 p-2 rounded"
             required
           >
-            
             {roles.map((r) => (
               <option key={r} value={r}>
-                {r === "admin"
-                  ? "Administrador"
-                  : r === "adminFundacion"
-                  ? "Administrador Fundación"
-                  : "Adoptante"}
+                {getRoleLabel(r)}
               </option>
             ))}
           </select>
@@ -129,6 +132,19 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
       </div>
     </div>
   );
+};
+
+// ✅ Validación de props corregida para SonarQube
+UserFormModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    _id: PropTypes.string,
+    username: PropTypes.string,
+    email: PropTypes.string,
+    role: PropTypes.oneOf(["admin", "adminFundacion", "adoptante"]),
+  }),
 };
 
 export default UserFormModal;
