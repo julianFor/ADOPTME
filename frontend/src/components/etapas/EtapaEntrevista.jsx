@@ -1,5 +1,7 @@
+// frontend/src/components/etapas/EtapaEntrevista.jsx
 import { useState } from 'react';
-import { FaCalendarAlt, FaCheck, FaTimes } from 'react-icons/fa';
+import PropTypes from 'prop-types';
+import { FaCheck, FaTimes } from 'react-icons/fa';
 import {
   agendarEntrevista,
   aprobarEtapa,
@@ -11,7 +13,9 @@ import { useToast } from '../../components/ui/ToastProvider';
 const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) => {
   const [fecha, setFecha] = useState(proceso?.entrevista?.fechaEntrevista?.split('T')[0] || '');
   const [enlace, setEnlace] = useState(proceso?.entrevista?.enlaceMeet || '');
-  const [observaciones, setObservaciones] = useState(proceso?.entrevista?.observacionesEntrevista || '');
+  const [observaciones, setObservaciones] = useState(
+    proceso?.entrevista?.observacionesEntrevista || ''
+  );
 
   const { success, error, warning } = useToast();
 
@@ -20,15 +24,14 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
       const datos = {
         fechaEntrevista: fecha,
         enlaceMeet: enlace,
-        observacionesEntrevista: observaciones
+        observacionesEntrevista: observaciones,
       };
       const res = await agendarEntrevista(procesoId, datos);
       setProceso(res.proceso);
-      // alert('Entrevista guardada correctamente.');
       success('Entrevista guardada correctamente.', { title: 'Guardado' });
     } catch (err) {
-      console.error('Error al guardar entrevista:', err.response?.data || err);
-      // alert('Error al guardar entrevista');
+      // eslint-disable-next-line no-console
+      console.error('Error al guardar entrevista:', err?.response?.data || err);
       error('Error al guardar entrevista.', { title: 'Error' });
     }
   };
@@ -37,9 +40,9 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
     try {
       const res = await aprobarEtapa(procesoId, 'entrevista');
       setProceso(res.proceso);
-      // alert('Entrevista aprobada correctamente.');
       success('Entrevista aprobada correctamente.', { title: 'Aprobada' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error al aprobar entrevista:', err);
       error('No se pudo aprobar la entrevista.', { title: 'Error' });
     }
@@ -52,17 +55,23 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
     try {
       const res = await rechazarEtapa(procesoId, 'entrevista', motivo);
       setProceso(res.proceso);
-      // alert('Entrevista rechazada.');
       success('Entrevista rechazada.', { title: 'Rechazada' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error al rechazar entrevista:', err);
       error('No se pudo rechazar la entrevista.', { title: 'Error' });
     }
   };
 
+  // Formato requerido por Google Calendar: YYYYMMDDTHHMMSSZ
+  const formato = (date) => {
+    const iso = date.toISOString();           // ej: 2025-11-05T10:00:00.000Z
+    const sinMs = iso.split('.')[0] + 'Z';    // -> 2025-11-05T10:00:00Z
+    return sinMs.replaceAll('-', '').replaceAll(':', ''); // -> 20251105T100000Z
+  };
+
   const generarGoogleCalendarURL = () => {
     if (!fecha) {
-      // alert('Debes ingresar la fecha de la entrevista');
       warning('Debes ingresar la fecha de la entrevista.', { title: 'Advertencia' });
       return;
     }
@@ -73,9 +82,10 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
 
     const start = new Date(`${fecha}T10:00:00`);
     const end = new Date(`${fecha}T11:00:00`);
-    const formato = (date) => date.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
-    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formato(start)}/${formato(end)}&details=${detalles}&location=${location}&sf=true&output=xml`;
+    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formato(
+      start
+    )}/${formato(end)}&details=${detalles}&location=${location}&sf=true&output=xml`;
 
     window.open(url, '_blank');
   };
@@ -86,8 +96,11 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
 
       <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col">
-          <label className="font-semibold mb-1">Fecha Entrevista:</label>
+          <label className="font-semibold mb-1" htmlFor="fecha-entrevista">
+            Fecha Entrevista:
+          </label>
           <input
+            id="fecha-entrevista"
             type="date"
             className="border border-gray-300 rounded-md px-4 py-2"
             value={fecha}
@@ -97,8 +110,11 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
         </div>
 
         <div className="flex flex-col">
-          <label className="font-semibold mb-1">Enlace MEET</label>
+          <label className="font-semibold mb-1" htmlFor="enlace-meet">
+            Enlace MEET
+          </label>
           <input
+            id="enlace-meet"
             type="text"
             placeholder="https://meet.google.com/xxx-xxxx-xxx"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -109,8 +125,11 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Observaciones</label>
+          <label className="font-semibold mb-1" htmlFor="observaciones-entrevista">
+            Observaciones
+          </label>
           <input
+            id="observaciones-entrevista"
             type="text"
             placeholder="Notas u observaciones"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -134,6 +153,7 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
                 alt="Google"
                 className="w-5 h-5"
               />
+              {' '}
               Agendar en Google Calendar
             </button>
 
@@ -152,7 +172,9 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
               onClick={handleRechazar}
               className="flex items-center gap-2 bg-red-300 text-white px-5 py-2 rounded-full hover:bg-red-400 transition"
             >
-              <FaTimes /> Rechazar
+              <FaTimes />
+              {' '}
+              Rechazar
             </button>
 
             <button
@@ -160,13 +182,28 @@ const EtapaEntrevista = ({ proceso, setProceso, procesoId, editable = true }) =>
               onClick={handleAprobar}
               className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition"
             >
-              <FaCheck /> Aprobar
+              <FaCheck />
+              {' '}
+              Aprobar
             </button>
           </div>
         </>
       )}
     </div>
   );
+};
+
+EtapaEntrevista.propTypes = {
+  proceso: PropTypes.shape({
+    entrevista: PropTypes.shape({
+      fechaEntrevista: PropTypes.string,           // ISO string
+      enlaceMeet: PropTypes.string,
+      observacionesEntrevista: PropTypes.string,
+    }),
+  }).isRequired,
+  setProceso: PropTypes.func.isRequired,
+  procesoId: PropTypes.string.isRequired,
+  editable: PropTypes.bool,
 };
 
 export default EtapaEntrevista;

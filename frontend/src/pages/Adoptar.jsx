@@ -1,10 +1,84 @@
+// frontend/src/pages/Adoptar.jsx
 import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import { getTodasLasMascotas } from "../services/mascotaService";
 import CatIcon from "../assets/images/catIcon.svg";
 import DogIcon from "../assets/images/dogIcon.svg";
 import OtherIcon from "../assets/images/otherIcon.svg";
 import PetCard from "../components/Home/PetCard";
 import { Link } from "react-router-dom";
+
+/* ───────────────── Componentes auxiliares ───────────────── */
+
+function SpeciesButtons({ className = "", speciesOptions, selectedSpecies, toggleSpecies }) {
+  return (
+    <div className={`flex gap-4 justify-center ${className}`}>
+      {speciesOptions.map((item) => {
+        const active = selectedSpecies === item.value;
+        return (
+          <button
+            key={item.value}
+            type="button"
+            className={`w-12 h-12 rounded-full border-4 transition duration-200 ease-in-out 
+              flex items-center justify-center
+              ${
+                active
+                  ? "border-purple-500 shadow-lg bg-white"
+                  : "border-gray-300 bg-[#f3e8ff] hover:bg-[#e9d5ff]"
+              }`}
+            onClick={() => toggleSpecies(item.value)}
+            aria-pressed={active}
+            title={active ? `Quitar filtro: ${item.label}` : `Filtrar: ${item.label}`}
+          >
+            <img src={item.icon} alt={item.label} className="w-6 h-6" />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+SpeciesButtons.propTypes = {
+  className: PropTypes.string,
+  speciesOptions: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      value: PropTypes.string.isRequired,
+      icon: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  selectedSpecies: PropTypes.string.isRequired,
+  toggleSpecies: PropTypes.func.isRequired,
+};
+
+/* ───────────────── Helpers puros ───────────────── */
+
+function origenLabel(v) {
+  if (v === "todos") return "Todos";
+  if (v === "fundacion") return "Fundación";
+  return "Externa";
+}
+
+// Render amigable de edad
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return "N/A";
+  const nacimiento = new Date(fechaNacimiento);
+  const hoy = new Date();
+  let años = hoy.getFullYear() - nacimiento.getFullYear();
+  const m = hoy.getMonth() - nacimiento.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) años--;
+  if (años <= 0) {
+    const meses = Math.max(
+      1,
+      (hoy.getMonth() + 12 * hoy.getFullYear()) -
+        (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
+    );
+    return `${meses} mes${meses !== 1 ? "es" : ""}`;
+  }
+  return `${años} año${años !== 1 ? "s" : ""}`;
+}
+
+/* ───────────────── Página principal ───────────────── */
 
 function Adoptar() {
   const [selectedSpecies, setSelectedSpecies] = useState("todos");
@@ -33,6 +107,7 @@ function Adoptar() {
         const response = await getTodasLasMascotas();
         setMascotas(response.data);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error al obtener las mascotas:", error);
       }
     };
@@ -98,40 +173,32 @@ function Adoptar() {
   const pageItems = filteredMascotas.slice(start, start + pageSize);
 
   const getPageNumbers = () => {
-    if (totalPages <= 8) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const pages = new Set([1, 2, totalPages - 1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
-    const arr = Array.from(pages).filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
-    const withDots = [];
-    for (let i = 0; i < arr.length; i++) {
-      withDots.push(arr[i]);
-      if (i < arr.length - 1 && arr[i + 1] - arr[i] > 1) withDots.push("...");
+    if (totalPages <= 8) {
+      return Array.from({ length: totalPages }, (_, i) => ({ type: "page", value: i + 1 }));
     }
-    return withDots;
-  };
+    const pages = new Set([
+      1,
+      2,
+      totalPages - 1,
+      totalPages,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+    ]);
+    const arr = Array.from(pages)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .sort((a, b) => a - b);
 
-  // ───────── UI helpers (solo estilos, sin tocar desktop)
-  const SpeciesButtons = ({ className = "" }) => (
-    <div className={`flex gap-4 justify-center ${className}`}>
-      {speciesOptions.map((item) => {
-        const active = selectedSpecies === item.value;
-        return (
-          <button
-            key={item.value}
-            type="button"
-            className={`w-12 h-12 rounded-full border-4 transition duration-200 ease-in-out 
-              flex items-center justify-center
-              ${active ? "border-purple-500 shadow-lg bg-white"
-                       : "border-gray-300 bg-[#f3e8ff] hover:bg-[#e9d5ff]"}`}
-            onClick={() => toggleSpecies(item.value)}
-            aria-pressed={active}
-            title={active ? `Quitar filtro: ${item.label}` : `Filtrar: ${item.label}`}
-          >
-            <img src={item.icon} alt={item.label} className="w-6 h-6" />
-          </button>
-        );
-      })}
-    </div>
-  );
+    const out = [];
+    for (let i = 0; i < arr.length; i++) {
+      out.push({ type: "page", value: arr[i] });
+      if (i < arr.length - 1 && arr[i + 1] - arr[i] > 1) {
+        // id estable basado en el rango omitido (evita usar índice)
+        out.push({ type: "dots", id: `${arr[i]}-${arr[i + 1]}` });
+      }
+    }
+    return out;
+  };
 
   return (
     <div className="min-h-screen px-6 py-10">
@@ -145,11 +212,17 @@ function Adoptar() {
             draggable="false"
           />
         </span>
+        {" "}
       </h2>
 
       {/* ====== Barra móvil: botón Filtros + chips de especie ====== */}
       <div className="md:hidden mb-4 flex items-center justify-between">
-        <SpeciesButtons className="flex-1" />
+        <SpeciesButtons
+          className="flex-1"
+          speciesOptions={speciesOptions}
+          selectedSpecies={selectedSpecies}
+          toggleSpecies={toggleSpecies}
+        />
         <button
           onClick={() => setOpenFilters(true)}
           className="ml-3 px-4 py-2 rounded-full bg-purple-600 text-white font-semibold shadow active:scale-[0.98]"
@@ -162,20 +235,46 @@ function Adoptar() {
       <div className="flex gap-6 items-start">
         {/* ====== Sidebar de filtros (DESKTOP: intacto) ====== */}
         <div className="hidden md:block w-64 p-4 bg-white rounded-xl shadow self-start">
-          <SpeciesButtons className="mb-6" />
+          <SpeciesButtons
+            className="mb-6"
+            speciesOptions={speciesOptions}
+            selectedSpecies={selectedSpecies}
+            toggleSpecies={toggleSpecies}
+          />
 
           {/* Origen */}
           <div className="mb-4">
             <h4 className="font-bold mb-2">Origen</h4>
             <div className="space-y-1 text-sm">
               <label className="flex items-center gap-2">
-                <input type="radio" name="origen" value="todos" checked={origen === "todos"} onChange={(e) => setOrigen(e.target.value)} /> Todos
+                <input
+                  type="radio"
+                  name="origen"
+                  value="todos"
+                  checked={origen === "todos"}
+                  onChange={(e) => setOrigen(e.target.value)}
+                />{" "}
+                Todos
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="origen" value="fundacion" checked={origen === "fundacion"} onChange={(e) => setOrigen(e.target.value)} /> Fundación
+                <input
+                  type="radio"
+                  name="origen"
+                  value="fundacion"
+                  checked={origen === "fundacion"}
+                  onChange={(e) => setOrigen(e.target.value)}
+                />{" "}
+                Fundación
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="origen" value="externo" checked={origen === "externo"} onChange={(e) => setOrigen(e.target.value)} /> Externa
+                <input
+                  type="radio"
+                  name="origen"
+                  value="externo"
+                  checked={origen === "externo"}
+                  onChange={(e) => setOrigen(e.target.value)}
+                />{" "}
+                Externa
               </label>
             </div>
           </div>
@@ -185,13 +284,34 @@ function Adoptar() {
             <h4 className="font-bold mb-2">Sexo</h4>
             <div className="space-y-1 text-sm">
               <label className="flex items-center gap-2">
-                <input type="radio" name="sexo" value="todos" checked={sexo === "todos"} onChange={(e) => setSexo(e.target.value)} /> Todos
+                <input
+                  type="radio"
+                  name="sexo"
+                  value="todos"
+                  checked={sexo === "todos"}
+                  onChange={(e) => setSexo(e.target.value)}
+                />{" "}
+                Todos
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="sexo" value="macho" checked={sexo === "macho"} onChange={(e) => setSexo(e.target.value)} /> Macho
+                <input
+                  type="radio"
+                  name="sexo"
+                  value="macho"
+                  checked={sexo === "macho"}
+                  onChange={(e) => setSexo(e.target.value)}
+                />{" "}
+                Macho
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="sexo" value="hembra" checked={sexo === "hembra"} onChange={(e) => setSexo(e.target.value)} /> Hembra
+                <input
+                  type="radio"
+                  name="sexo"
+                  value="hembra"
+                  checked={sexo === "hembra"}
+                  onChange={(e) => setSexo(e.target.value)}
+                />{" "}
+                Hembra
               </label>
             </div>
           </div>
@@ -201,16 +321,44 @@ function Adoptar() {
             <h4 className="font-bold mb-2">Tamaño</h4>
             <div className="space-y-1 text-sm">
               <label className="flex items-center gap-2">
-                <input type="radio" name="tamano" value="todos" checked={tamano === "todos"} onChange={(e) => setTamano(e.target.value)} /> Todos
+                <input
+                  type="radio"
+                  name="tamano"
+                  value="todos"
+                  checked={tamano === "todos"}
+                  onChange={(e) => setTamano(e.target.value)}
+                />{" "}
+                Todos
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="tamano" value="pequeño" checked={tamano === "pequeño"} onChange={(e) => setTamano(e.target.value)} /> Pequeño
+                <input
+                  type="radio"
+                  name="tamano"
+                  value="pequeño"
+                  checked={tamano === "pequeño"}
+                  onChange={(e) => setTamano(e.target.value)}
+                />{" "}
+                Pequeño
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="tamano" value="mediano" checked={tamano === "mediano"} onChange={(e) => setTamano(e.target.value)} /> Mediano
+                <input
+                  type="radio"
+                  name="tamano"
+                  value="mediano"
+                  checked={tamano === "mediano"}
+                  onChange={(e) => setTamano(e.target.value)}
+                />{" "}
+                Mediano
               </label>
               <label className="flex items-center gap-2">
-                <input type="radio" name="tamano" value="grande" checked={tamano === "grande"} onChange={(e) => setTamano(e.target.value)} /> Grande
+                <input
+                  type="radio"
+                  name="tamano"
+                  value="grande"
+                  checked={tamano === "grande"}
+                  onChange={(e) => setTamano(e.target.value)}
+                />{" "}
+                Grande
               </label>
             </div>
           </div>
@@ -218,7 +366,14 @@ function Adoptar() {
           {/* Edad */}
           <div className="mb-2">
             <h4 className="font-bold mb-2">Edad (máxima)</h4>
-            <input type="range" min="0" max="20" value={edadMax} onChange={(e) => setEdadMax(e.target.value)} className="w-full" />
+            <input
+              type="range"
+              min="0"
+              max="20"
+              value={edadMax}
+              onChange={(e) => setEdadMax(e.target.value)}
+              className="w-full"
+            />
             <div className="flex justify-between text-sm mt-1">
               <span>0 años</span>
               <span>{edadMax} años</span>
@@ -233,7 +388,9 @@ function Adoptar() {
               <PetCard
                 nombre={m.nombre}
                 edad={calcularEdad(m.fechaNacimiento)}
-                sexo={m.sexo ? m.sexo.charAt(0).toUpperCase() + m.sexo.slice(1).toLowerCase() : "N/A"}
+                sexo={
+                  m.sexo ? m.sexo.charAt(0).toUpperCase() + m.sexo.slice(1).toLowerCase() : "N/A"
+                }
                 descripcion={m.descripcion}
                 imagen={getImagenPrincipal(m.imagenes)}
                 id={m._id}
@@ -252,7 +409,10 @@ function Adoptar() {
       {/* ====== Paginación ====== */}
       <div className="flex justify-center mt-10">
         {filteredMascotas.length > 0 && (
-          <nav className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-purple-300 shadow" aria-label="Paginación">
+          <nav
+            className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-purple-300 shadow"
+            aria-label="Paginación"
+          >
             <button
               className="px-3 py-1 rounded-full hover:bg-purple-100 text-purple-700 font-semibold disabled:opacity-40"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -261,18 +421,22 @@ function Adoptar() {
               {"<"}
             </button>
 
-            {getPageNumbers().map((n, idx) =>
-              n === "..." ? (
-                <span key={`dots-${idx}`} className="px-2 select-none">…</span>
+            {getPageNumbers().map((item) =>
+              item.type === "dots" ? (
+                <span key={`dots-${item.id}`} className="px-2 select-none">
+                  …
+                </span>
               ) : (
                 <button
-                  key={n}
+                  key={`page-${item.value}`}
                   className={`px-3 py-1 rounded-full font-semibold ${
-                    currentPage === n ? "bg-purple-600 text-white" : "hover:bg-purple-100 text-purple-700"
+                    currentPage === item.value
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-purple-100 text-purple-700"
                   }`}
-                  onClick={() => setCurrentPage(n)}
+                  onClick={() => setCurrentPage(item.value)}
                 >
-                  {n}
+                  {item.value}
                 </button>
               )
             )}
@@ -310,7 +474,12 @@ function Adoptar() {
               </button>
             </div>
 
-            <SpeciesButtons className="mb-5" />
+            <SpeciesButtons
+              className="mb-5"
+              speciesOptions={speciesOptions}
+              selectedSpecies={selectedSpecies}
+              toggleSpecies={toggleSpecies}
+            />
 
             {/* Origen */}
             <div className="mb-4">
@@ -318,8 +487,14 @@ function Adoptar() {
               <div className="flex gap-4 text-sm">
                 {["todos", "fundacion", "externo"].map((v) => (
                   <label key={v} className="flex items-center gap-2">
-                    <input type="radio" name="origen_m" value={v} checked={origen === v} onChange={(e) => setOrigen(e.target.value)} />
-                    {v === "todos" ? "Todos" : v === "fundacion" ? "Fundación" : "Externa"}
+                    <input
+                      type="radio"
+                      name="origen_m"
+                      value={v}
+                      checked={origen === v}
+                      onChange={(e) => setOrigen(e.target.value)}
+                    />
+                    {origenLabel(v)}
                   </label>
                 ))}
               </div>
@@ -331,7 +506,13 @@ function Adoptar() {
               <div className="flex gap-4 text-sm">
                 {["todos", "macho", "hembra"].map((v) => (
                   <label key={v} className="flex items-center gap-2">
-                    <input type="radio" name="sexo_m" value={v} checked={sexo === v} onChange={(e) => setSexo(e.target.value)} />
+                    <input
+                      type="radio"
+                      name="sexo_m"
+                      value={v}
+                      checked={sexo === v}
+                      onChange={(e) => setSexo(e.target.value)}
+                    />
                     {v === "todos" ? "Todos" : v.charAt(0).toUpperCase() + v.slice(1)}
                   </label>
                 ))}
@@ -344,7 +525,13 @@ function Adoptar() {
               <div className="flex flex-wrap gap-3 text-sm">
                 {["todos", "pequeño", "mediano", "grande"].map((v) => (
                   <label key={v} className="flex items-center gap-2">
-                    <input type="radio" name="tamano_m" value={v} checked={tamano === v} onChange={(e) => setTamano(e.target.value)} />
+                    <input
+                      type="radio"
+                      name="tamano_m"
+                      value={v}
+                      checked={tamano === v}
+                      onChange={(e) => setTamano(e.target.value)}
+                    />
                     {v.charAt(0).toUpperCase() + v.slice(1)}
                   </label>
                 ))}
@@ -354,7 +541,14 @@ function Adoptar() {
             {/* Edad */}
             <div className="mb-2">
               <h4 className="font-bold mb-2">Edad (máxima)</h4>
-              <input type="range" min="0" max="20" value={edadMax} onChange={(e) => setEdadMax(e.target.value)} className="w-full" />
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={edadMax}
+                onChange={(e) => setEdadMax(e.target.value)}
+                className="w-full"
+              />
               <div className="flex justify-between text-sm mt-1">
                 <span>0 años</span>
                 <span>{edadMax} años</span>
@@ -386,25 +580,6 @@ function Adoptar() {
       )}
     </div>
   );
-}
-
-// Render amigable de edad
-function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return "N/A";
-  const nacimiento = new Date(fechaNacimiento);
-  const hoy = new Date();
-  let años = hoy.getFullYear() - nacimiento.getFullYear();
-  const m = hoy.getMonth() - nacimiento.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) años--;
-  if (años <= 0) {
-    const meses = Math.max(
-      1,
-      (hoy.getMonth() + 12 * hoy.getFullYear()) -
-        (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
-    );
-    return `${meses} mes${meses !== 1 ? "es" : ""}`;
-  }
-  return `${años} año${años !== 1 ? "s" : ""}`;
 }
 
 export default Adoptar;
