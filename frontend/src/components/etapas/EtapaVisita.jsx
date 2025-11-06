@@ -1,11 +1,13 @@
+// frontend/src/components/etapas/EtapaVisita.jsx
 import { useState } from 'react';
-import { FaCalendarAlt, FaCheck, FaTimes } from 'react-icons/fa';
+import PropTypes from 'prop-types';
+import { FaCheck, FaTimes } from 'react-icons/fa';
 import {
   registrarVisita,
   aprobarEtapa,
-  rechazarEtapa
+  rechazarEtapa,
 } from '../../services/procesoService';
-// ✅ toasts
+// toasts
 import { useToast } from '../../components/ui/ToastProvider';
 
 const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
@@ -26,15 +28,14 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
         fechaVisita: fecha,
         horaVisita: hora,
         responsable,
-        observacionesVisita: observaciones
+        observacionesVisita: observaciones,
       };
       const res = await registrarVisita(procesoId, datos);
       setProceso(res.proceso);
-      // alert('Visita guardada correctamente.');
       success('Visita guardada correctamente.', { title: 'Guardado' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error al guardar visita:', err?.response?.data || err);
-      // alert('Error al guardar visita');
       error('Error al guardar visita.', { title: 'Error' });
     }
   };
@@ -43,9 +44,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
     try {
       const res = await aprobarEtapa(procesoId, 'visita');
       setProceso(res.proceso);
-      // alert('Visita aprobada correctamente.');
       success('Visita aprobada correctamente.', { title: 'Aprobada' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error al aprobar visita:', err);
       error('No se pudo aprobar la visita.', { title: 'Error' });
     }
@@ -58,9 +59,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
     try {
       const res = await rechazarEtapa(procesoId, 'visita', motivo);
       setProceso(res.proceso);
-      // alert('Visita rechazada.');
       success('Visita rechazada.', { title: 'Rechazada' });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Error al rechazar visita:', err);
       error('No se pudo rechazar la visita.', { title: 'Error' });
     }
@@ -68,7 +69,6 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
 
   const generarGoogleCalendarURL = () => {
     if (!fecha || !hora || !responsable) {
-      // alert('Debes ingresar fecha, hora y responsable para agendar.');
       warning('Debes ingresar fecha, hora y responsable para agendar.', { title: 'Advertencia' });
       return;
     }
@@ -79,11 +79,14 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
 
     const start = new Date(`${fecha}T${hora}`);
     const end = new Date(start.getTime() + 60 * 60 * 1000);
-    const formato = (date) => date.toISOString().replace(/[-:]|\.\d{3}/g, '');
+
+    // Usar replaceAll (con regex global) en lugar de replace(/.../g, '')
+    const formato = (date) => date.toISOString().replaceAll(/[-:]|\.\d{3}/g, '');
 
     const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formato(start)}/${formato(end)}&details=${detalles}&location=${location}&sf=true&output=xml`;
 
-    window.open(url, '_blank');
+    // Preferir globalThis a window
+    globalThis.open?.(url, '_blank');
   };
 
   return (
@@ -92,8 +95,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
 
       <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col">
-          <label className="font-semibold mb-1">Fecha Visita:</label>
+          <label className="font-semibold mb-1" htmlFor="fecha-visita">Fecha Visita:</label>
           <input
+            id="fecha-visita"
             type="date"
             className="border border-gray-300 rounded-md px-4 py-2"
             value={fecha}
@@ -103,8 +107,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
         </div>
 
         <div className="flex flex-col">
-          <label className="font-semibold mb-1">Hora Visita:</label>
+          <label className="font-semibold mb-1" htmlFor="hora-visita">Hora Visita:</label>
           <input
+            id="hora-visita"
             type="time"
             className="border border-gray-300 rounded-md px-4 py-2"
             value={hora}
@@ -114,8 +119,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Responsable en la Fundación</label>
+          <label className="font-semibold mb-1" htmlFor="responsable-visita">Responsable en la Fundación</label>
           <input
+            id="responsable-visita"
             type="text"
             placeholder="Nombre del cuidador o voluntario"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -126,8 +132,9 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
         </div>
 
         <div className="flex flex-col md:col-span-2">
-          <label className="font-semibold mb-1">Observaciones</label>
+          <label className="font-semibold mb-1" htmlFor="observaciones-visita">Observaciones</label>
           <input
+            id="observaciones-visita"
             type="text"
             placeholder="Notas u observaciones de la visita"
             className="border border-gray-300 rounded-md px-4 py-2"
@@ -151,7 +158,7 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
                 alt="Google"
                 className="w-5 h-5"
               />
-              Agendar en Google Calendar
+              {' '}Agendar en Google Calendar
             </button>
 
             <button
@@ -186,6 +193,23 @@ const EtapaVisita = ({ proceso, setProceso, procesoId, editable = true }) => {
       )}
     </div>
   );
+};
+
+EtapaVisita.propTypes = {
+  procesoId: PropTypes.string.isRequired,
+  setProceso: PropTypes.func.isRequired,
+  editable: PropTypes.bool,
+  proceso: PropTypes.shape({
+    entrevista: PropTypes.shape({
+      aprobada: PropTypes.bool,
+    }),
+    visita: PropTypes.shape({
+      fechaVisita: PropTypes.string,
+      horaVisita: PropTypes.string,
+      responsable: PropTypes.string,
+      observacionesVisita: PropTypes.string,
+    }),
+  }).isRequired,
 };
 
 export default EtapaVisita;

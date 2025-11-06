@@ -1,4 +1,14 @@
-import React, { createContext, useContext, useCallback, useMemo, useRef, useState, useEffect } from "react";
+// frontend/src/components/ui/ToastProvider.jsx
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
+import PropTypes from "prop-types";
 import { FiCheckCircle, FiXCircle, FiInfo, FiAlertTriangle, FiX } from "react-icons/fi";
 
 const ToastContext = createContext(null);
@@ -8,17 +18,19 @@ const makeId = () => `${Date.now()}-${_id++}`;
 
 export const ToastProvider = ({
   children,
-  position = "bottom-left", // bottom-left | bottom-right | top-right | top-left (por si después lo quieres mover)
-  max = 5,                   // máximo de toasts apilados
+  position = "bottom-left", // bottom-left | bottom-right | top-right | top-left
+  max = 5, // máximo de toasts apilados
 }) => {
   const [toasts, setToasts] = useState([]);
   const timersRef = useRef({});
-  const remainingRef = useRef({}); // para pausar/reanudar en hover
+  const remainingRef = useRef({}); // para pausar/reanudar en hover/teclado
 
   // limpiar timers al desmontar
   useEffect(() => {
     return () => {
-      Object.values(timersRef.current).forEach(clearTimeout);
+      for (const t of Object.values(timersRef.current)) {
+        clearTimeout(t);
+      }
       timersRef.current = {};
       remainingRef.current = {};
     };
@@ -33,50 +45,58 @@ export const ToastProvider = ({
     delete remainingRef.current[id];
   }, []);
 
-  const startTimer = useCallback((toast) => {
-    const { id, duration } = toast;
-    if (!duration) return;
-    const startedAt = Date.now();
-    remainingRef.current[id] = { remaining: duration, startedAt };
+  const startTimer = useCallback(
+    (toast) => {
+      const { id, duration } = toast;
+      if (!duration) return;
+      const startedAt = Date.now();
+      remainingRef.current[id] = { remaining: duration, startedAt };
 
-    timersRef.current[id] = setTimeout(() => remove(id), duration);
-  }, [remove]);
+      timersRef.current[id] = setTimeout(() => remove(id), duration);
+    },
+    [remove]
+  );
 
-  const push = useCallback((payload) => {
-    const id = makeId();
-    const toast = {
-      id,
-      type: payload.type ?? "info",                // success | error | info | warning
-      title: payload.title ?? "",                  // opcional
-      message: payload.message ?? "",
-      duration: payload.duration ?? 4000,          // ms
-      action: payload.action ?? null,              // { label, onClick }
-    };
+  const push = useCallback(
+    (payload) => {
+      const id = makeId();
+      const toast = {
+        id,
+        type: payload.type ?? "info", // success | error | info | warning
+        title: payload.title ?? "",
+        message: payload.message ?? "",
+        duration: payload.duration ?? 4000, // ms
+        action: payload.action ?? null,
+      };
 
-    setToasts((ts) => {
-      const next = [...ts, toast];
-      // respeta límite máximo (quita el más antiguo visualmente)
-      return next.length >  max ? next.slice(next.length - max) : next;
-    });
+      setToasts((ts) => {
+        const next = [...ts, toast];
+        return next.length > max ? next.slice(next.length - max) : next;
+      });
 
-    startTimer(toast);
-  }, [max, startTimer]);
+      startTimer(toast);
+    },
+    [max, startTimer]
+  );
 
-  const api = useMemo(() => ({
-    push,
-    success: (message, opts = {}) => push({ type: "success", message, ...opts }),
-    error:   (message, opts = {}) => push({ type: "error",   message, ...opts }),
-    info:    (message, opts = {}) => push({ type: "info",    message, ...opts }),
-    warning: (message, opts = {}) => push({ type: "warning", message, ...opts }),
-  }), [push]);
+  const api = useMemo(
+    () => ({
+      push,
+      success: (message, opts = {}) => push({ type: "success", message, ...opts }),
+      error: (message, opts = {}) => push({ type: "error", message, ...opts }),
+      info: (message, opts = {}) => push({ type: "info", message, ...opts }),
+      warning: (message, opts = {}) => push({ type: "warning", message, ...opts }),
+    }),
+    [push]
+  );
 
   // clases por posición
   const posCls = useMemo(() => {
     const map = {
-      "bottom-left":  "bottom-4 left-4",
+      "bottom-left": "bottom-4 left-4",
       "bottom-right": "bottom-4 right-4",
-      "top-right":    "top-4 right-4",
-      "top-left":     "top-4 left-4",
+      "top-right": "top-4 right-4",
+      "top-left": "top-4 left-4",
     };
     return map[position] ?? map["bottom-left"];
   }, [position]);
@@ -91,7 +111,6 @@ export const ToastProvider = ({
             toast={t}
             onClose={() => remove(t.id)}
             onPause={() => {
-              // pausa en hover
               const timer = timersRef.current[t.id];
               if (timer) {
                 clearTimeout(timer);
@@ -103,7 +122,6 @@ export const ToastProvider = ({
               }
             }}
             onResume={() => {
-              // reanuda al salir del hover
               const rec = remainingRef.current[t.id];
               if (rec && rec.remaining > 0) {
                 rec.startedAt = Date.now();
@@ -115,6 +133,12 @@ export const ToastProvider = ({
       </div>
     </ToastContext.Provider>
   );
+};
+
+ToastProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+  position: PropTypes.oneOf(["bottom-left", "bottom-right", "top-right", "top-left"]),
+  max: PropTypes.number,
 };
 
 export const useToast = () => {
@@ -182,6 +206,9 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     <div
       role={sty.ariaRole}
       aria-live="polite"
+      tabIndex={0}
+      onFocus={onPause}
+      onBlur={onResume}
       onMouseEnter={onPause}
       onMouseLeave={onResume}
       className={[
@@ -193,7 +220,9 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     >
       <div className="p-4 pr-10 relative">
         <div className="text-sm leading-5 text-neutral-800 flex items-start gap-3">
-          <span className={`mt-[2px] inline-flex h-7 w-7 items-center justify-center rounded-full ${sty.iconWrap}`}>
+          <span
+            className={`mt-[2px] inline-flex h-7 w-7 items-center justify-center rounded-full ${sty.iconWrap}`}
+          >
             <Icon className="text-lg" />
           </span>
           <div className="flex-1">
@@ -228,3 +257,22 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     </div>
   );
 };
+
+Toast.propTypes = {
+  toast: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    type: PropTypes.oneOf(["success", "error", "info", "warning"]),
+    title: PropTypes.string,
+    message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+    duration: PropTypes.number,
+    action: PropTypes.shape({
+      label: PropTypes.string,
+      onClick: PropTypes.func,
+    }),
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onPause: PropTypes.func.isRequired,
+  onResume: PropTypes.func.isRequired,
+};
+
+export default ToastProvider;

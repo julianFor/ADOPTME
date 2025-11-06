@@ -1,4 +1,6 @@
+// src/components/Gestion/Mascotas/MascotaExternaFormModal.jsx
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Dialog } from "@headlessui/react";
 import { createMascota, updateMascota } from "../../../services/mascotaService";
 
@@ -13,7 +15,7 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
     origen: "externo",
     contactoExterno: { nombre: "", telefono: "", correo: "" },
     imagen: null,
-    disponible: true
+    disponible: true,
   });
 
   useEffect(() => {
@@ -29,10 +31,11 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
         contactoExterno: {
           nombre: initialData.contactoExterno?.nombre || "",
           telefono: initialData.contactoExterno?.telefono || "",
-          correo: initialData.contactoExterno?.correo || ""
+          correo: initialData.contactoExterno?.correo || "",
         },
         imagen: null,
-        disponible: typeof initialData.disponible === "boolean" ? initialData.disponible : true
+        disponible:
+          typeof initialData.disponible === "boolean" ? initialData.disponible : true,
       });
     } else {
       setFormData({
@@ -45,7 +48,7 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
         origen: "externo",
         contactoExterno: { nombre: "", telefono: "", correo: "" },
         imagen: null,
-        disponible: true
+        disponible: true,
       });
     }
   }, [initialData]);
@@ -53,12 +56,11 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Nombres anidados: contactoExterno.nombre, contactoExterno.telefono, contactoExterno.correo
     if (name.startsWith("contactoExterno.")) {
       const key = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
-        contactoExterno: { ...prev.contactoExterno, [key]: value }
+        contactoExterno: { ...prev.contactoExterno, [key]: value },
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -77,14 +79,14 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
       // Campos simples
       data.append("nombre", formData.nombre);
       data.append("especie", formData.especie);
-      data.append("tamano", formData.tamano); // <-- SIN ñ
+      data.append("tamano", formData.tamano); // sin ñ
       data.append("sexo", formData.sexo);
       data.append("estadoSalud", formData.estadoSalud);
       data.append("fechaNacimiento", formData.fechaNacimiento);
       data.append("origen", formData.origen || "externo");
       data.append("disponible", String(!!formData.disponible));
 
-      // Contacto externo (bracketed)
+      // Contacto externo
       data.append("contactoExterno[nombre]", formData.contactoExterno.nombre);
       data.append("contactoExterno[telefono]", formData.contactoExterno.telefono);
       data.append("contactoExterno[correo]", formData.contactoExterno.correo);
@@ -222,17 +224,29 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
             </div>
 
             {/* Imagen */}
-            <input type="file" accept="image/*" onChange={handleFileChange} className="input w-full" />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="input w-full"
+            />
 
             {/* Oculto: origen */}
             <input type="hidden" name="origen" value={formData.origen} />
 
             {/* Botones */}
             <div className="flex justify-end gap-4 pt-4">
-              <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-400 rounded-md">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-400 rounded-md"
+              >
                 Cancelar
               </button>
-              <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-md">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-purple-600 text-white rounded-md"
+              >
                 {initialData ? "Guardar Cambios" : "Crear Mascota"}
               </button>
             </div>
@@ -241,6 +255,33 @@ const MascotaExternaFormModal = ({ isOpen, onClose, onSubmit, initialData }) => 
       </div>
     </Dialog>
   );
+};
+
+MascotaExternaFormModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    _id: PropTypes.string,
+    nombre: PropTypes.string,
+    especie: PropTypes.string,
+    tamano: PropTypes.string,
+    tamaño: PropTypes.string, // por compatibilidad con datos antiguos
+    sexo: PropTypes.string,
+    estadoSalud: PropTypes.string,
+    fechaNacimiento: PropTypes.string,
+    origen: PropTypes.string,
+    disponible: PropTypes.bool,
+    contactoExterno: PropTypes.shape({
+      nombre: PropTypes.string,
+      telefono: PropTypes.string,
+      correo: PropTypes.string,
+    }),
+  }),
+};
+
+MascotaExternaFormModal.defaultProps = {
+  initialData: null,
 };
 
 export default MascotaExternaFormModal;
