@@ -1,4 +1,5 @@
 // src/components/necesidades/NecesidadCard.jsx
+import PropTypes from "prop-types";
 import { FaWhatsapp } from "react-icons/fa";
 import ProgressBar from "./ProgressBar";
 
@@ -10,7 +11,10 @@ const URG = {
 
 export default function NecesidadCard({ item }) {
   const img = item?.imagenPrincipal?.url || "/placeholder-catdog.jpg";
-  const pct = Math.min(100, Math.round((item.recibido / item.objetivo) * 100));
+  const objetivo = Number(item?.objetivo) || 0;
+  const recibido = Number(item?.recibido) || 0;
+  const pct =
+    objetivo > 0 ? Math.min(100, Math.round((recibido / objetivo) * 100)) : 0;
 
   return (
     <article
@@ -22,62 +26,58 @@ export default function NecesidadCard({ item }) {
       style={{ border: "1px solid #EFE9FD" }}
     >
       <div className="flex flex-col sm:flex-row">
-        {/* Imagen grande a la izquierda, esquinas muy redondeadas */}
+        {/* Imagen */}
         <div className="sm:w-[48%]">
           <img
             src={img}
-            alt={item.titulo}
+            alt={item?.titulo || "Necesidad"}
             className="w-full h-[260px] sm:h-full object-cover sm:rounded-l-[24px]"
             loading="lazy"
           />
         </div>
 
-        {/* Contenido a la derecha */}
+        {/* Contenido */}
         <div className="flex-1 p-5 sm:p-6">
-          {/* Título */}
           <h3 className="text-[22px] sm:text-[24px] font-semibold text-[#332D41] leading-tight">
-            {item.titulo}
+            {item?.titulo}
           </h3>
 
-          {/* Fecha */}
           <p className="mt-1 text-[13px] text-[#6B7280]">
-            Fecha Publicación: {formatFecha(item.fechaPublicacion)}
+            Fecha Publicación: {formatFecha(item?.fechaPublicacion)}
           </p>
 
-          {/* Chips */}
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium bg-[#EFE9FD] text-[#7C3AED]">
-              {capital(item.categoria)}
+              {capital(item?.categoria)}
             </span>
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium ${URG[item.urgencia] || URG.media}`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium ${
+                URG[item?.urgencia] || URG.media
+              }`}
             >
-              {capital(item.urgencia)}
+              {capital(item?.urgencia)}
             </span>
           </div>
 
-          {/* Descripción breve */}
-          {item.descripcionBreve && (
+          {item?.descripcionBreve && (
             <p className="mt-3 text-[14px] text-[#6B7280] leading-relaxed">
               {item.descripcionBreve}
             </p>
           )}
 
-          {/* Barra + texto “2 Unidades / 5 Unidades” */}
           <div className="mt-4">
             <ProgressBar value={pct} />
             <div className="mt-2 text-[14px] text-[#374151]">
-              <span className="font-medium">{item.recibido} Unidades</span>
+              <span className="font-medium">{recibido} Unidades</span>
               <span className="mx-1">/</span>
-              <span className="font-medium">{item.objetivo} Unidades</span>
+              <span className="font-medium">{objetivo} Unidades</span>
             </div>
           </div>
 
-          {/* CTA alineado a la derecha (WhatsApp + Donar) */}
           <div className="mt-4 flex justify-end">
             <a
               href={`https://wa.me/573024529227?text=Hola,%20quiero%20ayudar%20con:%20${encodeURIComponent(
-                item.titulo
+                item?.titulo || ""
               )}`}
               target="_blank"
               rel="noreferrer"
@@ -93,7 +93,7 @@ export default function NecesidadCard({ item }) {
               <span className="w-[28px] h-[28px] rounded-full bg-white/20 flex items-center justify-center">
                 <FaWhatsapp className="text-white text-lg" />
               </span>
-              Donar
+              {" "}Donar
             </a>
           </div>
         </div>
@@ -102,6 +102,28 @@ export default function NecesidadCard({ item }) {
   );
 }
 
+NecesidadCard.propTypes = {
+  item: PropTypes.shape({
+    titulo: PropTypes.string.isRequired,
+    descripcionBreve: PropTypes.string,
+    categoria: PropTypes.string,
+    urgencia: PropTypes.oneOf(["alta", "media", "baja"]),
+    fechaPublicacion: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.instanceOf(Date),
+    ]),
+    recibido: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+      .isRequired,
+    objetivo: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+      .isRequired,
+    imagenPrincipal: PropTypes.shape({
+      url: PropTypes.string,
+      secure_url: PropTypes.string,
+    }),
+  }).isRequired,
+};
+
+// utils locales
 function capital(s = "") {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }

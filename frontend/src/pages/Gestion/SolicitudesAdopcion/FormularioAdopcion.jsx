@@ -1,3 +1,4 @@
+// src/pages/Gestion/Adopciones/FormularioAdopcion.jsx
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { crearSolicitud } from "../../../services/solicitudAdopcionService";
@@ -5,7 +6,8 @@ import { useParams, useNavigate } from "react-router-dom";
 // 🔔 Toasts personalizados
 import { useToast } from "../../../components/ui/ToastProvider";
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// ✅ Set para check de tipos
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const FormularioAdopcion = () => {
@@ -14,13 +16,20 @@ const FormularioAdopcion = () => {
   const navigate = useNavigate();
   const { success, error, info } = useToast();
 
-  // --- Sanitizadores ---
-  const onlyDigits = (v) => (v || "").replace(/\D+/g, "");
+  // --- Sanitizadores (sin replace global) ---
+  const onlyDigits = (v) =>
+    Array.from((v || "")).filter((ch) => ch >= "0" && ch <= "9").join("");
+
+  // letras Unicode + espacios
   const onlyLettersSpaces = (v) =>
-    (v || "").replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]/g, "");
+    (v || "").match(/[\p{L}\s]/gu)?.join("") ?? "";
+
+  // letras, números, espacios y # - . ,
   const addressSafe = (v) =>
-    (v || "").replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-\.,]/g, "");
-  const textSafe = (v) => (v || "").replace(/[<>]/g, "");
+    (v || "").match(/[\p{L}\p{N}\s#\-,.]/gu)?.join("") ?? "";
+
+  // quita < y >
+  const textSafe = (v) => (v || "").replaceAll("<", "").replaceAll(">", "");
 
   const SANITIZE = {
     nombreCompleto: onlyLettersSpaces,
@@ -92,7 +101,7 @@ const FormularioAdopcion = () => {
       "End",
     ];
     if (allowed.includes(e.key)) return;
-    if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+    if (!/^\d$/.test(e.key)) e.preventDefault();
   };
   const handlePasteDigitsOnly = (e, field, maxLen) => {
     e.preventDefault();
@@ -108,7 +117,7 @@ const FormularioAdopcion = () => {
       setter(null);
       return;
     }
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       error("Solo se permiten imágenes JPG, PNG o WEBP.", { duration: 5000 });
       e.target.value = "";
       setter(null);
@@ -157,6 +166,16 @@ const FormularioAdopcion = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Verificación explícita de los 3 campos requeridos por el backend
+    const faltantes = ["aceptaVisitaVirtual", "compromisoCuidados", "aceptaContrato"].filter(
+      (k) => !form[k] || String(form[k]).trim() === ""
+    );
+    if (faltantes.length) {
+      info("Completa las preguntas de Compromiso y Responsabilidad.", { duration: 4500 });
+      return;
+    }
+
     if (!form.aceptaTerminos) {
       info("Debes aceptar los términos para continuar.", { duration: 4500 });
       return;
@@ -166,12 +185,13 @@ const FormularioAdopcion = () => {
     if (idMascota) data.append("mascota", idMascota);
     if (user?._id) data.append("adoptante", user._id);
 
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === "aceptaTerminos") return;
+    // ✅ for...of en lugar de forEach
+    for (const [key, value] of Object.entries(form)) {
+      if (key === "aceptaTerminos") continue;
       if (value !== null && value !== undefined && String(value).trim() !== "") {
         data.append(key, value);
       }
-    });
+    }
 
     if (documentoIdentidad) data.append("documentoIdentidad", documentoIdentidad);
     if (pruebaResidencia) data.append("pruebaResidencia", pruebaResidencia);
@@ -180,10 +200,9 @@ const FormularioAdopcion = () => {
       setEnviando(true);
       const response = await crearSolicitud(data);
       console.log(response);
-      success('Solicitud de Adopción Enviada Correctamente.', { duration: 4000 });
+      success("Solicitud de Adopción Enviada Correctamente.", { duration: 4000 });
       resetForm();
 
-      // 🟣 Redirección según rol (espera breve para que se vea el toast)
       setTimeout(() => {
         if (user?.role === "adoptante") {
           navigate("/dashboard/adoptante/mis-solicitudes");
@@ -213,19 +232,20 @@ const FormularioAdopcion = () => {
       className="max-w-5xl mt-5 mb-20 mx-auto p-6 bg-white rounded-lg shadow-md space-y-6"
     >
       <h2 className="text-2xl font-bold text-purple-600 text-center">
-        Formulario de Solicitud de Adopción <span className="inline-block"><img
-          src="/paw-title.svg"
-          alt="Huellita"
-          className=" h-7 sm:h-8 w-auto select-none"
-          draggable="false"
-        /></span>
+        Formulario de Solicitud de Adopción{" "}
+        <span className="inline-block">
+          <img
+            src="/paw-title.svg"
+            alt="Huellita"
+            className=" h-7 sm:h-8 w-auto select-none"
+            draggable="false"
+          />
+        </span>
       </h2>
 
       {/* Información Personal */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          📌 Información Personal
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Información Personal</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
             name="nombreCompleto"
@@ -234,7 +254,7 @@ const FormularioAdopcion = () => {
             onChange={handleChange}
             required
             className="input"
-            pattern="^[a-zA-ZÀ-ÿ\s]+$"
+            pattern="^[\p{L}\s]+$"
             title="Solo se permiten letras y espacios"
             maxLength={80}
             autoComplete="name"
@@ -250,7 +270,7 @@ const FormularioAdopcion = () => {
             onPaste={(e) => handlePasteDigitsOnly(e, "cedula", 15)}
             required
             className="input"
-            pattern="^[0-9]+$"
+            pattern="^\d+$"
             inputMode="numeric"
             title="Solo se permiten números"
             maxLength={15}
@@ -277,19 +297,14 @@ const FormularioAdopcion = () => {
             onPaste={(e) => handlePasteDigitsOnly(e, "telefono", 15)}
             required
             className="input"
-            pattern="^[0-9]+$"
+            pattern="^\d+$"
             inputMode="tel"
             title="Solo se permiten números"
             maxLength={15}
             autoComplete="tel"
           />
 
-          <input
-            name="correo"
-            value={form.correo}
-            readOnly
-            className="input bg-gray-100"
-          />
+          <input name="correo" value={form.correo} readOnly className="input bg-gray-100" />
 
           <input
             name="direccion"
@@ -298,7 +313,7 @@ const FormularioAdopcion = () => {
             onChange={handleChange}
             required
             className="input"
-            pattern="^[a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-\.,]+$"
+            pattern="^[\p{L}\p{N}\s#\-,.]+$"
             title="Solo letras, números y # - . ,"
             maxLength={120}
             autoComplete="address-line1"
@@ -311,7 +326,7 @@ const FormularioAdopcion = () => {
             onChange={handleChange}
             required
             className="input"
-            pattern="^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]+$"
+            pattern="^[\p{L}\s]+$"
             title="Solo se permiten letras y espacios"
             maxLength={80}
             autoComplete="address-level2"
@@ -324,7 +339,7 @@ const FormularioAdopcion = () => {
             onChange={handleChange}
             required
             className="input"
-            pattern="^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]+$"
+            pattern="^[\p{L}\s]+$"
             title="Solo se permiten letras y espacios"
             maxLength={80}
             autoComplete="address-level2"
@@ -334,9 +349,7 @@ const FormularioAdopcion = () => {
 
       {/* Información del Hogar */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          📌 Información sobre el Hogar
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Información sobre el Hogar</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { name: "tipoVivienda", label: "Tipo de vivienda", options: ["casa", "apartamento", "otro"] },
@@ -367,9 +380,7 @@ const FormularioAdopcion = () => {
 
       {/* Adopción */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          📌 Información sobre la Adopción
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Información sobre la Adopción</h3>
         <div className="grid grid-cols-1 md-grid-cols-2 md:grid-cols-2 gap-4">
           <textarea
             name="motivoAdopcion"
@@ -420,7 +431,7 @@ const FormularioAdopcion = () => {
             onChange={handleChange}
             required
             className="input"
-            pattern="^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]+$"
+            pattern="^[\p{L}\s]+$"
             title="Solo se permiten letras y espacios"
             maxLength={80}
           />
@@ -436,11 +447,9 @@ const FormularioAdopcion = () => {
         </div>
       </section>
 
-      {/* Compromisos */}
+      {/* 🔁 Compromiso y Responsabilidad (REQUERIDO por backend) */}
       <section>
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          📌 Compromiso y Responsabilidad
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Compromiso y Responsabilidad</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { name: "aceptaVisitaVirtual", label: "¿Aceptas visita virtual?" },
@@ -466,7 +475,7 @@ const FormularioAdopcion = () => {
       {/* Archivos (solo imágenes) */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
-          Documento de identidad:
+          <span>Documento de identidad:</span>{" "}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -480,7 +489,7 @@ const FormularioAdopcion = () => {
         </label>
 
         <label className="block">
-          Prueba de residencia:
+          <span>Prueba de residencia:</span>{" "}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -514,8 +523,8 @@ const FormularioAdopcion = () => {
               "Visita A La Fundación – El Adoptante Conocerá A La Mascota En Persona.",
               "Firma Del Compromiso – Se Firmará El Acuerdo De Adopción.",
               "Entrega De La Mascota – La Mascota Llegará A Su Nuevo Hogar.",
-            ].map((paso, index) => (
-              <li key={index} className="flex items-start gap-2">
+            ].map((paso) => (
+              <li key={paso} className="flex items-start gap-2">
                 <span className="text-purple-500 mt-1">✔️</span>
                 <span>{paso}</span>
               </li>
@@ -530,9 +539,7 @@ const FormularioAdopcion = () => {
             checked={form.aceptaTerminos}
             onChange={handleChange}
           />
-          <span>
-            Declaro que la información es verdadera y acepto el proceso.
-          </span>
+          <span>Declaro que la información es verdadera y acepto el proceso.</span>
         </section>
 
         {/* Botones */}
