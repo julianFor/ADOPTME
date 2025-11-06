@@ -1,5 +1,6 @@
 // src/pages/Gestion/Dashboards/AdoptanteHome.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { FiFilePlus } from 'react-icons/fi';
 import { FaRegClipboard, FaPaw } from 'react-icons/fa';
@@ -142,6 +143,13 @@ function StatCard({ color = 'purple', icon, title, value }) {
   );
 }
 
+StatCard.propTypes = {
+  color: PropTypes.oneOf(['emerald', 'sky', 'fuchsia', 'purple']),
+  icon: PropTypes.node.isRequired,
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
+
 /* ---------- Cards ---------- */
 
 function ProcesosEnCurso({ rows = [], loading = false }) {
@@ -156,7 +164,8 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
     return `${dd}/${mm}/${yyyy}`;
   };
 
-  const data = rows?.length ? rows : (loading ? [] : []);
+  // S3923: evitar condición que devuelve lo mismo en ambas ramas
+  const data = rows?.length ? rows : [];
   const empty = !loading && !rows?.length;
 
   const goList = () => navigate('/dashboard/adoptante/mis-procesos');
@@ -230,6 +239,11 @@ function ProcesosEnCurso({ rows = [], loading = false }) {
   );
 }
 
+ProcesosEnCurso.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.object),
+  loading: PropTypes.bool,
+};
+
 function MisSolicitudesPublicacion({ rows = [], loading = false }) {
   const navigate = useNavigate();
 
@@ -246,7 +260,8 @@ function MisSolicitudesPublicacion({ rows = [], loading = false }) {
     return 'text-amber-600'; // pendiente u otros
   };
 
-  const data = rows?.length ? rows : (loading ? [] : []);
+  // S3923: evitar condición que devuelve lo mismo en ambas ramas
+  const data = rows?.length ? rows : [];
   const empty = !loading && !rows?.length;
 
   const goList = () => navigate('/dashboard/adoptante/mis-solicitudes-publicacion');
@@ -312,3 +327,8 @@ function MisSolicitudesPublicacion({ rows = [], loading = false }) {
     </div>
   );
 }
+
+MisSolicitudesPublicacion.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.object),
+  loading: PropTypes.bool,
+};
