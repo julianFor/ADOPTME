@@ -29,7 +29,7 @@ function PetCarousel() {
   };
 
   const retroceder = () => {
-    if (start - visible >= 0) {
+    if (start > 0) {
       setStart(start - visible);
     }
   };
@@ -37,8 +37,11 @@ function PetCarousel() {
   const CLOUDINARY_PLACEHOLDER = 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
 
   const obtenerImagen = (imagenes) => {
-    if (Array.isArray(imagenes) && imagenes.length > 0 && typeof imagenes[0] === 'string' && imagenes[0].startsWith('http')) {
-      return imagenes[0];
+    if (Array.isArray(imagenes) && imagenes.length > 0) {
+      const primera = imagenes[0];
+      if (typeof primera === 'string' && primera.startsWith('http')) {
+        return primera;
+      }
     }
 
     if (typeof imagenes === 'string' && imagenes.startsWith('http')) {
@@ -55,7 +58,7 @@ function PetCarousel() {
         <span className="inline-block ml-2">
           <img
             src="/paw-title.svg"
-            alt=""
+            alt="Huella decorativa"
             className="h-7 sm:h-8 w-auto select-none"
             draggable="false"
           />
@@ -67,6 +70,7 @@ function PetCarousel() {
         <button
           onClick={retroceder}
           className="text-2xl bg-gray-300 p-3 rounded-full transition duration-300 hover:bg-purple-400 hover:text-white"
+          aria-label="Retroceder mascotas"
         >
           <FaChevronLeft />
         </button>
@@ -85,7 +89,7 @@ function PetCarousel() {
                 sexo={mascota.sexo}
                 descripcion={mascota.descripcion}
                 imagen={obtenerImagen(mascota.imagenes)}
-                redirigir={true}
+                redirigir
                 onAdoptar={() => navigate('/adoptar')}
               />
             ))}
@@ -96,6 +100,7 @@ function PetCarousel() {
         <button
           onClick={avanzar}
           className="text-2xl bg-gray-300 p-3 rounded-full transition duration-300 hover:bg-purple-400 hover:text-white"
+          aria-label="Avanzar mascotas"
         >
           <FaChevronRight />
         </button>
@@ -103,33 +108,43 @@ function PetCarousel() {
 
       {/* Paginación inferior */}
       <div className="flex justify-center mt-4 gap-2">
-        {Array.from({ length: Math.ceil(mascotas.length / visible) }).map((_, i) => (
-          <span
-            key={`page-${i}`} // ✅ Clave única
-            className={`w-4 h-4 rounded-full transition ${
-              i === Math.floor(start / visible) ? 'bg-purple-400' : 'bg-gray-300'
-            }`}
-          />
-        ))}
+        {mascotas.map((mascota, index) => {
+          const totalPaginas = Math.ceil(mascotas.length / visible);
+          if (index >= totalPaginas) return null; // evita render innecesario
+
+          const pagina = index;
+          const esActiva = pagina === Math.floor(start / visible);
+
+          return (
+            <span
+              key={mascota._id || `page-${pagina}`} // ✅ Evita usar índice directamente
+              className={`w-4 h-4 rounded-full transition ${
+                esActiva ? 'bg-purple-400' : 'bg-gray-300'
+              }`}
+            />
+          );
+        })}
       </div>
     </section>
   );
 }
 
-// Función para calcular edad a partir de la fecha de nacimiento
+// ✅ Evita condiciones negadas y mejora legibilidad
 function calcularEdad(fechaNacimiento) {
-  if (fechaNacimiento) {
-    const nacimiento = new Date(fechaNacimiento);
-    const hoy = new Date();
-    const años = hoy.getFullYear() - nacimiento.getFullYear();
-    const meses = hoy.getMonth() - nacimiento.getMonth();
-    if (años > 0) {
-      return `${años} año${años !== 1 ? 's' : ''}`;
-    }
-    return `${Math.max(meses, 1)} mes${meses !== 1 ? 'es' : ''}`;
-  } else {
+  if (!fechaNacimiento) {
     return 'N/A';
   }
+
+  const nacimiento = new Date(fechaNacimiento);
+  const hoy = new Date();
+  const años = hoy.getFullYear() - nacimiento.getFullYear();
+  const meses = hoy.getMonth() - nacimiento.getMonth();
+
+  if (años > 0) {
+    return `${años} año${años !== 1 ? 's' : ''}`;
+  }
+
+  return `${Math.max(meses, 1)} mes${meses !== 1 ? 'es' : ''}`;
 }
 
 export default PetCarousel;

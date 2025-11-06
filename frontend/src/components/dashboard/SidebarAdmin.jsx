@@ -1,12 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FiHome, FiUsers, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { BiBone, BiHeart, BiClipboard, BiDollarCircle, BiUserCheck } from 'react-icons/bi';
 import { UserContext } from '../../context/UserContext';
 
 const SidebarAdmin = () => {
   const { user } = useContext(UserContext);
-  const location = useLocation();
 
   const [collapsed, setCollapsed] = useState(false);
   const [openMascotas, setOpenMascotas] = useState(false);

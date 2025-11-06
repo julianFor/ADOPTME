@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 function DonationProgress({ total = 0, meta = 1 }) {
   const porcentaje = Math.min((total / meta) * 100, 100);
   const metaAlcanzada = total >= meta;
@@ -33,11 +35,17 @@ function DonationProgress({ total = 0, meta = 1 }) {
 
       {metaAlcanzada && (
         <div className="mt-4 text-green-700 font-semibold text-lg animate-pulse">
-           ¡Meta alcanzada! Gracias por tu ayuda ❤️
+          ¡Meta alcanzada! Gracias por tu ayuda ❤️
         </div>
       )}
     </div>
   );
 }
+
+// ✅ Validación de props
+DonationProgress.propTypes = {
+  total: PropTypes.number.isRequired,
+  meta: PropTypes.number.isRequired,
+};
 
 export default DonationProgress;

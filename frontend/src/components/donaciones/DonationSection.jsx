@@ -16,11 +16,11 @@ function DonationSection() {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.monto) {
+        if (data?.monto) {
           setMeta(data);
 
           // Obtener donaciones asociadas a esa meta
-          fetch(`http://localhost:3000/api/donaciones/${data._id}`, {
+          fetch(`http://localhost:3000/api/donaciones/${data?._id}`, {
             headers: {
               "Content-Type": "application/json",
               "x-access-token": localStorage.getItem("token"),
@@ -28,7 +28,9 @@ function DonationSection() {
           })
             .then((res) => res.json())
             .then((dons) => setDonaciones(dons))
-            .catch((err) => console.error("❌ Error al cargar donaciones:", err));
+            .catch((err) =>
+              console.error("❌ Error al cargar donaciones:", err)
+            );
         } else {
           console.warn("⚠️ No hay meta activa.");
         }
@@ -51,7 +53,7 @@ function DonationSection() {
     })
       .then((res) => res.json())
       .then((nuevaDonacion) => {
-        if (nuevaDonacion && nuevaDonacion._id) {
+        if (nuevaDonacion?._id) {
           setDonaciones((prev) => [...prev, nuevaDonacion]);
         } else {
           alert("❌ Error al guardar la donación.");
@@ -71,14 +73,14 @@ function DonationSection() {
       <div
         className="
           grid grid-cols-1
-          lg:grid-cols-[auto_auto]   /* 👈 columnas del ancho del contenido */
+          lg:grid-cols-[auto_auto]
           gap-y-8 lg:gap-y-10
-          gap-x-4 lg:gap-x-6         /* separación real controlada */
+          gap-x-4 lg:gap-x-6
           items-start
-          justify-center             /* centro el conjunto */
+          justify-center
         "
       >
-        {/* Columna izquierda: tarjeta PayPal + progreso (ESCALA y POSICIÓN intactas) */}
+        {/* Columna izquierda: tarjeta PayPal + progreso */}
         <div className="flex flex-col items-center lg:items-start">
           <div className="inline-block origin-top lg:scale-[.88] md:scale-[.92] sm:scale-100">
             <div className="w-[460px] max-w-full">
@@ -86,14 +88,14 @@ function DonationSection() {
             </div>
           </div>
 
-          {meta !== null ? (
+          {meta ? (
             <div className="mt-3 inline-block origin-top lg:scale-[.88] md:scale-[.92] sm:scale-100 w-[460px] max-w-full">
-              {meta.descripcion && (
+              {meta?.descripcion && (
                 <p className="italic text-gray-700 mb-2 text-center">
                   {meta.descripcion}
                 </p>
               )}
-              <DonationProgress total={total} meta={meta.monto} />
+              <DonationProgress total={total} meta={meta?.monto} />
             </div>
           ) : (
             <p className="mt-6 text-sm text-orange-500 font-medium">
@@ -102,7 +104,7 @@ function DonationSection() {
           )}
         </div>
 
-        {/* Columna derecha: ilustración (sin márgenes extra) */}
+        {/* Columna derecha: ilustración */}
         <div className="hidden lg:block">
           <img
             src="/donar-illustration.svg"

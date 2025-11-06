@@ -1,13 +1,12 @@
 // src/components/dashboard/SidebarAdoptante.jsx
 import React, { useState, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FiHome, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { BiUserCheck } from 'react-icons/bi';
 import { UserContext } from '../../context/UserContext';
 
 const SidebarAdoptante = () => {
   const { user } = useContext(UserContext);
-  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [openMiActividad, setOpenMiActividad] = useState(true);
 
@@ -41,7 +40,6 @@ const SidebarAdoptante = () => {
 
       {/* Menú */}
       <nav className="mt-2">
-        {/* 🔹 Dashboard (nuevo) */}
         <Link
           to="/dashboard/adoptante"
           className="flex items-center gap-3 px-4 py-2 hover:bg-purple-50 text-gray-800"

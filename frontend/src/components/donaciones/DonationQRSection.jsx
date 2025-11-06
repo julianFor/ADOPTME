@@ -3,7 +3,7 @@ export default function DonationQRSection() {
     <section className="relative mt-14 mb-10 sm:mt-16">
       {/* Título */}
       <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-purple-600 flex items-center justify-center gap-2">
-        Apoyanos con tu Donacion
+        Apóyanos con tu Donación{' '}
         <img
           src="/paw-title.svg"
           alt=""
@@ -24,7 +24,7 @@ export default function DonationQRSection() {
         <img
           src="/cat-balloons.svg"
           alt=""
-          className="hidden md:block absolute -right-[120px] lg:-right-[160px] top-1/2 -translate-y-1/2 w-[260px] lg:w-[300px]  select-none pointer-events-none"
+          className="hidden md:block absolute -right-[120px] lg:-right-[160px] top-1/2 -translate-y-1/2 w-[260px] lg:w-[300px] select-none pointer-events-none"
           draggable="false"
         />
 
@@ -32,9 +32,9 @@ export default function DonationQRSection() {
         <div
           className="
             grid grid-cols-1
-            sm:grid-cols-[min-content_min-content]   /* columnas del ancho del contenido */
+            sm:grid-cols-[min-content_min-content]
             justify-center
-            gap-5 sm:gap-6                            /* separación pequeña entre tarjetas */
+            gap-5 sm:gap-6
             justify-items-center
           "
         >

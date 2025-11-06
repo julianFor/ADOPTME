@@ -1,11 +1,10 @@
-
 // server.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 // Configuración de ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,7 +53,7 @@ const routes = [
   { path: './routes/solicitudPublicacionRoutes.js', endpoint: '/api/publicaciones' },
   { path: './routes/notificacionRoutes.js', endpoint: '/api/notificaciones' },
   { path: './routes/donationRoutes.js', endpoint: '/api/donaciones' },
-  { path: './routes/donationGoalRoutes.js', endpoint: '/api/donation-goals', endpoint: '/api/metas' },
+  { path: './routes/donationGoalRoutes.js', endpoint: '/api/metas' },
   { path: './routes/donationsProductRoutes.js', endpoint: '/api/donations-products' },
   { path: './routes/paypalRoutes.js', endpoint: '/api/paypal' },
   { path: './routes/necesidadRoutes.js', endpoint: '/api/necesidades' },
@@ -65,7 +64,7 @@ const routes = [
 for (const route of routes) {
   try {
     const routeModule = await import(route.path);
-    if (routeModule && routeModule.default) {
+    if (routeModule?.default) {
       app.use(route.endpoint, routeModule.default);
       console.log(`✓ Ruta ${route.endpoint} cargada correctamente`);
     }
