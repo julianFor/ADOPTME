@@ -105,7 +105,7 @@ const FormularioAdopcion = () => {
   };
   const handlePasteDigitsOnly = (e, field, maxLen) => {
     e.preventDefault();
-    const pasted = (e.clipboardData.getData("text") || "").replace(/\D+/g, "");
+    const pasted = (e.clipboardData.getData("text") || "").replaceAll(/\D+/g, "");
     const next = maxLen ? pasted.slice(0, maxLen) : pasted;
     setForm((prev) => ({ ...prev, [field]: next }));
   };

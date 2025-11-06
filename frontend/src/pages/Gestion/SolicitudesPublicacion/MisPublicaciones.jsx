@@ -19,9 +19,9 @@ function calcularEdad(fechaNacimiento) {
   if (años <= 0) {
     const totalMeses = h.getMonth() - n.getMonth() + 12 * (h.getFullYear() - n.getFullYear());
     const m = Math.max(totalMeses, 1);
-    return `${m} mes${m !== 1 ? 'es' : ''}`;
+    return `${m} mes${m === 1 ? '' : 'es'}`;
   }
-  return `${años} año${años !== 1 ? 's' : ''}`;
+  return `${años} año${años === 1 ? '' : 's'}`;
 }
 
 /* ===== Helpers Cloudinary ===== */
@@ -105,34 +105,38 @@ const MisPublicaciones = () => {
         Mis Publicaciones
       </h2>
 
-      {loading ? (
-        <p className="text-center">Cargando...</p>
-      ) : mascotas.length === 0 ? (
-        <p className="text-center text-gray-500">No has publicado ninguna mascota todavía.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 justify-center">
-          {mascotas.map((mascota) => {
-            if (!mascota || typeof mascota !== 'object' || !mascota.nombre || typeof mascota.sexo !== 'string') {
-              console.warn('Mascota inválida detectada:', mascota);
-              return null;
-            }
+      {(() => {
+        if (loading) {
+          return <p className="text-center">Cargando...</p>;
+        }
+        if (mascotas.length === 0) {
+          return <p className="text-center text-gray-500">No has publicado ninguna mascota todavía.</p>;
+        }
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 justify-center">
+            {mascotas.map((mascota) => {
+              if (!mascota || typeof mascota !== 'object' || !mascota.nombre || typeof mascota.sexo !== 'string') {
+                console.warn('Mascota inválida detectada:', mascota);
+                return null;
+              }
 
-            const imgUrl = pickFirstImageUrl(mascota.imagenes) || PLACEHOLDER;
+              const imgUrl = pickFirstImageUrl(mascota.imagenes) || PLACEHOLDER;
 
-            return (
-              <PetCard
-                key={mascota._id}
-                nombre={mascota.nombre}
-                sexo={mascota.sexo}
-                edad={calcularEdad(mascota.fechaNacimiento)}
-                descripcion={mascota.descripcion || 'Sin descripción.'}
-                imagen={imgUrl}
-                redirigir={() => navigate(`/mascotas/${mascota._id}`)}
-              />
-            );
-          })}
-        </div>
-      )}
+              return (
+                <PetCard
+                  key={mascota._id}
+                  nombre={mascota.nombre}
+                  sexo={mascota.sexo}
+                  edad={calcularEdad(mascota.fechaNacimiento)}
+                  descripcion={mascota.descripcion || 'Sin descripción.'}
+                  imagen={imgUrl}
+                  redirigir={() => navigate(`/mascotas/${mascota._id}`)}
+                />
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { getAllMascotas } from '../../services/mascotaService';
 import PetCard from '../../components/Home/PetCard';
@@ -23,34 +24,43 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
     fetchRelacionadas();
   }, [origen, mascotaId]);
 
-  // Función para obtener la imagen principal
+  // ✅ Condiciones positivas (eliminado uso de negaciones innecesarias)
   const getImagenPrincipal = (imagenes) => {
-    if (!imagenes) return 'https://via.placeholder.com/600x400?text=AdoptMe';
-    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
-    if (!primera) return 'https://via.placeholder.com/600x400?text=AdoptMe';
-    if (typeof primera === 'string' && primera.startsWith('http')) return primera;
+    if (imagenes && Array.isArray(imagenes) && imagenes[0]) {
+      const primera = imagenes[0];
+      if (typeof primera === 'string' && primera.startsWith('http')) {
+        return primera;
+      }
+    }
     return 'https://via.placeholder.com/600x400?text=AdoptMe';
   };
 
   if (mascotas.length === 0) return null;
 
   return (
-    <div className="mt-20 mb-16 px-5 ">
+    <div className="mt-20 mb-16 px-5">
       <h3 className="text-2xl md:text-3xl font-bold text-center text-purple-600 mb-10">
-        Conoce a más peluditos <span className="inline-block"><img
-          src="/paw-title.svg"
-          alt="Huellita"
-          className="h-7 sm:h-8 w-auto select-none"
-          draggable="false"
-        /></span>
+        Conoce a más peluditos{' '}
+        <span className="inline-block">
+          <img
+            src="/paw-title.svg"
+            alt="Huellita"
+            className="h-7 sm:h-8 w-auto select-none"
+            draggable="false"
+          />
+        </span>
       </h3>
 
       <div className="flex flex-wrap justify-center gap-6">
         {mascotas.map((m) => (
+          // ✅ Accesibilidad agregada: role, tabIndex, y evento de teclado
           <div
             key={m._id}
+            role="button"
+            tabIndex={0}
             onClick={() => navigate(`/mascotas/${m._id}`)}
-            className="cursor-pointer"
+            onKeyDown={(e) => e.key === 'Enter' && navigate(`/mascotas/${m._id}`)}
+            className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-xl"
           >
             <PetCard
               nombre={m.nombre}
@@ -66,22 +76,32 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
   );
 };
 
+// ✅ Condiciones positivas y código limpio
 function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return "N/A";
+  if (!fechaNacimiento) return 'N/A';
   const nacimiento = new Date(fechaNacimiento);
   const hoy = new Date();
   let años = hoy.getFullYear() - nacimiento.getFullYear();
   const m = hoy.getMonth() - nacimiento.getMonth();
+
   if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) años--;
-  if (años <= 0) {
-    const meses = Math.max(
-      1,
-      (hoy.getMonth() + 12 * hoy.getFullYear()) -
-      (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
-    );
-    return `${meses} mes${meses !== 1 ? "es" : ""}`;
+
+  if (años > 0) {
+    return `${años} año${años !== 1 ? 's' : ''}`;
   }
-  return `${años} año${años !== 1 ? "s" : ""}`;
+
+  const meses = Math.max(
+    1,
+    (hoy.getMonth() + 12 * hoy.getFullYear()) -
+      (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
+  );
+  return `${meses} mes${meses !== 1 ? 'es' : ''}`;
 }
+
+// ✅ Validación de props añadida (errores 1 y 2 corregidos)
+PeluditosRelacionados.propTypes = {
+  origen: PropTypes.string.isRequired,
+  mascotaId: PropTypes.string.isRequired,
+};
 
 export default PeluditosRelacionados;

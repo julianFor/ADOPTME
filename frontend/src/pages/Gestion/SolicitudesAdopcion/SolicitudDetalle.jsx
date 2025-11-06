@@ -5,8 +5,6 @@ import {
   rechazarSolicitud
 } from '../../../services/solicitudAdopcionService';
 import { crearProceso } from '../../../services/procesoService';
-
-// ✅ importar hook de toasts
 import { useToast } from '../../../components/ui/ToastProvider';
 
 /** Helper de respaldo SOLO para registros viejos (string/public_id).
@@ -17,17 +15,14 @@ const getCloudinaryAssetUrl = (asset) => {
 
   const RAW_EXT = /\.(pdf|docx?|xlsx?|pptx?|txt|csv|zip|rar)$/i;
 
-  // 1) Listas → primero
   if (Array.isArray(asset)) return getCloudinaryAssetUrl(asset[0]);
 
-  // 2) Si ya es URL absoluta (legacy): devuélvela tal cual (no normalizamos)
   if (typeof asset === "string" && /^https?:\/\//i.test(asset)) {
     return asset;
   }
 
   const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
-  // 3) Objeto SIN secure_url/url (muy raro)
   if (typeof asset === "object" && asset !== null) {
     const { public_id = "", resource_type, format } = asset;
     if (!cloud || !public_id) return "";
@@ -36,12 +31,10 @@ const getCloudinaryAssetUrl = (asset) => {
     const isRawFmt = /^(pdf|docx?|xlsx?|pptx?|txt|csv|zip|rar)$/i.test(fmt);
     const rt = isRawFmt ? "raw" : (resource_type || "image");
 
-    // Para raw NO añadimos .format
     const suffix = rt === "raw" ? "" : (fmt ? `.${fmt}` : "");
     return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
   }
 
-  // 4) public_id string
   if (typeof asset === "string") {
     if (!cloud) return `/uploads/${asset}`;
     const rt = RAW_EXT.test(asset) ? "raw" : "image";
@@ -51,13 +44,17 @@ const getCloudinaryAssetUrl = (asset) => {
   return "";
 };
 
+/** Helper para obtener URL de documentos de manera más legible */
+const getDocumentUrl = (doc) => {
+  if (doc && typeof doc === 'object' && doc.secure_url) return doc.secure_url;
+  return getCloudinaryAssetUrl(doc);
+};
+
 const SolicitudDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [solicitud, setSolicitud] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // ✅ usar toasts
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -65,9 +62,8 @@ const SolicitudDetalle = () => {
       try {
         const response = await getSolicitudById(id);
         setSolicitud(response);
-      } catch (error) {
-        console.error('Error al cargar solicitud:', error);
-        // (No se muestran toasts aquí para respetar "solo cambiar alerts")
+      } catch (error_) {
+        console.error('Error al cargar solicitud:', error_);
       } finally {
         setLoading(false);
       }
@@ -78,12 +74,10 @@ const SolicitudDetalle = () => {
   const handleAprobar = async () => {
     try {
       await crearProceso(solicitud._id);
-      // alert('Solicitud aprobada y proceso de adopción creado.');
       success('Solicitud aprobada y proceso de adopción creado.', { title: 'Aprobada' });
       navigate('/dashboard/admin/solicitudes-adopcion');
-    } catch (errorObj) {
-      console.error('Error al aprobar solicitud:', errorObj);
-      // alert('No se pudo aprobar la solicitud.');
+    } catch (error_) {
+      console.error('Error al aprobar solicitud:', error_);
       error('No se pudo aprobar la solicitud.', { title: 'Error' });
     }
   };
@@ -91,12 +85,10 @@ const SolicitudDetalle = () => {
   const handleRechazar = async () => {
     try {
       await rechazarSolicitud(solicitud._id);
-      // alert('Solicitud rechazada.');
       success('Solicitud rechazada.', { title: 'Rechazada' });
       navigate('/dashboard/admin/solicitudes-adopcion');
-    } catch (errorObj) {
-      console.error('Error al rechazar solicitud:', errorObj);
-      // alert('No se pudo rechazar la solicitud.');
+    } catch (error_) {
+      console.error('Error al rechazar solicitud:', error_);
       error('No se pudo rechazar la solicitud.', { title: 'Error' });
     }
   };
@@ -104,16 +96,8 @@ const SolicitudDetalle = () => {
   if (loading) return <p className="text-center mt-10">Cargando solicitud...</p>;
   if (!solicitud) return <p className="text-center mt-10">Solicitud no encontrada</p>;
 
-  // 1) Preferimos secure_url (tal cual viene); 2) fallback a helper legacy
-  const urlDocId =
-    (solicitud.documentoIdentidad && typeof solicitud.documentoIdentidad === 'object' && solicitud.documentoIdentidad.secure_url)
-      ? solicitud.documentoIdentidad.secure_url
-      : getCloudinaryAssetUrl(solicitud.documentoIdentidad);
-
-  const urlResidencia =
-    (solicitud.pruebaResidencia && typeof solicitud.pruebaResidencia === 'object' && solicitud.pruebaResidencia.secure_url)
-      ? solicitud.pruebaResidencia.secure_url
-      : getCloudinaryAssetUrl(solicitud.pruebaResidencia);
+  const urlDocId = getDocumentUrl(solicitud.documentoIdentidad);
+  const urlResidencia = getDocumentUrl(solicitud.pruebaResidencia);
 
   return (
     <div className="max-w-5xl ml-10 mx-auto p-6 bg-white rounded-xl shadow-lg">
@@ -149,7 +133,7 @@ const SolicitudDetalle = () => {
       <div className="mt-8 flex gap-4 flex-wrap">
         {urlDocId && (
           <a
-            href={urlDocId} // ← usamos la URL EXACTA de Cloudinary si existe
+            href={urlDocId}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import PeluditosRelacionados from './PeluditosRelacionados';
 
@@ -115,9 +116,24 @@ function calcularEdad(fechaNacimiento) {
       (hoy.getMonth() + 12 * hoy.getFullYear()) -
       (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
     );
-    return `${meses} mes${meses !== 1 ? "es" : ""}`;
+    return `${meses} ${meses === 1 ? "mes" : "meses"}`;
   }
-  return `${años} año${años !== 1 ? "s" : ""}`;
+  return `${años} ${años === 1 ? "año" : "años"}`;
 }
+
+DetalleMascotaFundacion.propTypes = {
+  mascota: PropTypes.shape({
+    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    nombre: PropTypes.string,
+    descripcion: PropTypes.string,
+    sexo: PropTypes.string,
+    imagenes: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.string),
+      PropTypes.string
+    ]),
+    fechaNacimiento: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
+    esterilizado: PropTypes.bool
+  }).isRequired
+};
 
 export default DetalleMascotaFundacion;

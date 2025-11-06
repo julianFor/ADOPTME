@@ -163,9 +163,9 @@ function calcularEdad(fechaNacimiento) {
       (hoy.getMonth() + 12 * hoy.getFullYear()) -
       (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
     );
-    return `${meses} mes${meses !== 1 ? "es" : ""}`;
+    return `${meses} mes${meses === 1 ? "" : "es"}`;
   }
-  return `${años} año${años !== 1 ? "s" : ""}`;
+  return `${años} año${años === 1 ? "" : "s"}`;
 }
 
 export default DetalleMascotaExterna;

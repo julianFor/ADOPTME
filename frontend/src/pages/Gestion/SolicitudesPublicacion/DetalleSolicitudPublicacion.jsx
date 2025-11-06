@@ -43,7 +43,7 @@ const isImageUrl = (url) => url && !isRawExt(url);
 const fmtDate = (v) => {
   if (!v) return '';
   const d = new Date(v);
-  return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 };
 
 const DetalleSolicitudPublicacion = () => {
@@ -164,19 +164,23 @@ const DetalleSolicitudPublicacion = () => {
 
         <p className="md:col-span-2">
           <strong>Confirmaciones:</strong><br />
-          {typeof solicitud.confirmaciones === 'object' && !Array.isArray(solicitud.confirmaciones) ? (
-            <ul className="list-disc list-inside mt-1">
-              {Object.entries(solicitud.confirmaciones).map(([key, val]) => (
-                <li key={key}>
-                  <strong>{traduccionesConfirmaciones[key] || key}:</strong> {val ? 'Sí' : 'No'}
-                </li>
-              ))}
-            </ul>
-          ) : solicitud.confirmaciones ? (
-            solicitud.confirmaciones
-          ) : (
-            'No especificadas'
-          )}
+          {(() => {
+            if (typeof solicitud.confirmaciones === 'object' && !Array.isArray(solicitud.confirmaciones)) {
+              return (
+                <ul className="list-disc list-inside mt-1">
+                  {Object.entries(solicitud.confirmaciones).map(([key, val]) => (
+                    <li key={key}>
+                      <strong>{traduccionesConfirmaciones[key] || key}:</strong> {val ? 'Sí' : 'No'}
+                    </li>
+                  ))}
+                </ul>
+              );
+            }
+            if (solicitud.confirmaciones) {
+              return solicitud.confirmaciones;
+            }
+            return 'No especificadas';
+          })()}
         </p>
 
         <p><strong>Estado:</strong> <span className="capitalize">{solicitud.estado}</span></p>
