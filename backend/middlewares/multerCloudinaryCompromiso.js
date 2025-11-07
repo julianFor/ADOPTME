@@ -2,10 +2,10 @@
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
-const path = require('path');
+const nodepath = require('node:path');
 const { v4: uuidv4 } = require('uuid');
 
-const ALLOWED_EXT  = ['.jpg', '.jpeg', '.png', '.webp'];
+const ALLOWED_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const ALLOWED_MIME = /^(image\/jpeg|image\/png|image\/webp)$/i;
 
 const storage = new CloudinaryStorage({
@@ -42,8 +42,8 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (_req, file, cb) => {
-  const ext = path.extname(file.originalname || '').toLowerCase();
-  if (!ALLOWED_EXT.includes(ext) || !ALLOWED_MIME.test(file.mimetype || '')) {
+  const ext = nodepath.extname(file.originalname || '').toLowerCase();
+  if (!ALLOWED_EXT.has(ext) || !ALLOWED_MIME.test(file.mimetype || '')) {
     return cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP.'));
   }
   cb(null, true);

@@ -209,16 +209,12 @@ export default function NecesidadFormModal({
 
   return (
     <div className="fixed inset-0 z-[80]">
-      {/* overlay - S6848/S1082: elemento no interactivo con onClick => role + tabIndex + teclado */}
-      <div
+      {/* overlay */}
+      <button
+        type="button"
         className="absolute inset-0 bg-black/40"
-        role="button"
-        tabIndex={0}
         aria-label="Cerrar modal"
         onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" || e.key === "Enter" || e.key === " ") onClose?.();
-        }}
       />
       {/* modal */}
       <div className="absolute inset-0 flex items-start justify-center overflow-auto pt-8 pb-10">

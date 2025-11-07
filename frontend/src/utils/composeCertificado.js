@@ -29,43 +29,71 @@ async function loadFonts() {
   ]);
 }
 
-// --- NUEVA VERSIÓN SIMPLIFICADA DE cropTransparent ---
-function findImageBounds(data, w, h) {
-  let minX = w, minY = h, maxX = 0, maxY = 0, found = false;
-  for (let y = 0; y < h; y++) {
+// Funciones auxiliares para procesamiento de imagen
+function isVisiblePixel(data, index) {
+  return data[index + 3] > 0;
+}
+
+function updateBounds(bounds, x, y) {
+  return {
+    minX: Math.min(bounds.minX, x),
+    maxX: Math.max(bounds.maxX, x),
+    minY: Math.min(bounds.minY, y),
+    maxY: Math.max(bounds.maxY, y)
+  };
+}
+
+function createInitialBounds(w, h) {
+  return {
+    minX: w,
+    minY: h,
+    maxX: 0,
+    maxY: 0
+  };
+}
+
+function processImageData(data, w, h) {
+  let bounds = createInitialBounds(w, h);
+  let found = false;
+
+  for (let y = 0; y < h && !found; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      if (data[i + 3] > 0) { // píxel visible
+      if (isVisiblePixel(data, i)) {
         found = true;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+        bounds = updateBounds(bounds, x, y);
       }
     }
   }
-  return found ? { minX, minY, maxX, maxY } : null;
+
+  return found ? bounds : null;
 }
 
-function cropTransparent(srcCanvas) {
-  const w = srcCanvas.width, h = srcCanvas.height;
-  const ctx = srcCanvas.getContext('2d');
-  const { data } = ctx.getImageData(0, 0, w, h);
-
-  const bounds = findImageBounds(data, w, h);
-  if (!bounds) return srcCanvas;
-
+function createCroppedCanvas(srcCanvas, bounds) {
   const cw = bounds.maxX - bounds.minX + 1;
   const ch = bounds.maxY - bounds.minY + 1;
   const out = document.createElement('canvas');
   out.width = cw;
   out.height = ch;
+  
   out.getContext('2d').drawImage(
     srcCanvas,
     bounds.minX, bounds.minY, cw, ch,
     0, 0, cw, ch
   );
+  
   return out;
+}
+
+function cropTransparent(srcCanvas) {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const ctx = srcCanvas.getContext('2d');
+  const { data } = ctx.getImageData(0, 0, w, h);
+
+  const bounds = processImageData(data, w, h);
+  
+  return bounds ? createCroppedCanvas(srcCanvas, bounds) : srcCanvas;
 }
 // ----------------------------------------------------
 

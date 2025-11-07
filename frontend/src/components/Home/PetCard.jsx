@@ -35,13 +35,15 @@ function PetCard({ nombre, edad, sexo, descripcion, imagen, redirigir = false })
         <div className="flex items-center justify-between mb-2 mx-2">
           <h3 className="text-xl font-semibold text-gray-700">{nombreSeguro}</h3>
           <div className="flex items-center gap-2">
-            {genero === 'hembra' ? (
-              <FaVenus className="text-pink-500" title="Hembra" />
-            ) : genero === 'macho' ? (
-              <FaMars className="text-blue-500" title="Macho" />
-            ) : (
-              <span className="text-gray-400 text-sm">?</span>
-            )}
+            {(() => {
+              if (genero === 'hembra') {
+                return <FaVenus className="text-pink-500" title="Hembra" />;
+              }
+              if (genero === 'macho') {
+                return <FaMars className="text-blue-500" title="Macho" />;
+              }
+              return <span className="text-gray-400 text-sm">?</span>;
+            })()}
 
             <div className="flex items-center bg-gray-200 text-xs px-2 h-6 rounded-full min-w-[50px] justify-center">
               <FaClock className="mr-1" />

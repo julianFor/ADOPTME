@@ -3,41 +3,36 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSolicitudById } from "../../../services/solicitudAdopcionService";
 import { FaCheckCircle, FaTimesCircle, FaClock, FaStar, FaArrowLeft } from "react-icons/fa";
 
+/** Helper: construye URL desde public_id */
+const buildCloudinaryUrl = (cloud, public_id, resourceType = 'image', format = '') => {
+  if (!cloud || !public_id) return '';
+  const suffix = format ? `.${format}` : '';
+  return `https://res.cloudinary.com/${cloud}/${resourceType}/upload/${public_id}${suffix}`;
+};
+
+/** Helper: maneja objeto Cloudinary */
+const handleCloudinaryObject = (asset) => {
+  if (asset.secure_url) return asset.secure_url;
+  if (asset.url) return asset.url;
+
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const public_id = asset.public_id || asset.filename;
+  const fmt = (asset.format || '').toLowerCase();
+  const rt = asset.resource_type || 'image';
+  
+  return buildCloudinaryUrl(cloud, public_id, rt, fmt);
+};
+
 /** Helper: resuelve URL de Cloudinary desde objeto/string/array */
 const getCloudinaryUrl = (asset) => {
-  if (!asset) return "";
-
-  // Si viene como lista, usa el primero
+  if (!asset) return '';
   if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
-
-  // Si ya es URL absoluta, úsala
-  if (typeof asset === "string" && /^https?:\/\//i.test(asset)) return asset;
-
-  // Objeto Cloudinary
-  if (typeof asset === "object") {
-    // preferimos secure_url del backend
-    if (asset.secure_url) return asset.secure_url;
-    if (asset.url) return asset.url;
-
-    // Fallback extremo: construir desde public_id (requieres VITE_CLOUDINARY_CLOUD_NAME)
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const public_id = asset.public_id || asset.filename;
-    const fmt = (asset.format || "").toLowerCase();
-    if (cloud && public_id) {
-      const rt = asset.resource_type || "image"; // aquí siempre subimos como image
-      const suffix = fmt ? `.${fmt}` : "";
-      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
-    }
+  if (typeof asset === 'string' && /^https?:\/\//i.test(asset)) return asset;
+  if (typeof asset === 'object') return handleCloudinaryObject(asset);
+  if (typeof asset === 'string') {
+    return buildCloudinaryUrl(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME, asset);
   }
-
-  // public_id simple (muy legado)
-  if (typeof asset === "string") {
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (!cloud) return "";
-    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
-  }
-
-  return "";
+  return '';
 };
 
 const DetallesMiSolicitudAdopcion = () => {

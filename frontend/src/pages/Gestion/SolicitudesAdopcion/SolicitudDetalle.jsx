@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getSolicitudById,
@@ -7,48 +8,7 @@ import {
 import { crearProceso } from '../../../services/procesoService';
 import { useToast } from '../../../components/ui/ToastProvider';
 
-/** Helper de respaldo SOLO para registros viejos (string/public_id).
- *  NO modificar secure_url de Cloudinary.
- */
-const getCloudinaryAssetUrl = (asset) => {
-  if (!asset) return "";
-
-  const RAW_EXT = /\.(pdf|docx?|xlsx?|pptx?|txt|csv|zip|rar)$/i;
-
-  if (Array.isArray(asset)) return getCloudinaryAssetUrl(asset[0]);
-
-  if (typeof asset === "string" && /^https?:\/\//i.test(asset)) {
-    return asset;
-  }
-
-  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-
-  if (typeof asset === "object" && asset !== null) {
-    const { public_id = "", resource_type, format } = asset;
-    if (!cloud || !public_id) return "";
-
-    const fmt = (format || "").toLowerCase();
-    const isRawFmt = /^(pdf|docx?|xlsx?|pptx?|txt|csv|zip|rar)$/i.test(fmt);
-    const rt = isRawFmt ? "raw" : (resource_type || "image");
-
-    const suffix = rt === "raw" ? "" : (fmt ? `.${fmt}` : "");
-    return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
-  }
-
-  if (typeof asset === "string") {
-    if (!cloud) return `/uploads/${asset}`;
-    const rt = RAW_EXT.test(asset) ? "raw" : "image";
-    return `https://res.cloudinary.com/${cloud}/${rt}/upload/${asset}`;
-  }
-
-  return "";
-};
-
-/** Helper para obtener URL de documentos de manera más legible */
-const getDocumentUrl = (doc) => {
-  if (doc && typeof doc === 'object' && doc.secure_url) return doc.secure_url;
-  return getCloudinaryAssetUrl(doc);
-};
+import { getDocumentUrl } from '../../../utils/cloudinaryUtils';
 
 const SolicitudDetalle = () => {
   const { id } = useParams();
@@ -104,53 +64,35 @@ const SolicitudDetalle = () => {
       <h2 className="text-2xl font-bold text-purple-600 mb-6">Detalle de Solicitud de Adopción</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-        <p><strong>Nombre completo:</strong> {solicitud.nombreCompleto}</p>
-        <p><strong>Cédula:</strong> {solicitud.cedula}</p>
-        <p><strong>Fecha de nacimiento:</strong> {solicitud.fechaNacimiento?.split('T')[0]}</p>
-        <p><strong>Dirección:</strong> {solicitud.direccion}</p>
-        <p><strong>Barrio:</strong> {solicitud.barrio}</p>
-        <p><strong>Ciudad:</strong> {solicitud.ciudad}</p>
-        <p><strong>Teléfono:</strong> {solicitud.telefono}</p>
-        <p><strong>Correo:</strong> {solicitud.correo}</p>
-        <p><strong>Tipo de vivienda:</strong> {solicitud.tipoVivienda}</p>
-        <p><strong>Tenencia:</strong> {solicitud.tenenciaVivienda}</p>
-        <p><strong>Acuerdo familiar:</strong> {solicitud.acuerdoFamiliar}</p>
-        <p><strong>¿Hay niños?:</strong> {solicitud.hayNinos}</p>
-        <p><strong>¿Otras mascotas?:</strong> {solicitud.otrasMascotas}</p>
-        <p><strong>¿Alergias?:</strong> {solicitud.alergias}</p>
-        <p className="md:col-span-2"><strong>Motivo de adopción:</strong> {solicitud.motivoAdopcion}</p>
-        <p><strong>Lugar donde vivirá:</strong> {solicitud.lugarMascota}</p>
-        <p><strong>Reacción ante problemas:</strong> {solicitud.reaccionProblemas}</p>
-        <p><strong>Tiempo que pasará sola:</strong> {solicitud.tiempoSola}</p>
-        <p><strong>Responsable:</strong> {solicitud.responsable}</p>
-        <p><strong>¿Qué harías si te mudas?:</strong> {solicitud.queHariasMudanza}</p>
-        <p><strong>Acepta visita virtual:</strong> {solicitud.aceptaVisitaVirtual}</p>
-        <p><strong>Compromiso de cuidados:</strong> {solicitud.compromisoCuidados}</p>
-        <p><strong>Acepta contrato:</strong> {solicitud.aceptaContrato}</p>
-        <p><strong>Mascota:</strong> {solicitud.mascota?.nombre}</p>
+        <InfoField label="Nombre completo" value={solicitud.nombreCompleto} />
+        <InfoField label="Cédula" value={solicitud.cedula} />
+        <InfoField label="Fecha de nacimiento" value={solicitud.fechaNacimiento?.split('T')[0]} />
+        <InfoField label="Dirección" value={solicitud.direccion} />
+        <InfoField label="Barrio" value={solicitud.barrio} />
+        <InfoField label="Ciudad" value={solicitud.ciudad} />
+        <InfoField label="Teléfono" value={solicitud.telefono} />
+        <InfoField label="Correo" value={solicitud.correo} />
+        <InfoField label="Tipo de vivienda" value={solicitud.tipoVivienda} />
+        <InfoField label="Tenencia" value={solicitud.tenenciaVivienda} />
+        <InfoField label="Acuerdo familiar" value={solicitud.acuerdoFamiliar} />
+        <InfoField label="¿Hay niños?" value={solicitud.hayNinos} />
+        <InfoField label="¿Otras mascotas?" value={solicitud.otrasMascotas} />
+        <InfoField label="¿Alergias?" value={solicitud.alergias} />
+        <InfoField label="Motivo de adopción" value={solicitud.motivoAdopcion} className="md:col-span-2" />
+        <InfoField label="Lugar donde vivirá" value={solicitud.lugarMascota} />
+        <InfoField label="Reacción ante problemas" value={solicitud.reaccionProblemas} />
+        <InfoField label="Tiempo que pasará sola" value={solicitud.tiempoSola} />
+        <InfoField label="Responsable" value={solicitud.responsable} />
+        <InfoField label="¿Qué harías si te mudas?" value={solicitud.queHariasMudanza} />
+        <InfoField label="Acepta visita virtual" value={solicitud.aceptaVisitaVirtual} />
+        <InfoField label="Compromiso de cuidados" value={solicitud.compromisoCuidados} />
+        <InfoField label="Acepta contrato" value={solicitud.aceptaContrato} />
+        <InfoField label="Mascota" value={solicitud.mascota?.nombre} />
       </div>
 
       <div className="mt-8 flex gap-4 flex-wrap">
-        {urlDocId && (
-          <a
-            href={urlDocId}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"
-          >
-            Ver Documento de Identidad
-          </a>
-        )}
-        {urlResidencia && (
-          <a
-            href={urlResidencia}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"
-          >
-            Ver Prueba de Residencia
-          </a>
-        )}
+        <DocumentButton url={urlDocId} label="Ver Documento de Identidad" />
+        <DocumentButton url={urlResidencia} label="Ver Prueba de Residencia" />
       </div>
 
       <div className="mt-10 flex gap-4 justify-end">
@@ -169,6 +111,38 @@ const SolicitudDetalle = () => {
       </div>
     </div>
   );
+};
+
+const InfoField = ({ label, value, className = '' }) => (
+  <p className={className}>
+    <strong>{label}:</strong> {value}
+  </p>
+);
+
+InfoField.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.any,
+  className: PropTypes.string
+};
+
+const DocumentButton = ({ url, label }) => {
+  if (!url) return null;
+  
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"
+    >
+      {label}
+    </a>
+  );
+};
+
+DocumentButton.propTypes = {
+  url: PropTypes.string,
+  label: PropTypes.string.isRequired
 };
 
 export default SolicitudDetalle;

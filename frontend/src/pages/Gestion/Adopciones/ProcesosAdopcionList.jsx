@@ -1,36 +1,98 @@
-// src/pages/Gestion/Adopciones/ProcesosAdopcionList.jsx
 import React, { useEffect, useState } from "react";
+import PropTypes from 'prop-types';
 import { getAllProcesos } from "../../../services/procesoService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import { getCloudinaryUrl } from "../../../utils/imageUtils";
 
-/** Helper para obtener URL de Cloudinary */
-const getCloudinaryUrl = (asset) => {
-  if (!asset) return "";
-  if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
-  if (typeof asset === "string" && /^https?:\/\//i.test(asset)) return asset;
+const SearchBar = ({ value, onChange }) => (
+  <div className="relative">
+    <input
+      type="text"
+      placeholder="Buscar"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+    />
+    <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
+  </div>
+);
 
-  if (typeof asset === "object" && asset !== null) {
-    if (asset.secure_url) return asset.secure_url;
-    if (asset.url) return asset.url;
+SearchBar.propTypes = {
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired
+};
 
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const public_id = asset.public_id || asset.filename;
-    const fmt = (asset.format || "").toLowerCase();
-    if (cloud && public_id) {
-      const rt = asset.resource_type || "image";
-      const suffix = fmt ? `.${fmt}` : "";
-      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
-    }
-  }
+const PetImage = ({ url }) => {
+  if (!url) return <span className="text-gray-400">Sin imagen</span>;
+  
+  return (
+    <img
+      src={url}
+      alt="mascota"
+      className="w-12 h-12 rounded-full object-cover"
+    />
+  );
+};
 
-  if (typeof asset === "string") {
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (!cloud) return "";
-    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
-  }
+PetImage.propTypes = {
+  url: PropTypes.string
+};
 
-  return "";
+const ProcesoRow = ({ proceso, onVerDetalles }) => {
+  const imgUrl = getCloudinaryUrl(proceso.solicitud?.mascota?.imagenes?.[0]);
+  const etapasCompletadas = contarEtapasCompletadas(proceso);
+  const fechaInicio = new Date(proceso.createdAt).toLocaleDateString("es-CO");
+
+  return (
+    <tr className="border-b hover:bg-gray-50">
+      <td className="px-4 py-2">
+        <PetImage url={imgUrl} />
+      </td>
+      <td className="px-4 py-2">{proceso.solicitud?.mascota?.nombre}</td>
+      <td className="px-4 py-2">{proceso.solicitud?.adoptante?.username}</td>
+      <td className="px-4 py-2">{fechaInicio}</td>
+      <td className="px-4 py-2">
+        {proceso.finalizado ? "Finalizado" : "En proceso"}
+      </td>
+      <td className="px-4 py-2 font-bold text-green-600">{etapasCompletadas}</td>
+      <td className="px-4 py-2">
+        <button
+          onClick={() => onVerDetalles(proceso._id)}
+          className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
+        >
+          Ver Detalles
+        </button>
+      </td>
+    </tr>
+  );
+};
+
+ProcesoRow.propTypes = {
+  proceso: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
+    finalizado: PropTypes.bool,
+    solicitud: PropTypes.shape({
+      mascota: PropTypes.shape({
+        nombre: PropTypes.string,
+        imagenes: PropTypes.array
+      }),
+      adoptante: PropTypes.shape({
+        username: PropTypes.string
+      })
+    })
+  }).isRequired,
+  onVerDetalles: PropTypes.func.isRequired
+};
+
+const contarEtapasCompletadas = (proceso) => {
+  let total = 1; // formulario siempre aprobado
+  if (proceso.entrevista?.aprobada) total++;
+  if (proceso.visita?.aprobada) total++;
+  if (proceso.compromiso?.aprobada) total++;
+  if (proceso.entrega?.aprobada) total++;
+  return `${total}/5`;
 };
 
 const ProcesosAdopcionList = () => {
@@ -63,20 +125,15 @@ const ProcesosAdopcionList = () => {
     return `${total}/5`;
   };
 
+  const handleVerDetalles = (procesoId) => {
+    navigate(`/dashboard/admin/procesos-adopcion/${procesoId}`);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Lista Procesos de Adopción</h1>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
-          />
-          <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
-        </div>
+        <SearchBar value={filtro} onChange={setFiltro} />
       </div>
 
       <div className="overflow-x-auto">
@@ -93,45 +150,13 @@ const ProcesosAdopcionList = () => {
             </tr>
           </thead>
           <tbody>
-            {filtrar.map((proceso) => {
-              const imgUrl = getCloudinaryUrl(proceso.solicitud?.mascota?.imagenes?.[0]);
-              return (
-                <tr key={proceso._id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">
-                    {imgUrl ? (
-                      <img
-                        src={imgUrl}
-                        alt="mascota"
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-400">Sin imagen</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">{proceso.solicitud?.mascota?.nombre}</td>
-                  <td className="px-4 py-2">{proceso.solicitud?.adoptante?.username}</td>
-                  <td className="px-4 py-2">
-                    {new Date(proceso.createdAt).toLocaleDateString("es-CO")}
-                  </td>
-                  <td className="px-4 py-2">
-                    {proceso.finalizado ? "Finalizado" : "En proceso"}
-                  </td>
-                  <td className="px-4 py-2 font-bold text-green-600">
-                    {contarEtapasCompletadas(proceso)}
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() =>
-                        navigate(`/dashboard/admin/procesos-adopcion/${proceso._id}`)
-                      }
-                      className="border border-purple-500 text-purple-500 px-3 py-1 rounded-full hover:bg-purple-100 transition"
-                    >
-                      Ver Detalles
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+            {filtrar.map((proceso) => (
+              <ProcesoRow
+                key={proceso._id}
+                proceso={proceso}
+                onVerDetalles={handleVerDetalles}
+              />
+            ))}
           </tbody>
         </table>
         {filtrar.length === 0 && (

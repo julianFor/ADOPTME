@@ -3,28 +3,25 @@ import { getMascotasConSolicitudes } from "../../../services/solicitudAdopcionSe
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 
+const buildCloudinaryUrl = (identifier, cloud) => {
+  return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${identifier}`;
+};
+
 // Helper para resolver URL de Cloudinary (o fallback)
 const getCloudinaryUrl = (img) => {
   if (!img) return "";
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
   if (typeof img === "string") {
-    if (/^https?:\/\//i.test(img)) return img; // ya es URL
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (cloud) {
-      // avatar pequeño con f_auto,q_auto y recorte centrado
-      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img}`;
-    }
-    return `/uploads/${img}`; // compatibilidad temporal
+    if (/^https?:\/\//i.test(img)) return img;
+    return cloud ? buildCloudinaryUrl(img, cloud) : `/uploads/${img}`;
   }
 
   if (typeof img === "object") {
     if (img.secure_url) return img.secure_url;
     if (img.url) return img.url;
-    if (img.public_id) {
-      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      if (cloud) {
-        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_96,h_96,c_fill/${img.public_id}`;
-      }
+    if (img.public_id && cloud) {
+      return buildCloudinaryUrl(img.public_id, cloud);
     }
   }
 

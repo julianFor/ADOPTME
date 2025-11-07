@@ -180,11 +180,12 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
         </div>
 
         <div className="flex flex-col md:col-span-2 items-center">
-          <label className="font-semibold mb-2" id="lbl-firma">
+          <label className="font-semibold mb-2" htmlFor="firma-canvas">
             Firma:
           </label>
           <canvas
             ref={firmaRef}
+            id="firma-canvas"
             width={500}
             height={160}
             className="border-2 border-dashed border-purple-400 rounded-md bg-white touch-none"
@@ -195,7 +196,7 @@ const EtapaFirma = ({ procesoId, setProceso, proceso }) => {
             onTouchStart={startTouch}
             onTouchMove={moveTouch}
             onTouchEnd={stopDrawing}
-            aria-labelledby="lbl-firma"
+            aria-label="Área para dibujar firma"
           />
         </div>
       </form>
