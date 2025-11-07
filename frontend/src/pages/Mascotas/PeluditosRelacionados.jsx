@@ -24,7 +24,6 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
     fetchRelacionadas();
   }, [origen, mascotaId]);
 
-  // ✅ Condición positiva y simplificada
   const getImagenPrincipal = (imagenes) => {
     if (imagenes && Array.isArray(imagenes) && imagenes[0]) {
       const primera = imagenes[0];
@@ -53,7 +52,6 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
 
       <div className="flex flex-wrap justify-center gap-6">
         {mascotas.map((m) => (
-          // ✅ Reemplazado <div role="button"> por <button> accesible
           <button
             key={m._id}
             type="button"
@@ -74,33 +72,32 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
   );
 };
 
-// ✅ Condición positiva en el cálculo de edad
+// ✅ Condición reescrita para evitar negación
 function calcularEdad(fechaNacimiento) {
-  if (fechaNacimiento) {
-    const nacimiento = new Date(fechaNacimiento);
-    const hoy = new Date();
-    let años = hoy.getFullYear() - nacimiento.getFullYear();
-    const m = hoy.getMonth() - nacimiento.getMonth();
+  if (!fechaNacimiento) {
+    return 'N/A';
+  }
 
-    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
-      años--;
-    }
+  const nacimiento = new Date(fechaNacimiento);
+  const hoy = new Date();
+  let años = hoy.getFullYear() - nacimiento.getFullYear();
+  const m = hoy.getMonth() - nacimiento.getMonth();
 
-    if (años > 0) {
-      return `${años} año${años !== 1 ? 's' : ''}`;
-    }
+  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+    años--;
+  }
 
+  if (años > 0) {
+    return `${años} año${años !== 1 ? 's' : ''}`;
+  } else {
     const meses =
       (hoy.getMonth() + 12 * hoy.getFullYear()) -
       (nacimiento.getMonth() + 12 * nacimiento.getFullYear());
     const totalMeses = Math.max(1, meses);
     return `${totalMeses} mes${totalMeses !== 1 ? 'es' : ''}`;
   }
-
-  return 'N/A';
 }
 
-// ✅ Validación de props
 PeluditosRelacionados.propTypes = {
   origen: PropTypes.string.isRequired,
   mascotaId: PropTypes.string.isRequired,

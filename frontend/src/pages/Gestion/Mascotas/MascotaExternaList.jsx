@@ -32,10 +32,7 @@ const MascotaExternaList = () => {
     fetchMascotas();
   }, []);
 
-  const handleCrear = () => {
-    setSelectedMascota(null);
-    setShowModal(true);
-  };
+  // ✅ handleCrear eliminado porque no se usaba
 
   const handleEditar = (mascota) => {
     setSelectedMascota(mascota);
@@ -59,14 +56,12 @@ const MascotaExternaList = () => {
     }
   };
 
-  // 🟣 Filtro de búsqueda por varios campos
   const filteredMascotas = mascotas.filter((m) =>
     `${m.nombre} ${m.contactoExterno?.nombre} ${m.contactoExterno?.telefono} ${m.contactoExterno?.correo} ${m.estado}`
       .toLowerCase()
       .includes(searchText.toLowerCase())
   );
 
-  // 🔸 Obtener imagen principal (URL válida o placeholder)
   const getImagenPrincipal = (imagenes) => {
     if (!imagenes) return "https://via.placeholder.com/300x300?text=AdoptMe";
     const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
