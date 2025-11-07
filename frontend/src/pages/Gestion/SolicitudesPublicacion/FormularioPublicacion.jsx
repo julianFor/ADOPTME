@@ -4,17 +4,22 @@ import { crearSolicitud } from '../../../services/solicitudPublicacionService';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../components/ui/ToastProvider';
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+// --- Constantes: use Set para comprobaciones de existencia (mejora rendimiento) ---
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 const MAX_FOTOS = 5;
 
 // --- Sanitizadores ---
+// Nota: mantuve regex cuando se requiere (p. ej. eliminar no dígitos).
 const onlyDigits = (v) => (v || '').replace(/\D+/g, '');
 const onlyLettersSpaces = (v) =>
   (v || '').replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
 const addressSafe = (v) =>
-  (v || '').replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-\.,]/g, '');
-const textSafe = (v) => (v || '').replace(/[<>]/g, '');
+  // limpié escapes innecesarios dentro de la clase de caracteres
+  (v || '').replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-,.]/g, '');
+const textSafe = (v) =>
+  // uso replaceAll para reemplazos literales sencillos y evitar regex global cuando no se necesita
+  (v || '').replaceAll('<', '').replaceAll('>', '');
 
 const SANITIZE = {
   nombre: onlyLettersSpaces,
@@ -37,7 +42,8 @@ const preventNonDigitsBeforeInput = (e) => {
 const preventNonDigitsKeyDown = (e) => {
   const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
   if (allowed.includes(e.key)) return;
-  if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+  // use \d en la regex (más conciso)
+  if (!/^\d$/.test(e.key)) e.preventDefault();
 };
 const handlePasteDigitsOnly = (e, setter) => {
   e.preventDefault();
@@ -104,7 +110,8 @@ const FormularioPublicacion = () => {
       return;
     }
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    // Usar Set#has() en lugar de Array#includes()
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       error('Solo se permiten imágenes (JPG, PNG o WEBP).', { duration: 5000 });
       e.target.value = '';
       setDocumentoIdentidad(null);
@@ -132,7 +139,7 @@ const FormularioPublicacion = () => {
     let rechazadas = 0;
 
     for (const f of files) {
-      if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+      if (!ALLOWED_IMAGE_TYPES.has(f.type)) {
         rechazadas++;
         continue;
       }
@@ -231,7 +238,11 @@ const FormularioPublicacion = () => {
     data.append('confirmaciones[aceptaVerificacion]', String(form.aceptaVerificacion2));
 
     if (documentoIdentidad) data.append('documentoIdentidad', documentoIdentidad);
-    imagenes.forEach((img) => data.append('imagenes', img));
+
+    // Reemplacé imagenes.forEach por for...of (mejora de performance y regla de estilo)
+    for (const img of imagenes) {
+      data.append('imagenes', img);
+    }
 
     try {
       setEnviando(true);
@@ -487,15 +498,15 @@ const FormularioPublicacion = () => {
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Condiciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVisita" checked={form.aceptaVisita} onChange={handleChange} />
+            <input type="checkbox" name="aceptaVisita" checked={form.aceptaVisita} onChange={handleChange} />{' '}
             ¿Acepta visitas?
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVerificacion" checked={form.aceptaVerificacion} onChange={handleChange} />
+            <input type="checkbox" name="aceptaVerificacion" checked={form.aceptaVerificacion} onChange={handleChange} />{' '}
             ¿Acepta verificación?
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="tieneCondiciones" checked={form.tieneCondiciones} onChange={handleChange} />
+            <input type="checkbox" name="tieneCondiciones" checked={form.tieneCondiciones} onChange={handleChange} />{' '}
             ¿Tiene condiciones para el adoptante?
           </label>
         </div>
@@ -506,15 +517,15 @@ const FormularioPublicacion = () => {
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Confirmaciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="esResponsable" checked={form.esResponsable} onChange={handleChange} />
+            <input type="checkbox" name="esResponsable" checked={form.esResponsable} onChange={handleChange} />{' '}
             Soy responsable de esta mascota
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="noSolicitaPago" checked={form.noSolicitaPago} onChange={handleChange} />
+            <input type="checkbox" name="noSolicitaPago" checked={form.noSolicitaPago} onChange={handleChange} />{' '}
             No solicito pago por la adopción
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVerificacion2" checked={form.aceptaVerificacion2} onChange={handleChange} />
+            <input type="checkbox" name="aceptaVerificacion2" checked={form.aceptaVerificacion2} onChange={handleChange} />{' '}
             Acepto verificación de información
           </label>
         </div>

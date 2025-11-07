@@ -31,14 +31,18 @@ function ThankYouModal({ show, onClose }) {
   return (
     <div
       id="modal-overlay"
-      role="button"
-      tabIndex={0}
-      aria-label="Cerrar modal de agradecimiento"
       onClick={handleOverlayClick}
-      onKeyDown={handleOverlayKeyDown}
       className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-[9999]"
     >
-      <div className="animate-fade-in-up z-[10000]">
+      {/* Botón transparente y accesible que cubre todo el overlay */}
+      <button
+        type="button"
+        aria-label="Cerrar modal de agradecimiento"
+        onClick={onClose}
+        onKeyDown={handleOverlayKeyDown}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-default"
+      />
+      <div className="animate-fade-in-up z-[10000] relative">
         <img
           src="/Gatitogracias.png"
           alt="Gracias por tu donación"

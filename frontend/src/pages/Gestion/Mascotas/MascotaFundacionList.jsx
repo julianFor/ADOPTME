@@ -8,33 +8,39 @@ import MascotaFundacionFormModal from "./MascotaFundacionFormModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 
 const formatSimpleAge = (fechaNacimiento) => {
-  if (!fechaNacimiento) return "No especificado";
+  if (fechaNacimiento) {
+    const dob = new Date(fechaNacimiento);
 
-  const dob = new Date(fechaNacimiento);
-  if (Number.isNaN(dob.getTime())) return "No especificado";
+    if (!Number.isNaN(dob.getTime())) {
+      const today = new Date();
 
-  const today = new Date();
-  if (dob > today) return "Fecha inválida";
+      if (dob <= today) {
+        let years = today.getFullYear() - dob.getFullYear();
+        let months = today.getMonth() - dob.getMonth();
+        let days = today.getDate() - dob.getDate();
 
-  let years = today.getFullYear() - dob.getFullYear();
-  let months = today.getMonth() - dob.getMonth();
-  let days = today.getDate() - dob.getDate();
+        if (days < 0) {
+          months -= 1;
+          const prevMonthIndex = (today.getMonth() - 1 + 12) % 12;
+          const prevMonthYear =
+            prevMonthIndex === 11 ? today.getFullYear() - 1 : today.getFullYear();
+          days += new Date(prevMonthYear, prevMonthIndex + 1, 0).getDate();
+        }
 
-  if (days < 0) {
-    months -= 1;
-    const prevMonthIndex = (today.getMonth() - 1 + 12) % 12;
-    const prevMonthYear = prevMonthIndex === 11 ? today.getFullYear() - 1 : today.getFullYear();
-    days += new Date(prevMonthYear, prevMonthIndex + 1, 0).getDate();
+        if (months < 0) {
+          months += 12;
+          years -= 1;
+        }
+
+        if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
+        if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
+        return `${days} día${days !== 1 ? "s" : ""}`;
+      }
+      return "Fecha inválida";
+    }
+    return "No especificado";
   }
-
-  if (months < 0) {
-    months += 12;
-    years -= 1;
-  }
-
-  if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
-  if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
-  return `${days} día${days !== 1 ? "s" : ""}`;
+  return "No especificado";
 };
 
 const MascotaFundacionList = () => {
@@ -94,10 +100,12 @@ const MascotaFundacionList = () => {
 
   // 🔸 Obtener imagen principal (URL válida o placeholder)
   const getImagenPrincipal = (imagenes) => {
-    if (!imagenes) return "https://via.placeholder.com/300x300?text=AdoptMe";
-    const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
-    if (!primera) return "https://via.placeholder.com/300x300?text=AdoptMe";
-    if (typeof primera === "string" && primera.startsWith("http")) return primera;
+    if (imagenes) {
+      const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
+      if (primera && typeof primera === "string" && primera.startsWith("http")) {
+        return primera;
+      }
+    }
     return "https://via.placeholder.com/300x300?text=AdoptMe";
   };
 
