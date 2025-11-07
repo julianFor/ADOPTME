@@ -286,6 +286,7 @@ exports.getProcesoPorSolicitud = async (req, res) => {
   try {
     const { solicitudId } = req.params;
 
+    // Validación estricta del ID
     if (!isValidObjectId(solicitudId)) {
       return res.status(400).json({ 
         success: false, 
@@ -293,14 +294,26 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       });
     }
 
-    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId })
-      .populate({
-        path: 'solicitud',
-        populate: [
-          { path: 'mascota' },
-          { path: 'adoptante', select: 'username email' }
-        ]
-      });
+    // Convertir el ID a un ObjectId válido y crear una consulta segura
+    const solicitudObjectId = mongoose.Types.ObjectId.createFromHexString(solicitudId.toString());
+    
+    // Usar una consulta sanitizada y con campos específicos
+    const proceso = await ProcesoAdopcion.findOne(
+      { solicitud: solicitudObjectId },
+      '-__v' // Excluir campos internos
+    ).populate({
+      path: 'solicitud',
+      populate: [
+        { 
+          path: 'mascota',
+          select: 'nombre especie raza imagen' // Seleccionar solo campos necesarios
+        },
+        { 
+          path: 'adoptante',
+          select: 'username email' // Limitar campos sensibles
+        }
+      ]
+    });
 
     if (!proceso) {
       return res.status(404).json({ 
