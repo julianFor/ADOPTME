@@ -23,7 +23,7 @@ const toBool = (v, def) => {
   return s === "true" || s === "1" || s === "on";
 };
 
-const toNullable = (v) => (!hasValue(v) ? null : v);
+const toNullable = (v) => (hasValue(v) ? v : null);
 
 // ─────────────────────────────────────────────────────────────────────────────
 

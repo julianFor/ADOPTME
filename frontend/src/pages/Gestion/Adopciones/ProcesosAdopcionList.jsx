@@ -116,15 +116,6 @@ const ProcesosAdopcionList = () => {
     p.solicitud?.adoptante?.username?.toLowerCase().includes(filtro.toLowerCase())
   );
 
-  const contarEtapasCompletadas = (proceso) => {
-    let total = 1; // formulario siempre aprobado
-    if (proceso.entrevista?.aprobada) total++;
-    if (proceso.visita?.aprobada) total++;
-    if (proceso.compromiso?.aprobada) total++;
-    if (proceso.entrega?.aprobada) total++;
-    return `${total}/5`;
-  };
-
   const handleVerDetalles = (procesoId) => {
     navigate(`/dashboard/admin/procesos-adopcion/${procesoId}`);
   };

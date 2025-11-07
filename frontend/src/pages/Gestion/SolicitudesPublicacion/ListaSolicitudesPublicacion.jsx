@@ -27,7 +27,7 @@ const getAssetUrl = (asset) => {
 };
 
 const toAvatar = (url) => {
-  if (!url || !url.includes("res.cloudinary.com")) return url;
+  if (!url?.includes("res.cloudinary.com")) return url;
   // normaliza si vino como /raw/upload/
   url = url.replace("/raw/upload/", "/image/upload/");
   // inserta transformación (evita duplicar si ya existe)

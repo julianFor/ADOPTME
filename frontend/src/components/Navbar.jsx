@@ -12,14 +12,13 @@ const Navbar = () => {
   const [open, setOpen] = useState(false); // RESPONSIVE: estado del menú
 
   // Ruta de gestión según rol
-  const gestionPath =
-    user?.role === 'admin'
-      ? '/dashboard-admin'
-      : user?.role === 'adminFundacion'
-      ? '/dashboard-fundacion'
-      : user?.role === 'adoptante'
-      ? '/dashboard-adoptante'
-      : '#';
+  const getGestionPath = () => {
+    if (user?.role === 'admin') return '/dashboard-admin';
+    if (user?.role === 'adminFundacion') return '/dashboard-fundacion';
+    if (user?.role === 'adoptante') return '/dashboard-adoptante';
+    return '#';
+  };
+  const gestionPath = getGestionPath();
 
   // helper para estilos activos (mismo diseño)
   const active = (path) =>
