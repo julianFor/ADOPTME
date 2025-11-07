@@ -1,5 +1,6 @@
 // src/components/NavbarAuth.jsx
 import React, { useState, useContext } from 'react';
+import PropTypes from 'prop-types';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/LogoAdoptmeLavandaV1.svg';
 import { FiBell, FiUser, FiMail, FiMenu, FiX } from 'react-icons/fi';
@@ -8,7 +9,7 @@ import NotificationModal from './NotificationModal';
 import { useNotificaciones } from '../context/NotificationContext';
 
 const AVATAR_POR_ROL = {
-  admin: '/GatoAdmin.jpg',          // ajusta a tus archivos reales
+  admin: '/GatoAdmin.jpg',
   adminFundacion: '/GatoFundacion.png',
   adoptante: '/GatoAdoptante.png',
 };
@@ -247,5 +248,10 @@ function NavbarAuth({ gestionPath }) {
     </header>
   );
 }
+
+NavbarAuth.propTypes = {
+  /** Ruta absoluta del dashboard según el rol (ej: "/dashboard/admin") */
+  gestionPath: PropTypes.string.isRequired,
+};
 
 export default NavbarAuth;

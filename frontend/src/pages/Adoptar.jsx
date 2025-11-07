@@ -208,12 +208,6 @@ function Adoptar() {
   // RESPONSIVE: panel móvil
   const [openFilters, setOpenFilters] = useState(false);
 
-  const speciesOptions = [
-    { label: "Gato", value: "gato", icon: CatIcon },
-    { label: "Perro", value: "perro", icon: DogIcon },
-    { label: "Otro", value: "otro", icon: OtherIcon },
-  ];
-
   useEffect(() => {
     const fetchMascotas = async () => {
       try {
@@ -451,7 +445,7 @@ function Adoptar() {
               toggleSpecies={toggleSpecies}
             />
 
-            {/* El MISMO bloque de filtros, pero en layout "inline" */}
+            {/* Filtros en layout inline para móvil */}
             <Filtros
               layout="inline"
               origen={origen} setOrigen={setOrigen}
