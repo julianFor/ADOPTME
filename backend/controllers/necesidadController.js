@@ -17,23 +17,16 @@ const toBool = (v, def = undefined) => {
   return s === "true" || s === "1" || s === "on";
 };
 
-const toNullable = (v) => (v === "" || v === undefined ? null : v);
-
 const safeString = (v) => {
   if (v === undefined || v === null) return "";
   return typeof v === "string" ? v.trim() : String(v).trim();
 };
 
-// Rechaza strings con caracteres que suelen usarse para inyección
-const isPlain = (s) => {
-  if (typeof s !== "string") return false;
-  return !s.includes("$") && !s.includes("{") && !s.includes("}") && !s.includes("[") && !s.includes("]");
-};
-
-// Sanitiza texto y limita longitud
-const sanitizeText = (v, maxLen = 200) => {
+// Sanitización estricta para prevenir inyección NoSQL
+const sanitizeTextStrict = (v, maxLen = 200) => {
   const s = safeString(v);
-  if (!s || !isPlain(s)) return null;
+  // Solo permite letras, números, espacios y puntuación básica
+  if (!/^[\w\s.,;:áéíóúÁÉÍÓÚñÑ()\-]*$/.test(s)) return null;
   return s.length > maxLen ? s.slice(0, maxLen) : s;
 };
 
@@ -59,10 +52,10 @@ const parseSort = (rawSort = "-fechaPublicacion") => {
   return (desc ? "-" : "") + field;
 };
 
-// Escapa regex
+// Escapa regex de manera segura (opcional)
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// ────────────────────────────────────────────────
+// ───────── Controladores ─────────
 
 exports.crearNecesidad = async (req, res) => {
   try {
@@ -72,10 +65,10 @@ exports.crearNecesidad = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    const sTitulo = sanitizeText(titulo, 140);
-    const sCategoria = sanitizeText(categoria, 60);
-    const sUrgencia = sanitizeText(urgencia, 30);
-    const sDesc = sanitizeText(descripcionBreve, 600);
+    const sTitulo = sanitizeTextStrict(titulo, 140);
+    const sCategoria = sanitizeTextStrict(categoria, 60);
+    const sUrgencia = sanitizeTextStrict(urgencia, 30);
+    const sDesc = sanitizeTextStrict(descripcionBreve, 600);
 
     if (!sTitulo) return res.status(400).json({ ok: false, message: "Título inválido" });
     if (!sCategoria) return res.status(400).json({ ok: false, message: "Categoría inválida" });
@@ -101,7 +94,6 @@ exports.crearNecesidad = async (req, res) => {
 
     const need = await Need.create(doc);
     return res.status(201).json({ ok: true, data: need });
-
   } catch (err) {
     console.error("💥 crearNecesidad:", err);
     return res.status(500).json({ ok: false, message: "Error al crear necesidad" });
@@ -110,9 +102,9 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
-    const qRaw = safeString(req.query.q?.toString());
-    const categoriaRaw = safeString(req.query.categoria?.toString());
-    const urgenciaRaw = safeString(req.query.urgencia?.toString());
+    const qRaw = sanitizeTextStrict(req.query.q?.toString(), 100);
+    const categoriaRaw = sanitizeTextStrict(req.query.categoria?.toString(), 50);
+    const urgenciaRaw = sanitizeTextStrict(req.query.urgencia?.toString(), 30);
     const estadoRaw = safeString(req.query.estado?.toString());
     const sort = parseSort(req.query.sort?.toString());
 
@@ -121,9 +113,9 @@ exports.listarPublicas = async (req, res) => {
     const skip = (pag - 1) * lim;
 
     const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
-    if (categoriaRaw && isPlain(categoriaRaw)) filter.categoria = categoriaRaw;
-    if (urgenciaRaw && isPlain(urgenciaRaw)) filter.urgencia = urgenciaRaw;
-    if (qRaw && isPlain(qRaw)) filter.titulo = { $regex: escapeRegex(qRaw), $options: "i" };
+    if (categoriaRaw) filter.categoria = categoriaRaw;
+    if (urgenciaRaw) filter.urgencia = urgenciaRaw;
+    if (qRaw) filter.titulo = { $regex: new RegExp(qRaw, "i") };
 
     const [data, total] = await Promise.all([
       Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
@@ -137,6 +129,7 @@ exports.listarPublicas = async (req, res) => {
   }
 };
 
+// ───────── Helpers ─────────
 async function actualizarImagenSiExiste(need, req) {
   if (req.file?.path && req.file?.filename) {
     const oldPublicId = need?.imagenPrincipal?.publicId;
@@ -151,6 +144,7 @@ async function actualizarImagenSiExiste(need, req) {
   }
 }
 
+// ───────── Resto de controladores ─────────
 exports.actualizar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -159,8 +153,7 @@ exports.actualizar = async (req, res) => {
     const need = await Need.findById(id);
     if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
-    const body = req.body || {};
-    const patch = buildPatch(body, need);
+    const patch = buildPatch(req.body, need);
     await actualizarImagenSiExiste(need, req);
 
     Object.assign(need, patch);
@@ -233,14 +226,14 @@ exports.eliminar = async (req, res) => {
   }
 };
 
-// auxiliar para patch
+// ───────── Auxiliar para patch ─────────
 function buildPatch(body, current) {
   const patch = {};
-  if (body.titulo) patch.titulo = sanitizeText(body.titulo, 140) || current.titulo;
-  if (body.categoria) patch.categoria = sanitizeText(body.categoria, 60) || current.categoria;
-  if (body.urgencia) patch.urgencia = sanitizeText(body.urgencia, 30) || current.urgencia;
+  if (body.titulo) patch.titulo = sanitizeTextStrict(body.titulo, 140) || current.titulo;
+  if (body.categoria) patch.categoria = sanitizeTextStrict(body.categoria, 60) || current.categoria;
+  if (body.urgencia) patch.urgencia = sanitizeTextStrict(body.urgencia, 30) || current.urgencia;
   if (body.descripcionBreve !== undefined) {
-    const s = sanitizeText(body.descripcionBreve, 600);
+    const s = sanitizeTextStrict(body.descripcionBreve, 600);
     patch.descripcionBreve = s != null ? s : undefined;
   }
   if (body.objetivo !== undefined) patch.objetivo = Number(toNumber(body.objetivo, current.objetivo));
