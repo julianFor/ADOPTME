@@ -39,37 +39,74 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
+    // Validación de valores permitidos
+    const categoriasValidas = ['alimentos', 'medicinas', 'insumos', 'otros'];
+    const urgenciasValidas = ['alta', 'media', 'baja'];
+    const estadosValidos = ['activa', 'pausada', 'cumplida', 'vencida'];
+
     // Validar y sanitizar datos antes de crear
     const needData = {
-      titulo: sanitizedData.titulo,
-      categoria: sanitizedData.categoria,
-      urgencia: sanitizedData.urgencia,
-      descripcionBreve: sanitizedData.descripcionBreve,
-      objetivo: toNumber(sanitizedData.objetivo, 1),
-      recibido: toNumber(sanitizedData.recibido, 0),
-      fechaLimite: toNullable(sanitizedData.fechaLimite),
-      estado: sanitizedData.estado || "activa",
+      titulo: typeof sanitizedData.titulo === 'string' 
+        ? sanitizedData.titulo.slice(0, 100) // limitar longitud
+        : null,
+      
+      categoria: categoriasValidas.includes(sanitizedData.categoria)
+        ? sanitizedData.categoria
+        : null,
+      
+      urgencia: urgenciasValidas.includes(sanitizedData.urgencia)
+        ? sanitizedData.urgencia
+        : null,
+      
+      descripcionBreve: typeof sanitizedData.descripcionBreve === 'string'
+        ? sanitizedData.descripcionBreve.slice(0, 500)
+        : null,
+      
+      objetivo: Math.max(1, Math.min(1000000, toNumber(sanitizedData.objetivo, 1))), // límite razonable
+      recibido: Math.max(0, Math.min(1000000, toNumber(sanitizedData.recibido, 0))),
+      
+      fechaLimite: sanitizedData.fechaLimite instanceof Date 
+        ? sanitizedData.fechaLimite 
+        : toNullable(sanitizedData.fechaLimite),
+      
+      estado: estadosValidos.includes(sanitizedData.estado)
+        ? sanitizedData.estado
+        : 'activa',
+      
       visible: toBool(sanitizedData.visible, true),
+      
       imagenPrincipal: {
-        url: String(req.file.path), // secure_url
-        publicId: String(req.file.filename), // public_id
+        url: req.file.path.toString().slice(0, 500), // limitar longitud
+        publicId: req.file.filename.toString().slice(0, 100),
       },
-      creadaPor: String(req.userId),
+      
+      creadaPor: mongoose.Types.ObjectId.isValid(req.userId) 
+        ? req.userId.toString()
+        : null,
+        
       fechaPublicacion: new Date(),
     };
 
-    // Validar campos requeridos
-    const camposRequeridos = ['titulo', 'categoria', 'urgencia'];
-    const camposFaltantes = camposRequeridos.filter(campo => !needData[campo]);
-    
-    if (camposFaltantes.length > 0) {
+    // Validar campos requeridos y tipos de datos
+    const validaciones = [
+      { campo: 'titulo', valido: Boolean(needData.titulo), mensaje: 'Título es requerido y debe ser texto' },
+      { campo: 'categoria', valido: Boolean(needData.categoria), mensaje: 'Categoría debe ser válida' },
+      { campo: 'urgencia', valido: Boolean(needData.urgencia), mensaje: 'Urgencia debe ser válida' },
+      { campo: 'creadaPor', valido: Boolean(needData.creadaPor), mensaje: 'Usuario creador inválido' },
+    ];
+
+    const errores = validaciones.filter(v => !v.valido);
+    if (errores.length > 0) {
       return res.status(400).json({
         ok: false,
-        message: `Campos requeridos faltantes: ${camposFaltantes.join(', ')}`
+        message: 'Datos inválidos',
+        errores: errores.map(e => e.mensaje)
       });
     }
 
-    const need = await Need.create(needData);
+    // Crear documento utilizando el modelo (que aplicará sus propias validaciones)
+    const need = new Need(needData);
+    await need.save();
 
     return res.status(201).json({ ok: true, data: need });
   } catch (err) {
