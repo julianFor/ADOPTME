@@ -226,16 +226,51 @@ exports.getMisProcesos = async (req, res) => {
 // Obtener todos los procesos (admin/adminFundacion)
 exports.getAllProcesos = async (req, res) => {
   try {
-    const procesos = await ProcesoAdopcion.find()
+    // Construir query segura con validaciones
+    const queryParams = {};
+    
+    // Si hay filtros en la query, validarlos
+    if (req.query) {
+      // Lista de campos permitidos y sus tipos
+      const allowedFilters = {
+        estado: ['pendiente', 'en proceso', 'completado', 'rechazado'],
+        etapa: ['entrevista', 'visita', 'compromiso', 'entrega']
+      };
+
+      // Validar y sanitizar cada filtro
+      for (const key of Object.keys(allowedFilters)) {
+        if (req.query[key]) {
+          const value = String(req.query[key]).trim();
+          if (allowedFilters[key].includes(value)) {
+            queryParams[key] = value;
+          }
+        }
+      }
+    }
+
+    // Usar la query sanitizada
+    const procesos = await ProcesoAdopcion.find(queryParams)
       .populate({
         path: 'solicitud',
         populate: [
-          { path: 'mascota' },
-          { path: 'adoptante', select: 'username email' }
+          { 
+            path: 'mascota',
+            select: 'nombre especie raza' // Limitar campos sensibles
+          },
+          { 
+            path: 'adoptante',
+            select: 'username email' // Limitar campos sensibles
+          }
         ]
-      });
+      })
+      .select('-__v') // Excluir campos internos
+      .lean(); // Convertir a JSON plano para mejor rendimiento
 
-    res.status(200).json({ success: true, procesos });
+    res.status(200).json({ 
+      success: true, 
+      count: procesos.length,
+      procesos 
+    });
   } catch (error) {
     console.error('Error al obtener todos los procesos:', error);
     res.status(500).json({ 
