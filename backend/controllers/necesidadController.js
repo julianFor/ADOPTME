@@ -4,6 +4,14 @@ const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
 const { sanitizeMongoId, sanitizeQueryParams, sanitizeUpdateData } = require("../utils/sanitize");
 
+// Función de utilidad para sanitizar valores de consulta
+const sanitizeQueryValue = (value) => {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return null; // No permitir arrays
+  if (typeof value === 'object') return null; // No permitir objetos
+  return String(value).trim(); // Convertir a string y eliminar espacios
+};
+
 // Proyección tipo “tarjeta”
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
