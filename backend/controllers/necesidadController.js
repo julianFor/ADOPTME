@@ -41,15 +41,23 @@ const toDate = (v) => {
 // Valida ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-const allowedEstados = new Set(["activa", "pausada", "cumplida", "vencida"]);
-const allowedSortFields = new Set(["fechaPublicacion", "urgencia", "objetivo", "recibido", "titulo"]);
+const allowedEstados = Object.freeze(new Set(["activa", "pausada", "cumplida", "vencida"]));
+const allowedSortFields = Object.freeze(new Set(["fechaPublicacion", "urgencia", "objetivo", "recibido", "titulo"]));
+const allowedCategories = Object.freeze(new Set([
+  "alimentos", "medicamentos", "insumos", "equipamiento", "otros"
+]));
+const allowedUrgencias = Object.freeze(new Set([
+  "alta", "media", "baja"
+]));
 
 const parseSort = (rawSort = "-fechaPublicacion") => {
   const s = safeString(rawSort);
   const desc = s.startsWith("-");
   const field = desc ? s.slice(1) : s;
+  // Si el campo no está permitido, usar el valor por defecto
   if (!allowedSortFields.has(field)) return "-fechaPublicacion";
-  return (desc ? "-" : "") + field;
+  // Construir el string de ordenamiento de manera segura
+  return `${desc ? "-" : ""}${field}`;
 };
 
 // Escapa regex de manera segura (opcional)
@@ -102,23 +110,47 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
+    // Sanitización y validación estricta de parámetros
     const qRaw = sanitizeTextStrict(req.query.q?.toString(), 100);
     const categoriaRaw = sanitizeTextStrict(req.query.categoria?.toString(), 50);
     const urgenciaRaw = sanitizeTextStrict(req.query.urgencia?.toString(), 30);
     const estadoRaw = safeString(req.query.estado?.toString());
+    
+    // Validación adicional de parámetros usando conjuntos predefinidos
+    const categoria = allowedCategories.has(categoriaRaw) ? categoriaRaw : undefined;
+    const urgencia = allowedUrgencias.has(urgenciaRaw) ? urgenciaRaw : undefined;
+    const estado = allowedEstados.has(estadoRaw) ? estadoRaw : "activa";
+    
+    // Validación segura del parámetro de ordenamiento
     const sort = parseSort(req.query.sort?.toString());
 
     const lim = Number(req.query.limit) > 0 ? Number(req.query.limit) : 12;
     const pag = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
     const skip = (pag - 1) * lim;
 
-    const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
-    if (categoriaRaw) filter.categoria = categoriaRaw;
-    if (urgenciaRaw) filter.urgencia = urgenciaRaw;
-    if (qRaw) filter.titulo = { $regex: new RegExp(qRaw, "i") };
+        // Construcción segura del filtro usando solo valores validados
+    const filter = { 
+      visible: true, 
+      estado
+    };
+    
+    // Solo agregar filtros si los valores son válidos
+    if (categoria) filter.categoria = categoria;
+    if (urgencia) filter.urgencia = urgencia;
+    if (qRaw) {
+      // Escapar caracteres especiales de regex y usar un patrón seguro
+      const safeQuery = escapeRegex(qRaw);
+      // Usar un objeto de búsqueda más seguro con un patrón escapado
+      filter.titulo = { $regex: `^${safeQuery}`, $options: "i" };
+    }
+
+    // Validar y aplicar límites seguros
+    const safeLimit = Math.min(Math.max(1, lim), 50); // Limitar a máximo 50 resultados
+    const safePage = Math.max(1, pag);
+    const safeSkip = (safePage - 1) * safeLimit;
 
     const [data, total] = await Promise.all([
-      Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
+      Need.find(filter).select(cardProjection).sort(sort).skip(safeSkip).limit(safeLimit).lean(),
       Need.countDocuments(filter),
     ]);
 
