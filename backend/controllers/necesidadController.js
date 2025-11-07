@@ -1,18 +1,28 @@
 // controllers/necesidadController.js
+const mongoose = require('mongoose');
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
-const mongoose = require("mongoose");
+const { sanitizeMongoId, sanitizeQueryParams, sanitizeUpdateData } = require("../utils/sanitize");
+
+// Función de utilidad para sanitizar valores de consulta
+const sanitizeQueryValue = (value) => {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return null; // No permitir arrays
+  if (typeof value === 'object') return null; // No permitir objetos
+  return String(value).trim(); // Convertir a string y eliminar espacios
+};
 
 // Proyección tipo “tarjeta”
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
 
-// ───────── helpers de casteo y sanitización ─────────
+/* ───────── helpers de casteo y sanitización ───────── */
 const toNumber = (v, def = undefined) => (v === undefined ? def : Number(v));
 
-const toBool = (v, def = undefined) => {
-  if (v === undefined) return def;
+const toBool = (v, def) => {
+  if (!hasValue(v)) return def;
   if (typeof v === "boolean") return v;
+  if (typeof v === "number") return Boolean(v);
   const s = String(v).toLowerCase().trim();
   return s === "true" || s === "1" || s === "on";
 };
@@ -59,19 +69,20 @@ const parseSort = (rawSort = "-fechaPublicacion") => {
   return (desc ? "-" : "") + field;
 };
 
-// Escapa regex
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-// ────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────── */
 
 exports.crearNecesidad = async (req, res) => {
   try {
-    const { titulo, categoria, urgencia, descripcionBreve, objetivo, recibido, fechaLimite, estado, visible } = req.body;
+    const sanitizedData = sanitizeUpdateData(req.body);
 
+    // Evitamos condición negada con else
     if (!req.file?.path || !req.file?.filename) {
-      return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
+      return res
+        .status(400)
+        .json({ ok: false, message: "Imagen principal requerida" });
     }
 
+    // Sanitización segura
     const sTitulo = sanitizeText(titulo, 140);
     const sCategoria = sanitizeText(categoria, 60);
     const sUrgencia = sanitizeText(urgencia, 30);
@@ -94,17 +105,41 @@ exports.crearNecesidad = async (req, res) => {
       fechaLimite: toDate(fechaLimite),
       estado: estadoFinal,
       visible: Boolean(toBool(visible, true)),
-      imagenPrincipal: { url: req.file.path, publicId: req.file.filename },
+      imagenPrincipal: {
+        url: req.file.path,
+        publicId: req.file.filename,
+      },
       creadaPor: String(req.userId),
       fechaPublicacion: new Date(),
     };
 
-    const need = await Need.create(doc);
-    return res.status(201).json({ ok: true, data: need });
+    // Validar campos requeridos y tipos de datos
+    const validaciones = [
+      { campo: 'titulo', valido: Boolean(needData.titulo), mensaje: 'Título es requerido y debe ser texto' },
+      { campo: 'categoria', valido: Boolean(needData.categoria), mensaje: 'Categoría debe ser válida' },
+      { campo: 'urgencia', valido: Boolean(needData.urgencia), mensaje: 'Urgencia debe ser válida' },
+      { campo: 'creadaPor', valido: Boolean(needData.creadaPor), mensaje: 'Usuario creador inválido' },
+    ];
 
+    const errores = validaciones.filter(v => !v.valido);
+    if (errores.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Datos inválidos',
+        errores: errores.map(e => e.mensaje)
+      });
+    }
+
+    // Crear documento utilizando el modelo (que aplicará sus propias validaciones)
+    const need = new Need(needData);
+    await need.save();
+
+    return res.status(201).json({ ok: true, data: need });
   } catch (err) {
     console.error("💥 crearNecesidad:", err);
-    return res.status(500).json({ ok: false, message: "Error al crear necesidad" });
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al crear necesidad" });
   }
 };
 
@@ -123,20 +158,33 @@ exports.listarPublicas = async (req, res) => {
     const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
     if (categoriaRaw && isPlain(categoriaRaw)) filter.categoria = categoriaRaw;
     if (urgenciaRaw && isPlain(urgenciaRaw)) filter.urgencia = urgenciaRaw;
-    if (qRaw && isPlain(qRaw)) filter.titulo = { $regex: escapeRegex(qRaw), $options: "i" };
+    if (qRaw && isPlain(qRaw)) filter.titulo = { $regex: qRaw, $options: "i" };
 
     const [data, total] = await Promise.all([
-      Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
+      Need.find(filter)
+        .select(cardProjection)
+        .sort(sortField)
+        .skip(skip)
+        .limit(limit),
       Need.countDocuments(filter),
     ]);
 
-    return res.json({ ok: true, data, total, page: pag, pages: Math.ceil(total / lim) });
+    return res.json({
+      ok: true,
+      data,
+      total,
+      page: page,
+      pages: Math.ceil(total / limit),
+    });
   } catch (err) {
     console.error("💥 listarPublicas:", err);
-    return res.status(500).json({ ok: false, message: "Error al listar necesidades" });
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al listar necesidades" });
   }
 };
 
+// Refactor de complejidad cognitiva (S3776)
 async function actualizarImagenSiExiste(need, req) {
   if (req.file?.path && req.file?.filename) {
     const oldPublicId = need?.imagenPrincipal?.publicId;
@@ -153,83 +201,103 @@ async function actualizarImagenSiExiste(need, req) {
 
 exports.actualizar = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
-
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
+    
     const need = await Need.findById(id);
-    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    
+    if (!need) {
+      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    }
 
-    const body = req.body || {};
-    const patch = buildPatch(body, need);
-    await actualizarImagenSiExiste(need, req);
+    const patch = buildPatchObject(req.body || {}, need);
+    const newImage = await updateImage(need, req.file);
+    
+    if (newImage) {
+      patch.imagenPrincipal = newImage;
+    }
 
     Object.assign(need, patch);
-    if (typeof need.syncEstado === "function") need.syncEstado();
+    
+    if (typeof need.syncEstado === "function") {
+      need.syncEstado();
+    }
 
     await need.save();
     return res.json({ ok: true, data: need });
+
   } catch (err) {
     console.error("💥 actualizar:", err);
     return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
   }
 };
 
-exports.obtenerPorId = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
-
-    const need = await Need.findById(id);
-    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-
-    if (typeof need.syncEstado === "function") {
-      need.syncEstado();
-      await need.save();
-    }
-    return res.json({ ok: true, data: need });
-  } catch (err) {
-    console.error("💥 obtenerPorId:", err);
-    return res.status(500).json({ ok: false, message: "Error al obtener necesidad" });
-  }
-};
-
 exports.cambiarEstado = async (req, res) => {
   try {
-    const { id } = req.params;
-    const estado = safeString(req.body.estado);
-    if (!isValidObjectId(id) || !allowedEstados.has(estado)) {
-      return res.status(400).json({ ok: false, message: "Parámetros inválidos" });
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
     }
 
-    const need = await Need.findByIdAndUpdate(id, { estado }, { new: true });
-    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    const estadosValidos = ["activa", "pausada", "cumplida", "vencida"];
+    const estado = sanitizeUpdateData(req.body).estado;
+    
+    if (!estado || !estadosValidos.includes(estado)) {
+      return res.status(400).json({ ok: false, message: "Estado no válido" });
+    }
+
+    const need = await Need.findByIdAndUpdate(
+      id,
+      { estado },
+      { new: true, runValidators: true }
+    );
+
+    if (!need)
+      return res
+        .status(404)
+        .json({ ok: false, message: "Necesidad no encontrada" });
 
     return res.json({ ok: true, data: need });
   } catch (err) {
     console.error("💥 cambiarEstado:", err);
-    return res.status(500).json({ ok: false, message: "Error al cambiar estado" });
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al cambiar estado" });
   }
 };
 
 exports.eliminar = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
 
     const need = await Need.findById(id);
-    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
+    if (!need)
+      return res
+        .status(404)
+        .json({ ok: false, message: "Necesidad no encontrada" });
 
+    // borra imagen en Cloudinary si existe
     const publicId = need?.imagenPrincipal?.publicId;
     if (publicId) {
-      try { await cloudinary.uploader.destroy(publicId, { resource_type: "image" }); }
-      catch (e) { console.warn("No se pudo eliminar imagen:", e?.message); }
+      try {
+        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("No se pudo eliminar imagen de Cloudinary:", e?.message);
+      }
     }
 
     await Need.findByIdAndDelete(id);
     return res.json({ ok: true });
   } catch (err) {
     console.error("💥 eliminar:", err);
-    return res.status(500).json({ ok: false, message: "Error al eliminar necesidad" });
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al eliminar necesidad" });
   }
 };
 
