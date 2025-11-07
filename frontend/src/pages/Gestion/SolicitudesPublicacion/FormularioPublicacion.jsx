@@ -569,21 +569,21 @@ const FormularioPublicacion = () => {
             className="mt-1"
           />
           <p className="text-xs text-gray-500 mt-1">
-            * Solo <span className="font-medium">imágenes</span> (JPG/PNG/WEBP). Máx. 5&nbsp;MB.
+        * Solo <span className="font-medium">imágenes</span> (JPG/PNG/WEBP). Máx. 5&nbsp;MB.
           </p>
         </label>
 
         <label className="block">
           Fotos de la mascota (hasta {MAX_FOTOS}):
           <input
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleImagenes}
-            className="mt-1"
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleImagenes}
+        className="mt-1"
           />
           <p className="text-xs text-gray-500 mt-1">
-            * Solo <span className="font-medium">imágenes</span> (JPG/PNG/WEBP), máx. {MAX_FOTOS} fotos y 5&nbsp;MB cada una.
+        * Solo <span className="font-medium">imágenes</span> (JPG/PNG/WEBP), máx. {MAX_FOTOS} fotos y 5&nbsp;MB cada una.
           </p>
         </label>
       </section>

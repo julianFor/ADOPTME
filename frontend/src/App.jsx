@@ -83,7 +83,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* ToastProvider debe envolver TODO para que los toasts funcionen en cualquier vista */}
+      {/* ToastProvider envuelve la aplicación para habilitar notificaciones toast en todas las vistas */}
       <ToastProvider>
         {user ? (
           <NotificationProvider>

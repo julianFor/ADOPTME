@@ -45,13 +45,8 @@ exports.crearSolicitud = async (req, res) => {
       asJSON(req.body?.confirmaciones) || fromBracketed(req.body, 'confirmaciones') || {};
 
     // 2) Archivos subidos a Cloudinary por el middleware uploadPublicacionDocs
-    const doc  = req.cloudinaryPublicacion?.documentoIdentidad || null;
-    const imgs = Array.isArray(req.cloudinaryPublicacion?.imagenes)
-      ? req.cloudinaryPublicacion.imagenes
-      : [];
-
-    const documentoIdentidad = doc?.secure_url || null;            // URL pública
-    const imagenes = imgs.map(i => i?.secure_url).filter(Boolean); // Array de URLs públicas
+    const documentoIdentidad = req.cloudinaryPublicacion?.documentoIdentidad?.secure_url || null;
+    const imagenes = req.cloudinaryPublicacion?.imagenes?.map(i => i?.secure_url).filter(Boolean) || [];
 
     // 3) Validación mínima
     if (!imagenes.length) {
@@ -178,18 +173,18 @@ exports.aprobarYPublicar = async (req, res) => {
       tamaño: solicitud.mascota?.tamaño,
       estadoSalud: solicitud.mascota?.estadoSalud,
       sexo: solicitud.mascota?.sexo,
-      descripcion: `${solicitud.mascota?.personalidad || ''}\n\nHistoria: ${solicitud.mascota?.historia || ''}`,
+      descripcion: `${solicitud.mascota?.personalidad ?? ''}\n\nHistoria: ${solicitud.mascota?.historia ?? ''}`,
       imagenes: solicitud.imagenes,
       origen: 'externo',
-      publicadaPor: solicitud.adoptante?._id || req.userId,
+      publicadaPor: solicitud.adoptante?._id ?? req.userId,
       publicada: true,
       disponible: true,
       contactoExterno: {
         nombre: solicitud.contacto?.nombre,
         telefono: solicitud.contacto?.telefono,
         correo: solicitud.contacto?.correo,
-        ubicacion: `${solicitud.contacto?.ciudad || ''} - ${solicitud.contacto?.barrio || ''}`,
-        observaciones: solicitud.observacionesAdmin || ''
+        ubicacion: `${solicitud.contacto?.ciudad ?? ''} - ${solicitud.contacto?.barrio ?? ''}`,
+        observaciones: solicitud.observacionesAdmin ?? ''
       }
     });
 
@@ -235,7 +230,7 @@ exports.rechazarSolicitud = async (req, res) => {
     }
 
     solicitud.estado = 'rechazada';
-    solicitud.observacionesAdmin = req.body?.observaciones || '';
+    solicitud.observacionesAdmin = req.body?.observaciones ?? '';
     await solicitud.save();
 
     if (solicitud.adoptante) {

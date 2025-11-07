@@ -45,7 +45,7 @@ const DetalleProcesoAdopcion = () => {
     
     if (datosListos && requiereInicializacion) {
       const etapaGuardada = localStorage.getItem(`etapaActual-${procesoId}`);
-      const etapaInicial = etapaGuardada !== null ? Number.parseInt(etapaGuardada, 10) : 0;
+      const etapaInicial = etapaGuardada ? Number.parseInt(etapaGuardada, 10) : 0;
       setEtapaActual(etapaInicial);
     }
   }, [loading, proceso, etapaActual, procesoId]);
@@ -65,25 +65,25 @@ const DetalleProcesoAdopcion = () => {
     if (etapaActual > 0) setEtapaActual(etapaActual - 1);
   };
 
-  const esSoloLectura = rol === 'adoptante';
+  const esAdministrador = rol !== 'adoptante';
   const puedeFirmar = rol === 'adoptante';
 
   const etapas = proceso
     ? [
-        <EtapaFormulario key="formulario" proceso={proceso} editable={!esSoloLectura} />,
+        <EtapaFormulario key="formulario" proceso={proceso} editable={esAdministrador} />,
         <EtapaEntrevista
           key="entrevista"
           proceso={proceso}
           setProceso={setProceso}
           procesoId={procesoId}
-          editable={!esSoloLectura}
+          editable={esAdministrador}
         />,
         <EtapaVisita
           key="visita"
           proceso={proceso}
           setProceso={setProceso}
           procesoId={procesoId}
-          editable={!esSoloLectura}
+          editable={esAdministrador}
         />,
         <EtapaFirma
           key="firma"
@@ -97,7 +97,7 @@ const DetalleProcesoAdopcion = () => {
           proceso={proceso}
           setProceso={setProceso}
           procesoId={procesoId}
-          editable={!esSoloLectura}
+          editable={esAdministrador}
         />,
       ]
     : [];

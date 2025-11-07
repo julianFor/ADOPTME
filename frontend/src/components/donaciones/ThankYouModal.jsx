@@ -27,7 +27,7 @@ function ThankYouModal({ show, onClose }) {
       id="modal-overlay"
       className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-[9999]"
     >
-      {/* Botón transparente y accesible que cubre todo el overlay */}
+      {/* Button that covers the entire overlay for accessibility and click handling */}
       <button
         type="button"
         aria-label="Cerrar modal de agradecimiento"
