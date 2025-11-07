@@ -10,7 +10,7 @@ import {
   FiPhoneCall,
 } from "react-icons/fi";
 
-function useInView(options = { root: null, rootMargin: "0px", threshold: 0.15 }) {
+function useInView({ root = null, rootMargin = "0px", threshold = 0.15 } = {}) {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
 
@@ -22,10 +22,10 @@ function useInView(options = { root: null, rootMargin: "0px", threshold: 0.15 })
         setInView(true);
         obs.unobserve(el); // dispara una vez
       }
-    }, options);
+    }, { root, rootMargin, threshold });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [options]);
+  }, [root, rootMargin, threshold]);
 
   return [ref, inView];
 }
@@ -59,7 +59,7 @@ const ComoAdoptar = () => {
         </div>
 
         <p className="mt-6 text-center text-xl text-gray-800 font-semibold">
-          <span className="inline-block align-middle mr-2">🐾</span>
+          <span className="inline-block align-middle mr-2">🐾</span>{' '}
           ¿Cómo funciona la adopción en nuestra plataforma?
         </p>
 
