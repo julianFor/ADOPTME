@@ -1,4 +1,6 @@
 // src/components/necesidades/ProgressBar.jsx
+import PropTypes from "prop-types";
+
 export default function ProgressBar({ value = 0 }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
@@ -14,3 +16,7 @@ export default function ProgressBar({ value = 0 }) {
     </div>
   );
 }
+
+ProgressBar.propTypes = {
+  value: PropTypes.number.isRequired,
+};

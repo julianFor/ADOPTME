@@ -52,7 +52,6 @@ export default function NecesidadFundacionList() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // ruta pública -> solo visibles
       const res = await listarNecesidades({
         estado: "",
         limit: 200,
@@ -114,6 +113,82 @@ export default function NecesidadFundacionList() {
     await fetchData();
   };
 
+  /* ====== Nueva función: renderiza el cuerpo de la tabla ====== */
+  const renderTableBody = () => {
+    if (loading) {
+      return Array.from({ length: 5 }).map(() => (
+        <tr key={crypto.randomUUID()} className="border-b">
+          <td className="px-4 py-3">
+            <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
+          </td>
+        </tr>
+      ));
+    }
+
+    if (filtered.length > 0) {
+      return filtered.map((n) => (
+        <tr key={n._id} className="border-b hover:bg-gray-50">
+          <td className="px-4 py-3">
+            <img
+              src={getImagenPrincipal(n)}
+              alt={n.titulo}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          </td>
+          <td className="px-4 py-3">
+            <div className="font-medium text-gray-800">{n.titulo}</div>
+            <div className="text-xs text-gray-400 capitalize">
+              {n.categoria} · {n.urgencia}
+            </div>
+          </td>
+          <td className="px-4 py-3">{n.objetivo}u</td>
+          <td className="px-4 py-3">{formatFecha(n.fechaPublicacion)}</td>
+          <td className="px-4 py-3">{estadoLabel(n.estado)}</td>
+          <td className="px-4 py-3">
+            <div className="flex items-center justify-center gap-4">
+              <PencilIcon
+                title="Editar"
+                className="h-5 w-5 text-purple-500 cursor-pointer"
+                onClick={() => onEditar(n)}
+              />
+              <TrashIcon
+                title="Eliminar"
+                className="h-5 w-5 text-purple-500 cursor-pointer"
+                onClick={() => onEliminar(n)}
+              />
+            </div>
+          </td>
+        </tr>
+      ));
+    }
+
+    return (
+      <tr>
+        <td colSpan={7} className="py-8 text-center text-gray-500">
+          No hay necesidades que coincidan con la búsqueda.
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -155,88 +230,7 @@ export default function NecesidadFundacionList() {
               <th className="px-4 py-2 text-center">Acciones</th>
             </tr>
           </thead>
-
-          <tbody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b">
-                  <td className="px-4 py-3">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
-                  </td>
-                </tr>
-              ))
-            ) : filtered.length ? (
-              filtered.map((n) => (
-                <tr key={n._id} className="border-b hover:bg-gray-50">
-                  {/* Imagen */}
-                  <td className="px-4 py-3">
-                    <img
-                      src={getImagenPrincipal(n)}
-                      alt={n.titulo}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  </td>
-
-                  {/* Título + meta */}
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800">{n.titulo}</div>
-                    <div className="text-xs text-gray-400 capitalize">
-                      {n.categoria} · {n.urgencia}
-                    </div>
-                  </td>
-
-                  {/* Cantidad (objetivo) */}
-                  <td className="px-4 py-3">{n.objetivo}u</td>
-
-                  {/* Fecha publicación */}
-                  <td className="px-4 py-3">{formatFecha(n.fechaPublicacion)}</td>
-
-                  {/* Estado */}
-                  <td className="px-4 py-3">{estadoLabel(n.estado)}</td>
-
-                  {/* Acciones */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-4">
-                      <PencilIcon
-                        title="Editar"
-                        className="h-5 w-5 text-purple-500 cursor-pointer"
-                        onClick={() => onEditar(n)}
-                      />
-                      <TrashIcon
-                        title="Eliminar"
-                        className="h-5 w-5 text-purple-500 cursor-pointer"
-                        onClick={() => onEliminar(n)}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-500">
-                  No hay necesidades que coincidan con la búsqueda.
-                </td>
-              </tr>
-            )}
-          </tbody>
+          <tbody>{renderTableBody()}</tbody>
         </table>
       </div>
 
@@ -248,7 +242,7 @@ export default function NecesidadFundacionList() {
         onCancel={() => setConfirmOpen(false)}
       />
 
-      {/* Modal crear/editar (ahí sí puedes cambiar el campo “Visible”) */}
+      {/* Modal crear/editar */}
       <NecesidadFormModal
         isOpen={showModal}
         initialData={selectedRow}

@@ -1,4 +1,3 @@
-// src/pages/Donar.jsx
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import DonationSection from "../components/donaciones/DonationSection";
@@ -64,36 +63,37 @@ function TabButton({ active, label, onClick }) {
     "w-full h-11 sm:h-12 rounded-full font-medium text-purple-600";
   const widthWrap = "w-[280px] sm:w-[340px]";
 
-  if (active) {
+  // 🔧 Corregido para evitar condición negada (S7735)
+  if (!active) {
     return (
-      <div
-        className={`${widthWrap} rounded-full p-[2px] bg-gradient-to-r from-purple-600 to-purple-300 shadow-[0_6px_0_#E9E4FB]`}
+      <button
+        type="button"
+        aria-pressed="false"
+        onClick={onClick}
+        className={`${widthWrap} ${commonText} bg-white shadow-[0_6px_0_#E9E4FB]`}
       >
-        <button
-          type="button"
-          aria-pressed="true"
-          onClick={onClick}
-          className={`${commonText} bg-white`}
-        >
-          {label}
-        </button>
-      </div>
+        {label}
+      </button>
     );
   }
 
   return (
-    <button
-      type="button"
-      aria-pressed="false"
-      onClick={onClick}
-      className={`${widthWrap} ${commonText} bg-white shadow-[0_6px_0_#E9E4FB]`}
+    <div
+      className={`${widthWrap} rounded-full p-[2px] bg-gradient-to-r from-purple-600 to-purple-300 shadow-[0_6px_0_#E9E4FB]`}
     >
-      {label}
-    </button>
+      <button
+        type="button"
+        aria-pressed="true"
+        onClick={onClick}
+        className={`${commonText} bg-white`}
+      >
+        {label}
+      </button>
+    </div>
   );
 }
 
-// ✅ Validación de props para cumplir con SonarQube S6774
+// ✅ Validación de props
 TabButton.propTypes = {
   active: PropTypes.bool.isRequired,
   label: PropTypes.string.isRequired,

@@ -7,40 +7,45 @@ import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/
 import MascotaFundacionFormModal from "./MascotaFundacionFormModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 
-const formatSimpleAge = (fechaNacimiento) => {
-  if (fechaNacimiento) {
-    const dob = new Date(fechaNacimiento);
+// 🟢 Funciones auxiliares para reducir complejidad
+const calcularDiferencias = (dob, today) => {
+  let years = today.getFullYear() - dob.getFullYear();
+  let months = today.getMonth() - dob.getMonth();
+  let days = today.getDate() - dob.getDate();
 
-    if (!Number.isNaN(dob.getTime())) {
-      const today = new Date();
-
-      if (dob <= today) {
-        let years = today.getFullYear() - dob.getFullYear();
-        let months = today.getMonth() - dob.getMonth();
-        let days = today.getDate() - dob.getDate();
-
-        if (days < 0) {
-          months -= 1;
-          const prevMonthIndex = (today.getMonth() - 1 + 12) % 12;
-          const prevMonthYear =
-            prevMonthIndex === 11 ? today.getFullYear() - 1 : today.getFullYear();
-          days += new Date(prevMonthYear, prevMonthIndex + 1, 0).getDate();
-        }
-
-        if (months < 0) {
-          months += 12;
-          years -= 1;
-        }
-
-        if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
-        if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
-        return `${days} día${days !== 1 ? "s" : ""}`;
-      }
-      return "Fecha inválida";
-    }
-    return "No especificado";
+  if (days < 0) {
+    months -= 1;
+    const prevMonthIndex = (today.getMonth() - 1 + 12) % 12;
+    const prevMonthYear =
+      prevMonthIndex === 11 ? today.getFullYear() - 1 : today.getFullYear();
+    days += new Date(prevMonthYear, prevMonthIndex + 1, 0).getDate();
   }
-  return "No especificado";
+
+  if (months < 0) {
+    months += 12;
+    years -= 1;
+  }
+
+  return { years, months, days };
+};
+
+const formatearEdad = ({ years, months, days }) => {
+  if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
+  if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
+  return `${days} día${days !== 1 ? "s" : ""}`;
+};
+
+const formatSimpleAge = (fechaNacimiento) => {
+  if (!fechaNacimiento) return "No especificado";
+
+  const dob = new Date(fechaNacimiento);
+  if (Number.isNaN(dob.getTime())) return "No especificado";
+
+  const today = new Date();
+  if (dob > today) return "Fecha inválida";
+
+  const diferencias = calcularDiferencias(dob, today);
+  return formatearEdad(diferencias);
 };
 
 const MascotaFundacionList = () => {

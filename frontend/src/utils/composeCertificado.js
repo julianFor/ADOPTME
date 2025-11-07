@@ -29,17 +29,13 @@ async function loadFonts() {
   ]);
 }
 
-// Recorta márgenes transparentes del canvas de la firma
-function cropTransparent(srcCanvas) {
-  const w = srcCanvas.width, h = srcCanvas.height;
-  const ctx = srcCanvas.getContext('2d');
-  const { data } = ctx.getImageData(0, 0, w, h);
-
+// --- NUEVA VERSIÓN SIMPLIFICADA DE cropTransparent ---
+function findImageBounds(data, w, h) {
   let minX = w, minY = h, maxX = 0, maxY = 0, found = false;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      if (data[i + 3] > 0) { // alpha > 0
+      if (data[i + 3] > 0) { // píxel visible
         found = true;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
@@ -48,17 +44,31 @@ function cropTransparent(srcCanvas) {
       }
     }
   }
-  if (!found) return srcCanvas;
-
-  const cw = maxX - minX + 1;
-  const ch = maxY - minY + 1;
-  const out = document.createElement('canvas');
-  out.width = cw; out.height = ch;
-  out.getContext('2d').drawImage(srcCanvas, minX, minY, cw, ch, 0, 0, cw, ch);
-  return out;
+  return found ? { minX, minY, maxX, maxY } : null;
 }
 
-// ---- NUEVAS FUNCIONES PARA REDUCIR COMPLEJIDAD ----
+function cropTransparent(srcCanvas) {
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const ctx = srcCanvas.getContext('2d');
+  const { data } = ctx.getImageData(0, 0, w, h);
+
+  const bounds = findImageBounds(data, w, h);
+  if (!bounds) return srcCanvas;
+
+  const cw = bounds.maxX - bounds.minX + 1;
+  const ch = bounds.maxY - bounds.minY + 1;
+  const out = document.createElement('canvas');
+  out.width = cw;
+  out.height = ch;
+  out.getContext('2d').drawImage(
+    srcCanvas,
+    bounds.minX, bounds.minY, cw, ch,
+    0, 0, cw, ch
+  );
+  return out;
+}
+// ----------------------------------------------------
+
 function drawCampoTexto(ctx, campo, datosCampo, xFn, yFn, debug, guide) {
   setFont(ctx, campo.font);
   const cx = xFn(campo.x - campo.w / 2);
@@ -82,16 +92,12 @@ function dibujarFirma(ctx, datos, xFn, yFn, debug, guide) {
   const sh = cropped.height * r;
 
   const sx = bx + (bw - sw) / 2;
-  const sy = by + (bh - sh) - 2; // -2 px para apoyar justo en la línea
+  const sy = by + (bh - sh) - 2;
 
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(cropped, sx, sy, sw, sh);
 }
-// ----------------------------------------------------
 
-/**
- * Componer certificado sobre plantilla PNG
- */
 export async function composeCertificado({
   plantillaSrc = '/plantillas/certificado_adopcion.png',
   W = 1600,
@@ -101,10 +107,10 @@ export async function composeCertificado({
 }) {
   await loadFonts();
 
-  // cache-busting simple por si acabas de reemplazar la imagen
-  const src = /\?/.test(plantillaSrc) ? plantillaSrc : `${plantillaSrc}?v=${Date.now()}`;
+  const src = /\?/.test(plantillaSrc)
+    ? plantillaSrc
+    : `${plantillaSrc}?v=${Date.now()}`;
 
-  // Cargar plantilla
   const plantilla = await new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -113,19 +119,17 @@ export async function composeCertificado({
     img.src = src;
   });
 
-  // Canvas destino
   const c = document.createElement('canvas');
-  c.width = W; c.height = H;
+  c.width = W;
+  c.height = H;
   const ctx = c.getContext('2d');
 
   const x = pxX(W), y = pxY(H);
 
-  // Fondo + plantilla
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
   ctx.drawImage(plantilla, 0, 0, W, H);
 
-  // Guías (debug)
   const guide = (cx, cy, cw, ch) => {
     if (!debug) return;
     ctx.save();
@@ -135,12 +139,9 @@ export async function composeCertificado({
     ctx.restore();
   };
 
-  // Campos de texto
   drawCampoTexto(ctx, L.campos.adoptante, datos.adoptante, x, y, debug, guide);
   drawCampoTexto(ctx, L.campos.mascota, datos.mascota, x, y, debug, guide);
   drawCampoTexto(ctx, L.campos.fecha, datos.fecha, x, y, debug, guide);
-
-  // Firma
   dibujarFirma(ctx, datos, x, y, debug, guide);
 
   return await new Promise((resolve) => {

@@ -29,16 +29,26 @@ export default function NeedsCatalog() {
   }, [filters]);
 
   const onPage = (dir) =>
-    setFilters((f) => ({ ...f, page: Math.max(1, Math.min((resp.pages || 1), f.page + dir)) }));
+    setFilters((f) => ({
+      ...f,
+      page: Math.max(1, Math.min(resp.pages || 1, f.page + dir)),
+    }));
 
   return (
     <div className="space-y-10">
       {/* GRID: 1 col en mobile, 2 en md+ para igualar Figma */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-64 bg-purple-50 rounded-[24px] shadow-[0_8px_24px_rgba(0,0,0,0.06)] animate-pulse" />
-          ))}
+          {/* ✅ Corregido: se usa un UID en lugar del índice */}
+          {Array.from({ length: 4 }).map(() => {
+            const uid = crypto.randomUUID();
+            return (
+              <div
+                key={uid}
+                className="h-64 bg-purple-50 rounded-[24px] shadow-[0_8px_24px_rgba(0,0,0,0.06)] animate-pulse"
+              />
+            );
+          })}
         </div>
       ) : (
         <>
