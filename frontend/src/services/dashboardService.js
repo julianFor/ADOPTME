@@ -8,23 +8,23 @@ export const getSummary = async () => {
   return data;
 };
 
-export const getSeriesAdopcion = async (params = { months: 6 }) => {
-  const { data } = await api.get('/dashboard/activity/adopcion', { params });
+export const getSeriesAdopcion = async ({ months = 6 } = {}) => {
+  const { data } = await api.get('/dashboard/activity/adopcion', { params: { months } });
   return data; // { series: [{name, val}, ...] }
 };
 
-export const getSeriesPublicacion = async (params = { months: 6 }) => {
-  const { data } = await api.get('/dashboard/activity/publicacion', { params });
+export const getSeriesPublicacion = async ({ months = 6 } = {}) => {
+  const { data } = await api.get('/dashboard/activity/publicacion', { params: { months } });
   return data; // { series: [...] }
 };
 
-export const getSeriesDonaciones = async (params = { months: 6 }) => {
-  const { data } = await api.get('/dashboard/activity/donaciones', { params });
+export const getSeriesDonaciones = async ({ months = 6 } = {}) => {
+  const { data } = await api.get('/dashboard/activity/donaciones', { params: { months } });
   return data; // { currency, series: [...] }
 };
 
-export const getProcesosEnCurso = async (params = { limit: 10 }) => {
-  const { data } = await api.get('/dashboard/processes/in-progress', { params });
+export const getProcesosEnCurso = async ({ limit = 10 } = {}) => {
+  const { data } = await api.get('/dashboard/processes/in-progress', { params: { limit } });
   return data; // { totalEtapas: 4, rows: [...] }
 };
 
@@ -35,12 +35,12 @@ export const getAdoptanteSummary = async () => {
   return data; // { solicitudesAdopcion:{total}, solicitudesPublicacion:{total}, publicacionesAdoptMe:{total} }
 };
 
-export const getMisProcesosEnCurso = async (params = { limit: 10 }) => {
-  const { data } = await api.get('/dashboard/adoptante/processes/in-progress', { params });
+export const getMisProcesosEnCurso = async ({ limit = 10 } = {}) => {
+  const { data } = await api.get('/dashboard/adoptante/processes/in-progress', { params: { limit } });
   return data; // { totalEtapas: 4, rows: [...] }
 };
 
-export const getMisSolicitudesPublicacion = async (params = { limit: 10 }) => {
-  const { data } = await api.get('/dashboard/adoptante/solicitudes-publicacion', { params });
+export const getMisSolicitudesPublicacion = async ({ limit = 10 } = {}) => {
+  const { data } = await api.get('/dashboard/adoptante/solicitudes-publicacion', { params: { limit } });
   return data; // { rows: [...] }
 };
