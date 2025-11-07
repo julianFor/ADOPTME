@@ -85,12 +85,12 @@ exports.listarPublicas = async (req, res) => {
     if (sanitizedParams.categoria) filter.categoria = sanitizedParams.categoria;
     if (sanitizedParams.urgencia) filter.urgencia = sanitizedParams.urgencia;
     if (sanitizedParams.q) {
-      const escapedQuery = sanitizedParams.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedQuery = sanitizedParams.q.replaceAll(/[.*+?^${}()|[\]\\]/g, '');
       filter.titulo = { $regex: new RegExp(escapedQuery, 'i') };
     }
 
-    const page = Math.max(1, parseInt(sanitizedParams.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(sanitizedParams.limit) || 10));
+    const page = Math.max(1, Number.parseInt(sanitizedParams.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number.parseInt(sanitizedParams.limit) || 10));
     const skip = (page - 1) * limit;
     const sortField = sanitizedParams.sort || '-fechaPublicacion';
 

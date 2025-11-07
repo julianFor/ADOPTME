@@ -230,7 +230,7 @@ exports.rechazarSolicitud = async (req, res) => {
     }
 
     solicitud.estado = 'rechazada';
-    solicitud.observacionesAdmin = req.body.observaciones ?? '';
+    solicitud.observacionesAdmin = req.body?.observaciones || '';
     await solicitud.save();
 
     if (solicitud.adoptante) {
