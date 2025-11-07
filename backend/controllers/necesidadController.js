@@ -1,4 +1,5 @@
 // controllers/necesidadController.js
+const mongoose = require('mongoose');
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
 const { sanitizeMongoId, sanitizeQueryParams, sanitizeUpdateData } = require("../utils/sanitize");
