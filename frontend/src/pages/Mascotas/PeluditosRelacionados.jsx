@@ -88,13 +88,13 @@ function calcularEdad(fechaNacimiento) {
   }
 
   if (años > 0) {
-    return `${años} año${años !== 1 ? 's' : ''}`;
+    return `${años} año${años === 1 ? '' : 's'}`;
   } else {
     const meses =
       (hoy.getMonth() + 12 * hoy.getFullYear()) -
       (nacimiento.getMonth() + 12 * nacimiento.getFullYear());
     const totalMeses = Math.max(1, meses);
-    return `${totalMeses} mes${totalMeses !== 1 ? 'es' : ''}`;
+    return `${totalMeses} mes${totalMeses === 1 ? '' : 'es'}`;
   }
 }
 

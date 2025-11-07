@@ -197,11 +197,8 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     <div
       role={sty.ariaRole}
       aria-live="polite"
-      tabIndex={0} // ✅ Hace el div interactivo accesible
-      onMouseEnter={onPause}
-      onMouseLeave={onResume}
-      onFocus={onPause}  // ✅ equivalente teclado
-      onBlur={onResume}   // ✅ equivalente teclado
+      aria-atomic="true"
+      aria-describedby={`toast-${toast.id}-description`}
       className={[
         "pointer-events-auto bg-white shadow-xl rounded-xl min-w-[280px] max-w-[420px] overflow-hidden",
         "transition-all duration-200",
@@ -218,18 +215,20 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
           </span>
           <div className="flex-1">
             {title ? <p className={`font-semibold ${sty.text}`}>{title}</p> : null}
-            <p className="mt-0.5">{message}</p>
+            <p id={`toast-${toast.id}-description`} className="mt-0.5">{message}</p>
           </div>
         </div>
 
         <button
-          aria-label="Cerrar"
+          aria-label="Cerrar notificación"
           onClick={onClose}
+          onMouseEnter={onPause}
+          onMouseLeave={onResume}
           onFocus={onPause}
           onBlur={onResume}
-          className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-600"
+          className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-600 p-1 rounded-full hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-400"
         >
-          <FiX />
+          <FiX aria-hidden="true" />
         </button>
       </div>
 

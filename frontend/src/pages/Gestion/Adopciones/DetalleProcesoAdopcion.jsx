@@ -38,12 +38,15 @@ const DetalleProcesoAdopcion = () => {
     fetchProceso();
   }, [procesoId]);
 
-  // Restaurar etapa desde localStorage una vez que el proceso esté cargado
+  // Restaurar etapa desde localStorage cuando el proceso esté listo
   useEffect(() => {
-    // Condición invertida para cumplir con SonarQube
-    if (!loading && proceso && etapaActual === null) {
-      const guardada = localStorage.getItem(`etapaActual-${procesoId}`);
-      setEtapaActual(guardada !== null ? Number.parseInt(guardada, 10) : 0);
+    const datosListos = loading === false && proceso !== null;
+    const requiereInicializacion = etapaActual === null;
+    
+    if (datosListos && requiereInicializacion) {
+      const etapaGuardada = localStorage.getItem(`etapaActual-${procesoId}`);
+      const etapaInicial = etapaGuardada !== null ? Number.parseInt(etapaGuardada, 10) : 0;
+      setEtapaActual(etapaInicial);
     }
   }, [loading, proceso, etapaActual, procesoId]);
 

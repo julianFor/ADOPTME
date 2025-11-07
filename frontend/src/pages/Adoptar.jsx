@@ -74,9 +74,9 @@ function calcularEdad(fechaNacimiento) {
         12 * hoy.getFullYear() -
         (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
     );
-    return `${meses} mes${meses !== 1 ? "es" : ""}`;
+    return `${meses} mes${meses === 1 ? "" : "es"}`;
   }
-  return `${años} año${años !== 1 ? "s" : ""}`;
+  return `${años} año${años === 1 ? "" : "s"}`;
 }
 
 /* ───────────────── Página principal ───────────────── */
@@ -116,26 +116,40 @@ function Adoptar() {
   }, []);
 
   const getImagenPrincipal = (imagenes) => {
-    if (!imagenes || (Array.isArray(imagenes) && imagenes.length === 0)) {
-      return "https://via.placeholder.com/600x400?text=AdoptMe";
+    const defaultImage = "https://via.placeholder.com/600x400?text=AdoptMe";
+    
+    if (!Array.isArray(imagenes) || imagenes.length === 0) {
+      return defaultImage;
     }
-    const first = Array.isArray(imagenes) ? imagenes[0] : imagenes;
-    if (typeof first === "string" && first.startsWith("http")) return first;
-    if (typeof first === "object" && first !== null) {
-      return first.secure_url || first.url || "https://via.placeholder.com/600x400?text=AdoptMe";
+    
+    const first = imagenes[0];
+    if (typeof first === "string" && first.startsWith("http")) {
+      return first;
     }
-    return "https://via.placeholder.com/600x400?text=AdoptMe";
+    
+    if (first && typeof first === "object") {
+      return first.secure_url || first.url || defaultImage;
+    }
+    
+    return defaultImage;
   };
 
   // Helpers
   const yearsOld = (fechaNacimiento) => {
-    if (!fechaNacimiento) return 0;
-    const n = new Date(fechaNacimiento);
-    const h = new Date();
-    let y = h.getFullYear() - n.getFullYear();
-    const m = h.getMonth() - n.getMonth();
-    if (m < 0 || (m === 0 && h.getDate() < n.getDate())) y--;
-    return Math.max(0, y);
+    if (typeof fechaNacimiento !== 'string') return 0;
+    
+    const nacimiento = new Date(fechaNacimiento);
+    if (!Number.isFinite(nacimiento.getTime())) return 0;
+    
+    const hoy = new Date();
+    const añosDiferencia = hoy.getFullYear() - nacimiento.getFullYear();
+    const mesDiferencia = hoy.getMonth() - nacimiento.getMonth();
+    const ajustePorMes = mesDiferencia === 0 
+      ? hoy.getDate() >= nacimiento.getDate()
+      : mesDiferencia > 0;
+    
+    const edad = ajustePorMes ? añosDiferencia : añosDiferencia - 1;
+    return Math.max(0, edad);
   };
   const normalizar = (v) => (v || "").toString().trim().toLowerCase();
 
@@ -146,21 +160,25 @@ function Adoptar() {
 
   // Filtro principal
   const filteredMascotas = useMemo(() => {
-    return mascotas.filter((m) => {
-      const especie = normalizar(m.especie || m.tipo);
-      const org = normalizar(m.origen);
-      const sx = normalizar(m.sexo);
-      const sz = normalizar(m.tamano || m.tamaño);
-      const edadY = yearsOld(m.fechaNacimiento);
+    const aplicarFiltros = (mascota) => {
+      // Normalización de valores
+      const especieMascota = normalizar(mascota.especie || mascota.tipo);
+      const origenMascota = normalizar(mascota.origen);
+      const sexoMascota = normalizar(mascota.sexo);
+      const tamanoMascota = normalizar(mascota.tamano || mascota.tamaño);
+      const edadMascota = yearsOld(mascota.fechaNacimiento);
 
-      const okEspecie = selectedSpecies === "todos" ? true : especie === selectedSpecies;
-      const okOrigen = origen === "todos" ? true : org === origen;
-      const okSexo = sexo === "todos" ? true : sx === sexo;
-      const okTam = tamano === "todos" ? true : sz === tamano;
-      const okEdad = edadY <= Number(edadMax);
+      // Verificación de filtros
+      if (selectedSpecies !== "todos" && especieMascota !== selectedSpecies) return false;
+      if (origen !== "todos" && origenMascota !== origen) return false;
+      if (sexo !== "todos" && sexoMascota !== sexo) return false;
+      if (tamano !== "todos" && tamanoMascota !== tamano) return false;
+      if (edadMascota > Number(edadMax)) return false;
 
-      return okEspecie && okOrigen && okSexo && okTam && okEdad;
-    });
+      return true;
+    };
+
+    return mascotas.filter(aplicarFiltros);
   }, [mascotas, selectedSpecies, origen, sexo, tamano, edadMax]);
 
   // Reset de página al cambiar filtros
@@ -389,8 +407,9 @@ function Adoptar() {
               <PetCard
                 nombre={m.nombre}
                 edad={calcularEdad(m.fechaNacimiento)}
-                sexo={
-                  m.sexo ? m.sexo.charAt(0).toUpperCase() + m.sexo.slice(1).toLowerCase() : "N/A"
+                sexo={m.sexo 
+                  ? m.sexo.charAt(0).toUpperCase() + m.sexo.slice(1).toLowerCase() 
+                  : "N/A"
                 }
                 descripcion={m.descripcion}
                 imagen={getImagenPrincipal(m.imagenes)}

@@ -17,7 +17,7 @@ const onlyLettersSpaces = (v) =>
 const addressSafe = (v) =>
   (v || '').replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-,.]/g, '');
 const textSafe = (v) =>
-  (v || '').replaceAll('<', '').replaceAll('>', ''); // ✅ reemplazo literal seguro
+  (v || '').replace(/[<>]/g, ''); // ✅ reemplazo seguro con regex
 
 const SANITIZE = {
   nombre: onlyLettersSpaces,
@@ -489,16 +489,31 @@ const FormularioPublicacion = () => {
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Condiciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVisita" checked={form.aceptaVisita} onChange={handleChange} />{' '}
-            ¿Acepta visitas?
+            <input 
+              type="checkbox" 
+              name="aceptaVisita" 
+              checked={form.aceptaVisita} 
+              onChange={handleChange} 
+            />
+            <span>¿Acepta visitas?</span>
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVerificacion" checked={form.aceptaVerificacion} onChange={handleChange} />{' '}
-            ¿Acepta verificación?
+            <input 
+              type="checkbox" 
+              name="aceptaVerificacion" 
+              checked={form.aceptaVerificacion} 
+              onChange={handleChange} 
+            />
+            <span>¿Acepta verificación?</span>
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="tieneCondiciones" checked={form.tieneCondiciones} onChange={handleChange} />{' '}
-            ¿Tiene condiciones para el adoptante?
+            <input 
+              type="checkbox" 
+              name="tieneCondiciones" 
+              checked={form.tieneCondiciones} 
+              onChange={handleChange} 
+            />
+            <span>¿Tiene condiciones para el adoptante?</span>
           </label>
         </div>
       </section>
@@ -508,16 +523,31 @@ const FormularioPublicacion = () => {
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Confirmaciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="esResponsable" checked={form.esResponsable} onChange={handleChange} />{' '}
-            Soy responsable de esta mascota
+            <input 
+              type="checkbox" 
+              name="esResponsable" 
+              checked={form.esResponsable} 
+              onChange={handleChange} 
+            />
+            <span>Soy responsable de esta mascota</span>
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="noSolicitaPago" checked={form.noSolicitaPago} onChange={handleChange} />{' '}
-            No solicito pago por la adopción
+            <input 
+              type="checkbox" 
+              name="noSolicitaPago" 
+              checked={form.noSolicitaPago} 
+              onChange={handleChange} 
+            />
+            <span>No solicito pago por la adopción</span>
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="aceptaVerificacion2" checked={form.aceptaVerificacion2} onChange={handleChange} />{' '}
-            Acepto verificación de información
+            <input 
+              type="checkbox" 
+              name="aceptaVerificacion2" 
+              checked={form.aceptaVerificacion2} 
+              onChange={handleChange} 
+            />
+            <span>Acepto verificación de información</span>
           </label>
         </div>
       </section>
@@ -553,7 +583,7 @@ const FormularioPublicacion = () => {
       </section>
 
       {/* Confirmación final */}
-      <div className="flex items-center gap-2">
+      <label className="flex items-center gap-2">
         <input
           type="checkbox"
           name="aceptaTerminos"
@@ -561,7 +591,7 @@ const FormularioPublicacion = () => {
           onChange={handleChange}
         />
         <span>Declaro que la información es verídica y autorizo su revisión por el equipo de AdoptMe.</span>
-      </div>
+      </label>
 
       <div className="flex justify-end gap-4">
         <button

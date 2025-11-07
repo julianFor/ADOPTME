@@ -30,24 +30,32 @@ const calcularDiferencias = (dob, today) => {
 };
 
 const formatearEdad = ({ years, months, days }) => {
-  if (years > 0) return `${years} año${years !== 1 ? "s" : ""}`;
-  if (months > 0) return `${months} mes${months !== 1 ? "es" : ""}`;
-  return `${days} día${days !== 1 ? "s" : ""}`;
+  if (years > 0) return `${years} año${years === 1 ? "" : "s"}`;
+  if (months > 0) return `${months} mes${months === 1 ? "" : "es"}`;
+  return `${days} día${days === 1 ? "" : "s"}`;
 };
 
 const formatSimpleAge = (fechaNacimiento) => {
-  if (fechaNacimiento) {
-    const dob = new Date(fechaNacimiento);
-    if (!Number.isNaN(dob.getTime())) {
-      const today = new Date();
-      if (dob <= today) {
-        const diferencias = calcularDiferencias(dob, today);
-        return formatearEdad(diferencias);
-      }
-      return "Fecha inválida";
-    }
+  if (!fechaNacimiento) {
+    return "No especificado";
   }
-  return "No especificado";
+
+  const dob = new Date(fechaNacimiento);
+  const esNumeroValido = Number.isFinite(dob.getTime());
+  
+  if (!esNumeroValido) {
+    return "No especificado";
+  }
+
+  const today = new Date();
+  const esFechaFutura = dob > today;
+  
+  if (esFechaFutura) {
+    return "Fecha inválida";
+  }
+  
+  const diferencias = calcularDiferencias(dob, today);
+  return formatearEdad(diferencias);
 };
 
 const MascotaFundacionList = () => {
@@ -107,10 +115,8 @@ const MascotaFundacionList = () => {
 
   // 🔸 Obtener imagen principal (URL válida o placeholder)
   const getImagenPrincipal = (imagenes) => {
-    if (imagenes && Array.isArray(imagenes) && imagenes[0] && typeof imagenes[0] === "string" && imagenes[0].startsWith("http")) {
-      return imagenes[0];
-    }
-    return "https://via.placeholder.com/300x300?text=AdoptMe";
+    const tieneImagenValida = imagenes && Array.isArray(imagenes) && imagenes[0] && typeof imagenes[0] === "string" && imagenes[0].startsWith("http");
+    return tieneImagenValida ? imagenes[0] : "https://via.placeholder.com/300x300?text=AdoptMe";
   };
 
   return (
@@ -151,8 +157,7 @@ const MascotaFundacionList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredMascotas.length > 0 ? (
-              filteredMascotas.map((mascota) => (
+            {filteredMascotas.map((mascota) => (
                 <tr key={mascota._id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">
                     <img
@@ -179,14 +184,14 @@ const MascotaFundacionList = () => {
                     />
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="text-center text-gray-500 py-6">
-                  No hay mascotas que coincidan con la búsqueda.
-                </td>
-              </tr>
-            )}
+              ))}
+              {filteredMascotas.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center text-gray-500 py-6">
+                    No hay mascotas que coincidan con la búsqueda.
+                  </td>
+                </tr>
+              )}
           </tbody>
         </table>
       </div>
