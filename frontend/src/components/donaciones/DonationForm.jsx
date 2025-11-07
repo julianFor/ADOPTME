@@ -24,7 +24,7 @@ function DonationForm({ onDonate, goalId }) {
   };
 
   useEffect(() => {
-    // --- Callbacks extraídos para reducir anidamiento (S2004) ---
+    // --- Callbacks externos para evitar anidamiento profundo (S2004) ---
     const createOrder = (data, actions) => {
       if (!form.monto || form.monto <= 0) {
         alert("Por favor, ingresa un monto válido");
@@ -39,13 +39,16 @@ function DonationForm({ onDonate, goalId }) {
       });
     };
 
-    const onApprove = (data, actions) => {
-      return actions.order.capture().then((details) => {
-        return fetch("http://localhost:3000/api/donaciones", {
+    // ✅ Refactor con async/await para eliminar niveles de .then()
+    const onApprove = async (data, actions) => {
+      try {
+        const details = await actions.order.capture();
+
+        const response = await fetch("http://localhost:3000/api/donaciones", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-access-token": globalThis.localStorage?.getItem("token"), // uso de globalThis (S7764)
+            "x-access-token": globalThis.localStorage?.getItem("token"),
           },
           body: JSON.stringify({
             nombre: details?.payer?.name?.given_name,
@@ -54,17 +57,16 @@ function DonationForm({ onDonate, goalId }) {
             descripcion: "Donación vía PayPal",
             goalId: goalId,
           }),
-        })
-          .then((res) => res.json())
-          .then(() => {
-            setShowModal(true);
-            setForm({ monto: "" });
-          })
-          .catch((err) => {
-            console.error("❌ Error:", err);
-            alert("❌ Error al guardar la donación.");
-          });
-      });
+        });
+
+        // Esperamos la respuesta para asegurar consistencia con el then original
+        await response.json();
+        setShowModal(true);
+        setForm({ monto: "" });
+      } catch (err) {
+        console.error("❌ Error:", err);
+        alert("❌ Error al guardar la donación.");
+      }
     };
 
     const onError = (err) => {
@@ -73,7 +75,7 @@ function DonationForm({ onDonate, goalId }) {
     };
 
     const renderPayPalButton = () => {
-      if (!globalThis.paypal) return; // uso de globalThis (S7764)
+      if (!globalThis.paypal) return;
 
       const container = document.getElementById("paypal-button-container");
       if (container) container.innerHTML = "";
@@ -87,7 +89,7 @@ function DonationForm({ onDonate, goalId }) {
         .render("#paypal-button-container");
     };
 
-    // Evitar condición negada con else (S7735)
+    // Evitar condición negada con else
     const hasSdk = document.getElementById("paypal-sdk");
     if (hasSdk) {
       renderPayPalButton();
@@ -99,7 +101,7 @@ function DonationForm({ onDonate, goalId }) {
       script.onload = renderPayPalButton;
       document.body.appendChild(script);
     }
-  }, [form.monto, goalId]); // mantener comportamiento; se añade goalId por coherencia
+  }, [form.monto, goalId]);
 
   return (
     <>

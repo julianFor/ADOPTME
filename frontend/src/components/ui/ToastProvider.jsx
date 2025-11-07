@@ -18,14 +18,13 @@ const makeId = () => `${Date.now()}-${_id++}`;
 
 export const ToastProvider = ({
   children,
-  position = "bottom-left", // bottom-left | bottom-right | top-right | top-left
-  max = 5, // máximo de toasts apilados
+  position = "bottom-left",
+  max = 5,
 }) => {
   const [toasts, setToasts] = useState([]);
   const timersRef = useRef({});
-  const remainingRef = useRef({}); // para pausar/reanudar en hover/teclado
+  const remainingRef = useRef({});
 
-  // limpiar timers al desmontar
   useEffect(() => {
     return () => {
       for (const t of Object.values(timersRef.current)) {
@@ -62,10 +61,10 @@ export const ToastProvider = ({
       const id = makeId();
       const toast = {
         id,
-        type: payload.type ?? "info", // success | error | info | warning
+        type: payload.type ?? "info",
         title: payload.title ?? "",
         message: payload.message ?? "",
-        duration: payload.duration ?? 4000, // ms
+        duration: payload.duration ?? 4000,
         action: payload.action ?? null,
       };
 
@@ -90,7 +89,6 @@ export const ToastProvider = ({
     [push]
   );
 
-  // clases por posición
   const posCls = useMemo(() => {
     const map = {
       "bottom-left": "bottom-4 left-4",
@@ -147,7 +145,6 @@ export const useToast = () => {
   return ctx;
 };
 
-// ---- Estilos por tipo (alineados con el diseño actual del proyecto)
 const TYPES = {
   success: {
     ring: "ring-1 ring-emerald-200",
@@ -188,14 +185,12 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
   const sty = TYPES[type] ?? TYPES.info;
   const Icon = sty.Icon;
 
-  // animación de entrada
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 10);
     return () => clearTimeout(t);
   }, []);
 
-  // progreso (100%→0%)
   const [start, setStart] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setStart(true), 20);
@@ -206,9 +201,6 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     <div
       role={sty.ariaRole}
       aria-live="polite"
-      tabIndex={0}
-      onFocus={onPause}
-      onBlur={onResume}
       onMouseEnter={onPause}
       onMouseLeave={onResume}
       className={[
@@ -234,13 +226,14 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
         <button
           aria-label="Cerrar"
           onClick={onClose}
+          onFocus={onPause}
+          onBlur={onResume}
           className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-600"
         >
           <FiX />
         </button>
       </div>
 
-      {/* Barra de tiempo */}
       {duration ? (
         <div className="h-1 bg-neutral-200/70">
           <div

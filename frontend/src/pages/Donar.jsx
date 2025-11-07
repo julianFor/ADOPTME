@@ -1,5 +1,6 @@
 // src/pages/Donar.jsx
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import DonationSection from "../components/donaciones/DonationSection";
 import DonationQRSection from "../components/donaciones/DonationQRSection";
 import NeedsCatalog from "../components/necesidades/NeedsCatalog";
@@ -91,3 +92,10 @@ function TabButton({ active, label, onClick }) {
     </button>
   );
 }
+
+// ✅ Validación de props para cumplir con SonarQube S6774
+TabButton.propTypes = {
+  active: PropTypes.bool.isRequired,
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+};

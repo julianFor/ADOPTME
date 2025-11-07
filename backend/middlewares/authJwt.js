@@ -10,7 +10,7 @@ const verifyToken = (req, res, next) => {
     // Obtener token desde los headers
     const token =
       req.headers['x-access-token'] ||
-      (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+      req.headers.authorization?.split(' ')[1];
 
     console.log('[authJwt] Token recibido:', token ? '***' + token.slice(-8) : 'NO ENVIADO');
 
