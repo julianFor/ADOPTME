@@ -561,8 +561,7 @@ const FormularioPublicacion = () => {
       {/* Archivos (solo imágenes) */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
-          Documento de identidad:
-          <input
+        <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handleDocumentoIdentidad}
@@ -575,7 +574,7 @@ const FormularioPublicacion = () => {
 
         <label className="block">
           Fotos de la mascota (hasta {MAX_FOTOS}):
-        <input
+          <input
           type="file"
           multiple
           accept="image/jpeg,image/png,image/webp"

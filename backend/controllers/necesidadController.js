@@ -84,16 +84,22 @@ exports.listarPublicas = async (req, res) => {
     if (sanitizedParams.estado) filter.estado = sanitizedParams.estado;
     if (sanitizedParams.categoria) filter.categoria = sanitizedParams.categoria;
     if (sanitizedParams.urgencia) filter.urgencia = sanitizedParams.urgencia;
-    if (sanitizedParams.q) filter.titulo = { $regex: sanitizedParams.q, $options: "i" };
+    if (sanitizedParams.q) {
+      const escapedQuery = sanitizedParams.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.titulo = { $regex: new RegExp(escapedQuery, 'i') };
+    }
 
-    const skip = (sanitizedParams.page - 1) * sanitizedParams.limit;
+    const page = Math.max(1, parseInt(sanitizedParams.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(sanitizedParams.limit) || 10));
+    const skip = (page - 1) * limit;
+    const sortField = sanitizedParams.sort || '-fechaPublicacion';
 
     const [data, total] = await Promise.all([
       Need.find(filter)
         .select(cardProjection)
-        .sort(sort)
+        .sort(sortField)
         .skip(skip)
-        .limit(lim),
+        .limit(limit),
       Need.countDocuments(filter),
     ]);
 
@@ -101,8 +107,8 @@ exports.listarPublicas = async (req, res) => {
       ok: true,
       data,
       total,
-      page: pag,
-      pages: Math.ceil(total / lim),
+      page: page,
+      pages: Math.ceil(total / limit),
     });
   } catch (err) {
     console.error("💥 listarPublicas:", err);
