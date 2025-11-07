@@ -13,36 +13,37 @@ import { UserContext } from '../../../context/UserContext';
 const DetalleProcesoAdopcion = () => {
   const { procesoId } = useParams();
   const [proceso, setProceso] = useState(null);
-  const [etapaActual, setEtapaActual] = useState(null); 
+  const [etapaActual, setEtapaActual] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const { user } = useContext(UserContext);
   const rol = user?.role;
 
   // Cargar el proceso
-useEffect(() => {
-  const fetchProceso = async () => {
-    try {
-      if (!procesoId) return;
-      const response = await getProcesoPorId(procesoId);
-      setProceso(response.proceso);
-    } catch (error) {
-      console.error('Error al obtener el proceso:', error);
-    } finally {
-      setLoading(false); 
-    }
-  };
+  useEffect(() => {
+    const fetchProceso = async () => {
+      try {
+        if (!procesoId) return;
+        const response = await getProcesoPorId(procesoId);
+        setProceso(response.proceso);
+      } catch (error) {
+        console.error('Error al obtener el proceso:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchProceso();
-}, [procesoId]);
-
+    fetchProceso();
+  }, [procesoId]);
 
   // Restaurar etapa desde localStorage una vez que el proceso esté cargado
   useEffect(() => {
-    if (!loading && proceso && etapaActual === null) {
-      const guardada = localStorage.getItem(`etapaActual-${procesoId}`);
-      setEtapaActual(guardada !== null ? parseInt(guardada, 10) : 0);
-    }
+    // ✅ Invertida la condición para evitar negación innecesaria
+    if (loading || !proceso || etapaActual !== null) return;
+
+    const guardada = localStorage.getItem(`etapaActual-${procesoId}`);
+    // ✅ Uso de Number.parseInt en lugar de parseInt
+    setEtapaActual(guardada !== null ? Number.parseInt(guardada, 10) : 0);
   }, [loading, proceso, etapaActual, procesoId]);
 
   // Guardar etapa actual cada vez que cambie
@@ -63,13 +64,38 @@ useEffect(() => {
   const esSoloLectura = rol === 'adoptante';
   const puedeFirmar = rol === 'adoptante';
 
+  // ✅ Se agregan claves únicas a cada componente del arreglo
   const etapas = proceso
     ? [
-        <EtapaFormulario proceso={proceso} editable={!esSoloLectura} />,
-        <EtapaEntrevista proceso={proceso} setProceso={setProceso} procesoId={procesoId} editable={!esSoloLectura} />,
-        <EtapaVisita proceso={proceso} setProceso={setProceso} procesoId={procesoId} editable={!esSoloLectura} />,
-        <EtapaFirma proceso={proceso} setProceso={setProceso} procesoId={procesoId} puedeFirmar={puedeFirmar} />,
-        <EtapaEntrega proceso={proceso} setProceso={setProceso} procesoId={procesoId} editable={!esSoloLectura} />,
+        <EtapaFormulario key="formulario" proceso={proceso} editable={!esSoloLectura} />,
+        <EtapaEntrevista
+          key="entrevista"
+          proceso={proceso}
+          setProceso={setProceso}
+          procesoId={procesoId}
+          editable={!esSoloLectura}
+        />,
+        <EtapaVisita
+          key="visita"
+          proceso={proceso}
+          setProceso={setProceso}
+          procesoId={procesoId}
+          editable={!esSoloLectura}
+        />,
+        <EtapaFirma
+          key="firma"
+          proceso={proceso}
+          setProceso={setProceso}
+          procesoId={procesoId}
+          puedeFirmar={puedeFirmar}
+        />,
+        <EtapaEntrega
+          key="entrega"
+          proceso={proceso}
+          setProceso={setProceso}
+          procesoId={procesoId}
+          editable={!esSoloLectura}
+        />,
       ]
     : [];
 
