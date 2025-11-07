@@ -1,5 +1,6 @@
 // src/components/necesidades/CalloutContacto.jsx
 import { FaWhatsapp } from "react-icons/fa";
+import PropTypes from "prop-types";
 
 export default function CalloutContacto({
   whatsappHref = "https://wa.me/573024529227",
@@ -16,7 +17,7 @@ export default function CalloutContacto({
       className="relative bg-white rounded-[28px] max-w-[800px] mx-auto"
       style={{
         border: "1.5px solid #C9B8FF",
-        padding: "0px 30px", // top/bottom 22, laterales 24 (igual a Figma)
+        padding: "0px 30px",
       }}
     >
       {/* Keyframes exactos y suavizados */}
@@ -41,13 +42,7 @@ export default function CalloutContacto({
         }
       `}</style>
 
-      <div
-        className="
-          grid items-center
-          gap-0
-          md:grid-cols-[1fr_auto]  
-        "
-      >
+      <div className="grid items-center gap-0 md:grid-cols-[1fr_auto]">
         {/* TEXTO (izquierda) */}
         <div className="min-w-0">
           <h3 className="text-[26px] font-semibold leading-tight" style={{ color: "#111827" }}>
@@ -64,18 +59,13 @@ export default function CalloutContacto({
               target="_blank"
               rel="noreferrer"
               aria-label="Contactanos por WhatsApp"
-              className="
-                relative inline-flex items-center justify-start
-                h-[48px] rounded-full bg-white font-semibold
-                border shadow-[0_6px_0_#E9E4FB]
-                overflow-hidden
-              "
+              className="relative inline-flex items-center justify-start h-[48px] rounded-full bg-white font-semibold border shadow-[0_6px_0_#E9E4FB] overflow-hidden"
               style={{
                 borderColor: "#C9B8FF",
                 animation: "pillOpenClose 3.4s ease-in-out infinite",
               }}
             >
-              {/* Texto “Contactanos” (se oculta/abre) */}
+              {/* Texto “Contactanos” */}
               <span
                 className="text-[16px] whitespace-nowrap select-none"
                 style={{
@@ -88,7 +78,7 @@ export default function CalloutContacto({
                 Contactanos
               </span>
 
-              {/* Ícono WhatsApp DENTRO del pill, pegado al borde derecho */}
+              {/* Ícono WhatsApp */}
               <span
                 className="absolute top-1/2 flex items-center justify-center rounded-full"
                 style={{
@@ -107,21 +97,23 @@ export default function CalloutContacto({
           </div>
         </div>
 
-        {/* GATO (derecha) – proporción y cercanía como en Figma */}
+        {/* GATO (derecha) */}
         <div className="hidden md:block">
           <img
             src={imgSrc}
             alt="Gato con gafas"
             className="select-none"
             draggable="false"
-            style={{
-              height: 290,
-              width: "auto",
-              marginRight: 8, // lo aproxima al borde como en Figma
-            }}
+            style={{ height: 290, width: "auto", marginRight: 8 }}
           />
         </div>
       </div>
     </section>
   );
 }
+
+// 🔹 Validación de props
+CalloutContacto.propTypes = {
+  whatsappHref: PropTypes.string,
+  imgSrc: PropTypes.string,
+};

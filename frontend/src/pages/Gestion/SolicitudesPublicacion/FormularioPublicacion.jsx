@@ -15,11 +15,9 @@ const onlyDigits = (v) => (v || '').replace(/\D+/g, '');
 const onlyLettersSpaces = (v) =>
   (v || '').replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
 const addressSafe = (v) =>
-  // limpié escapes innecesarios dentro de la clase de caracteres
   (v || '').replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-,.]/g, '');
 const textSafe = (v) =>
-  // uso replaceAll para reemplazos literales sencillos y evitar regex global cuando no se necesita
-  (v || '').replaceAll('<', '').replaceAll('>', '');
+  (v || '').replaceAll('<', '').replaceAll('>', ''); // ✅ reemplazo literal seguro
 
 const SANITIZE = {
   nombre: onlyLettersSpaces,
@@ -42,7 +40,6 @@ const preventNonDigitsBeforeInput = (e) => {
 const preventNonDigitsKeyDown = (e) => {
   const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
   if (allowed.includes(e.key)) return;
-  // use \d en la regex (más conciso)
   if (!/^\d$/.test(e.key)) e.preventDefault();
 };
 const handlePasteDigitsOnly = (e, setter) => {
@@ -70,7 +67,7 @@ const FormularioPublicacion = () => {
     especie: '',
     raza: '',
     fechaNacimiento: '',
-    tamaño: '', // 👈 con ñ (coherente con backend)
+    tamaño: '',
     sexo: '',
     estadoSalud: '',
     personalidad: '',
@@ -110,7 +107,6 @@ const FormularioPublicacion = () => {
       return;
     }
 
-    // Usar Set#has() en lugar de Array#includes()
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       error('Solo se permiten imágenes (JPG, PNG o WEBP).', { duration: 5000 });
       e.target.value = '';
@@ -221,7 +217,7 @@ const FormularioPublicacion = () => {
     data.append('mascota[especie]', form.especie);
     data.append('mascota[raza]', form.raza);
     data.append('mascota[fechaNacimiento]', form.fechaNacimiento);
-    data.append('mascota[tamaño]', form.tamaño); // 👈 con ñ
+    data.append('mascota[tamaño]', form.tamaño);
     data.append('mascota[sexo]', form.sexo);
     data.append('mascota[estadoSalud]', form.estadoSalud);
     data.append('mascota[personalidad]', form.personalidad);
@@ -239,7 +235,6 @@ const FormularioPublicacion = () => {
 
     if (documentoIdentidad) data.append('documentoIdentidad', documentoIdentidad);
 
-    // Reemplacé imagenes.forEach por for...of (mejora de performance y regla de estilo)
     for (const img of imagenes) {
       data.append('imagenes', img);
     }
@@ -251,16 +246,12 @@ const FormularioPublicacion = () => {
       success('Solicitud de Publicación enviada correctamente.', { duration: 4000 });
       resetForm();
 
-      // 🟣 Redirección según rol (espera breve para que se vea el toast)
       setTimeout(() => {
         if (user?.role === 'adoptante') {
-          // Vista de publicaciones propias del adoptante
           navigate('/dashboard/adoptante/mis-solicitudes-publicacion');
         } else if (user?.role === 'admin') {
-          // Vista donde el admin revisa/gestiona solicitudes de publicación
           navigate('/dashboard/admin/mis-solicitudes-publicacion');
         } else if (user?.role === 'adminFundacion') {
-          // La fundación no gestiona publicaciones externas; lo llevamos a su dashboard
           navigate('/dashboard/adminFundacion/mis-solicitudes-publicacion');
         } else {
           navigate('/');

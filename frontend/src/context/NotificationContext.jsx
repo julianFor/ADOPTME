@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect, useContext, useMemo } from "react";
+import PropTypes from "prop-types";
 import {
   contarNoLeidas,
   getMisNotificaciones,
@@ -18,7 +19,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       setCargando(true);
       const res = await getMisNotificaciones();
-      setNotificaciones(res.data?.notificaciones || res); // adaptado a ambos formatos
+      setNotificaciones(res.data?.notificaciones || res);
       const resContador = await contarNoLeidas();
       setNoLeidas(resContador.data?.noLeidas ?? resContador);
     } catch (error) {
@@ -46,19 +47,25 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [user]);
 
+  // ✅ useMemo para valor estable del contexto
+  const value = useMemo(() => ({
+    notificaciones,
+    noLeidas,
+    cargarNotificaciones,
+    marcarUnaComoLeida,
+    cargando
+  }), [notificaciones, noLeidas, cargando]);
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notificaciones,
-        noLeidas,
-        cargarNotificaciones,
-        marcarUnaComoLeida,
-        cargando
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
+};
+
+// ✅ Validación de props
+NotificationProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export const useNotificaciones = () => useContext(NotificationContext);

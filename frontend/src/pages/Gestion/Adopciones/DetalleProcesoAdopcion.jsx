@@ -23,9 +23,11 @@ const DetalleProcesoAdopcion = () => {
   useEffect(() => {
     const fetchProceso = async () => {
       try {
-        if (!procesoId) return;
-        const response = await getProcesoPorId(procesoId);
-        setProceso(response.proceso);
+        // Condición invertida para mejorar legibilidad
+        if (procesoId) {
+          const response = await getProcesoPorId(procesoId);
+          setProceso(response.proceso);
+        }
       } catch (error) {
         console.error('Error al obtener el proceso:', error);
       } finally {
@@ -38,12 +40,11 @@ const DetalleProcesoAdopcion = () => {
 
   // Restaurar etapa desde localStorage una vez que el proceso esté cargado
   useEffect(() => {
-    // ✅ Invertida la condición para evitar negación innecesaria
-    if (loading || !proceso || etapaActual !== null) return;
-
-    const guardada = localStorage.getItem(`etapaActual-${procesoId}`);
-    // ✅ Uso de Number.parseInt en lugar de parseInt
-    setEtapaActual(guardada !== null ? Number.parseInt(guardada, 10) : 0);
+    // Condición invertida para cumplir con SonarQube
+    if (!loading && proceso && etapaActual === null) {
+      const guardada = localStorage.getItem(`etapaActual-${procesoId}`);
+      setEtapaActual(guardada !== null ? Number.parseInt(guardada, 10) : 0);
+    }
   }, [loading, proceso, etapaActual, procesoId]);
 
   // Guardar etapa actual cada vez que cambie
@@ -64,7 +65,6 @@ const DetalleProcesoAdopcion = () => {
   const esSoloLectura = rol === 'adoptante';
   const puedeFirmar = rol === 'adoptante';
 
-  // ✅ Se agregan claves únicas a cada componente del arreglo
   const etapas = proceso
     ? [
         <EtapaFormulario key="formulario" proceso={proceso} editable={!esSoloLectura} />,
@@ -101,15 +101,17 @@ const DetalleProcesoAdopcion = () => {
 
   return (
     <div className="px-6 py-4">
-      <h2 className="text-3xl font-bold text-purple-600 mb-4 text-center">Proceso de Adopción</h2>
+      <h2 className="text-3xl font-bold text-purple-600 mb-4 text-center">
+        Proceso de Adopción
+      </h2>
 
       <LineaProgreso proceso={proceso} />
 
       <div className="my-4">
-        {loading || etapaActual === null ? (
-          <p className="text-center text-gray-500">Cargando proceso...</p>
-        ) : (
+        {!loading && etapaActual !== null ? (
           etapas[etapaActual] || <p className="text-center text-red-500">No se encontró el proceso</p>
+        ) : (
+          <p className="text-center text-gray-500">Cargando proceso...</p>
         )}
       </div>
 

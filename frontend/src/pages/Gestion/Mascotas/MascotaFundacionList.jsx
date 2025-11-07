@@ -36,16 +36,18 @@ const formatearEdad = ({ years, months, days }) => {
 };
 
 const formatSimpleAge = (fechaNacimiento) => {
-  if (!fechaNacimiento) return "No especificado";
-
-  const dob = new Date(fechaNacimiento);
-  if (Number.isNaN(dob.getTime())) return "No especificado";
-
-  const today = new Date();
-  if (dob > today) return "Fecha inválida";
-
-  const diferencias = calcularDiferencias(dob, today);
-  return formatearEdad(diferencias);
+  if (fechaNacimiento) {
+    const dob = new Date(fechaNacimiento);
+    if (!Number.isNaN(dob.getTime())) {
+      const today = new Date();
+      if (dob <= today) {
+        const diferencias = calcularDiferencias(dob, today);
+        return formatearEdad(diferencias);
+      }
+      return "Fecha inválida";
+    }
+  }
+  return "No especificado";
 };
 
 const MascotaFundacionList = () => {
@@ -105,11 +107,8 @@ const MascotaFundacionList = () => {
 
   // 🔸 Obtener imagen principal (URL válida o placeholder)
   const getImagenPrincipal = (imagenes) => {
-    if (imagenes) {
-      const primera = Array.isArray(imagenes) ? imagenes[0] : imagenes;
-      if (primera && typeof primera === "string" && primera.startsWith("http")) {
-        return primera;
-      }
+    if (imagenes && Array.isArray(imagenes) && imagenes[0] && typeof imagenes[0] === "string" && imagenes[0].startsWith("http")) {
+      return imagenes[0];
     }
     return "https://via.placeholder.com/300x300?text=AdoptMe";
   };
@@ -152,44 +151,44 @@ const MascotaFundacionList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredMascotas.map((mascota) => (
-              <tr key={mascota._id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">
-                  <img
-                    src={getImagenPrincipal(mascota.imagenes)}
-                    alt="mascota"
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                </td>
-                <td className="px-4 py-2">{mascota.nombre}</td>
-                <td className="px-4 py-2">{mascota.especie}</td>
-                <td className="px-4 py-2">
-                  {formatSimpleAge(mascota.fechaNacimiento)}
-                </td>
-                <td className="px-4 py-2">{mascota.estadoSalud}</td>
-                <td className="px-4 py-2">
-                  {mascota.disponible ? "Disponible" : "No disponible"}
-                </td>
-                <td className="px-4 py-2 flex justify-center gap-4">
-                  <PencilIcon
-                    className="h-5 w-5 text-purple-500 cursor-pointer"
-                    onClick={() => handleEditar(mascota)}
-                  />
-                  <TrashIcon
-                    className="h-5 w-5 text-purple-500 cursor-pointer"
-                    onClick={() => handleEliminar(mascota)}
-                  />
+            {filteredMascotas.length > 0 ? (
+              filteredMascotas.map((mascota) => (
+                <tr key={mascota._id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-2">
+                    <img
+                      src={getImagenPrincipal(mascota.imagenes)}
+                      alt="mascota"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  </td>
+                  <td className="px-4 py-2">{mascota.nombre}</td>
+                  <td className="px-4 py-2">{mascota.especie}</td>
+                  <td className="px-4 py-2">{formatSimpleAge(mascota.fechaNacimiento)}</td>
+                  <td className="px-4 py-2">{mascota.estadoSalud}</td>
+                  <td className="px-4 py-2">
+                    {mascota.disponible ? "Disponible" : "No disponible"}
+                  </td>
+                  <td className="px-4 py-2 flex justify-center gap-4">
+                    <PencilIcon
+                      className="h-5 w-5 text-purple-500 cursor-pointer"
+                      onClick={() => handleEditar(mascota)}
+                    />
+                    <TrashIcon
+                      className="h-5 w-5 text-purple-500 cursor-pointer"
+                      onClick={() => handleEliminar(mascota)}
+                    />
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="text-center text-gray-500 py-6">
+                  No hay mascotas que coincidan con la búsqueda.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
-
-        {filteredMascotas.length === 0 && (
-          <p className="text-center text-gray-500 py-6">
-            No hay mascotas que coincidan con la búsqueda.
-          </p>
-        )}
       </div>
 
       <MascotaFundacionFormModal

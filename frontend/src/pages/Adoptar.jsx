@@ -70,7 +70,8 @@ function calcularEdad(fechaNacimiento) {
   if (años <= 0) {
     const meses = Math.max(
       1,
-      (hoy.getMonth() + 12 * hoy.getFullYear()) -
+      hoy.getMonth() +
+        12 * hoy.getFullYear() -
         (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
     );
     return `${meses} mes${meses !== 1 ? "es" : ""}`;
@@ -120,7 +121,7 @@ function Adoptar() {
     }
     const first = Array.isArray(imagenes) ? imagenes[0] : imagenes;
     if (typeof first === "string" && first.startsWith("http")) return first;
-    if (typeof first === "object") {
+    if (typeof first === "object" && first !== null) {
       return first.secure_url || first.url || "https://via.placeholder.com/600x400?text=AdoptMe";
     }
     return "https://via.placeholder.com/600x400?text=AdoptMe";
@@ -371,7 +372,7 @@ function Adoptar() {
               min="0"
               max="20"
               value={edadMax}
-              onChange={(e) => setEdadMax(e.target.value)}
+              onChange={(e) => setEdadMax(Number(e.target.value))}
               className="w-full"
             />
             <div className="flex justify-between text-sm mt-1">
@@ -424,7 +425,7 @@ function Adoptar() {
             {getPageNumbers().map((item) =>
               item.type === "dots" ? (
                 <span key={`dots-${item.id}`} className="px-2 select-none">
-                  …
+                  … 
                 </span>
               ) : (
                 <button
@@ -546,7 +547,7 @@ function Adoptar() {
                 min="0"
                 max="20"
                 value={edadMax}
-                onChange={(e) => setEdadMax(e.target.value)}
+                onChange={(e) => setEdadMax(Number(e.target.value))}
                 className="w-full"
               />
               <div className="flex justify-between text-sm mt-1">

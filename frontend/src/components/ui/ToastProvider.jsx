@@ -16,11 +16,7 @@ const ToastContext = createContext(null);
 let _id = 0;
 const makeId = () => `${Date.now()}-${_id++}`;
 
-export const ToastProvider = ({
-  children,
-  position = "bottom-left",
-  max = 5,
-}) => {
+export const ToastProvider = ({ children, position = "bottom-left", max = 5 }) => {
   const [toasts, setToasts] = useState([]);
   const timersRef = useRef({});
   const remainingRef = useRef({});
@@ -201,8 +197,11 @@ const Toast = ({ toast, onClose, onPause, onResume }) => {
     <div
       role={sty.ariaRole}
       aria-live="polite"
+      tabIndex={0} // ✅ Hace el div interactivo accesible
       onMouseEnter={onPause}
       onMouseLeave={onResume}
+      onFocus={onPause}  // ✅ equivalente teclado
+      onBlur={onResume}   // ✅ equivalente teclado
       className={[
         "pointer-events-auto bg-white shadow-xl rounded-xl min-w-[280px] max-w-[420px] overflow-hidden",
         "transition-all duration-200",

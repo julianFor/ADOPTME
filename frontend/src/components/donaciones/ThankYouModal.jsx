@@ -15,12 +15,6 @@ function ThankYouModal({ show, onClose }) {
 
   if (!show) return null;
 
-  const handleOverlayClick = (e) => {
-    if (e.target.id === "modal-overlay") {
-      onClose();
-    }
-  };
-
   const handleOverlayKeyDown = (e) => {
     // Cerrar con teclado: Escape, Enter o Space
     if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
@@ -31,7 +25,6 @@ function ThankYouModal({ show, onClose }) {
   return (
     <div
       id="modal-overlay"
-      onClick={handleOverlayClick}
       className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-[9999]"
     >
       {/* Botón transparente y accesible que cubre todo el overlay */}
