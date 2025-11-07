@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
 
-/* ───────── helpers de casteo y sanitización ───────── */
+// ───────── helpers de casteo y sanitización ─────────
 const toNumber = (v, def = undefined) => (v === undefined ? def : Number(v));
 
 const toBool = (v, def = undefined) => {
@@ -59,18 +59,19 @@ const parseSort = (rawSort = "-fechaPublicacion") => {
   return (desc ? "-" : "") + field;
 };
 
-/* ─────────────────────────────────────────────────── */
+// Escapa regex
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// ────────────────────────────────────────────────
 
 exports.crearNecesidad = async (req, res) => {
   try {
     const { titulo, categoria, urgencia, descripcionBreve, objetivo, recibido, fechaLimite, estado, visible } = req.body;
 
-    // ✅ Evitamos condición negada con else y simplificamos lectura
-    if (!(req.file?.path && req.file?.filename)) {
+    if (!req.file?.path || !req.file?.filename) {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // Sanitización segura
     const sTitulo = sanitizeText(titulo, 140);
     const sCategoria = sanitizeText(categoria, 60);
     const sUrgencia = sanitizeText(urgencia, 30);
@@ -93,10 +94,7 @@ exports.crearNecesidad = async (req, res) => {
       fechaLimite: toDate(fechaLimite),
       estado: estadoFinal,
       visible: Boolean(toBool(visible, true)),
-      imagenPrincipal: {
-        url: req.file.path,
-        publicId: req.file.filename,
-      },
+      imagenPrincipal: { url: req.file.path, publicId: req.file.filename },
       creadaPor: String(req.userId),
       fechaPublicacion: new Date(),
     };
@@ -123,21 +121,9 @@ exports.listarPublicas = async (req, res) => {
     const skip = (pag - 1) * lim;
 
     const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
-
-    if (categoriaRaw) {
-      const safeCat = sanitizeText(categoriaRaw, 60);
-      if (safeCat) filter.categoria = safeCat;
-    }
-
-    if (urgenciaRaw) {
-      const safeUrg = sanitizeText(urgenciaRaw, 30);
-      if (safeUrg) filter.urgencia = safeUrg;
-    }
-
-    if (qRaw) {
-      const safeQ = sanitizeText(qRaw, 100);
-      if (safeQ) filter.titulo = { $regex: safeQ, $options: "i" };
-    }
+    if (categoriaRaw && isPlain(categoriaRaw)) filter.categoria = categoriaRaw;
+    if (urgenciaRaw && isPlain(urgenciaRaw)) filter.urgencia = urgenciaRaw;
+    if (qRaw && isPlain(qRaw)) filter.titulo = { $regex: escapeRegex(qRaw), $options: "i" };
 
     const [data, total] = await Promise.all([
       Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
@@ -151,7 +137,6 @@ exports.listarPublicas = async (req, res) => {
   }
 };
 
-// Refactor de complejidad cognitiva (S3776)
 async function actualizarImagenSiExiste(need, req) {
   if (req.file?.path && req.file?.filename) {
     const oldPublicId = need?.imagenPrincipal?.publicId;
@@ -183,7 +168,6 @@ exports.actualizar = async (req, res) => {
 
     await need.save();
     return res.json({ ok: true, data: need });
-
   } catch (err) {
     console.error("💥 actualizar:", err);
     return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
