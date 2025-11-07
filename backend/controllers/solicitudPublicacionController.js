@@ -45,8 +45,8 @@ exports.crearSolicitud = async (req, res) => {
       asJSON(req.body?.confirmaciones) || fromBracketed(req.body, 'confirmaciones') || {};
 
     // 2) Archivos subidos a Cloudinary por el middleware uploadPublicacionDocs
-    const documentoIdentidad = req.cloudinaryPublicacion?.documentoIdentidad?.secure_url || null;
-    const imagenes = req.cloudinaryPublicacion?.imagenes?.map(i => i?.secure_url).filter(Boolean) || [];
+    const documentoIdentidad = req.cloudinaryPublicacion?.documentoIdentidad?.secure_url ?? null;
+    const imagenes = req.cloudinaryPublicacion?.imagenes?.map(i => i?.secure_url).filter(Boolean) ?? [];
 
     // 3) Validación mínima
     if (!imagenes.length) {
@@ -160,7 +160,7 @@ exports.getMisSolicitudes = async (req, res) => {
 exports.aprobarYPublicar = async (req, res) => {
   try {
     const solicitud = await SolicitudPublicacion.findById(req.params.id).populate('adoptante');
-    if (!solicitud || solicitud.estado !== 'pendiente') {
+    if (solicitud?.estado !== 'pendiente') {
       return res.status(400).json({ success: false, message: 'Solicitud no válida o ya procesada.' });
     }
 
@@ -230,7 +230,7 @@ exports.rechazarSolicitud = async (req, res) => {
     }
 
     solicitud.estado = 'rechazada';
-    solicitud.observacionesAdmin = req.body?.observaciones || '';
+    solicitud.observacionesAdmin = req.body?.observaciones ?? '';
     await solicitud.save();
 
     if (solicitud.adoptante) {

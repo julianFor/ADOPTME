@@ -30,6 +30,7 @@ const toNullable = (v) => (hasValue(v) ? v : null);
 
 exports.crearNecesidad = async (req, res) => {
   try {
+    const sanitizedData = sanitizeUpdateData(req.body);
     const {
       titulo,
       categoria,
@@ -40,7 +41,7 @@ exports.crearNecesidad = async (req, res) => {
       fechaLimite,
       estado,
       visible,
-    } = req.body;
+    } = sanitizedData;
 
     // Imagen principal obligatoria (el middleware pone req.file)
     if (!req.file?.path || !req.file?.filename) {
@@ -234,9 +235,9 @@ exports.cambiarEstado = async (req, res) => {
     }
 
     const estadosValidos = ["activa", "pausada", "cumplida", "vencida"];
-    const estado = req.body.estado;
+    const estado = sanitizeUpdateData(req.body).estado;
     
-    if (!estadosValidos.includes(estado)) {
+    if (!estado || !estadosValidos.includes(estado)) {
       return res.status(400).json({ ok: false, message: "Estado no válido" });
     }
 
