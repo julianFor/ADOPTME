@@ -24,7 +24,7 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
     fetchRelacionadas();
   }, [origen, mascotaId]);
 
-  // ✅ Condiciones positivas (eliminado uso de negaciones innecesarias)
+  // ✅ Condición positiva y simplificada
   const getImagenPrincipal = (imagenes) => {
     if (imagenes && Array.isArray(imagenes) && imagenes[0]) {
       const primera = imagenes[0];
@@ -53,14 +53,12 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
 
       <div className="flex flex-wrap justify-center gap-6">
         {mascotas.map((m) => (
-          // ✅ Accesibilidad agregada: role, tabIndex, y evento de teclado
-          <div
+          // ✅ Reemplazado <div role="button"> por <button> accesible
+          <button
             key={m._id}
-            role="button"
-            tabIndex={0}
+            type="button"
             onClick={() => navigate(`/mascotas/${m._id}`)}
-            onKeyDown={(e) => e.key === 'Enter' && navigate(`/mascotas/${m._id}`)}
-            className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-xl"
+            className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-xl bg-transparent border-0 p-0 text-left"
           >
             <PetCard
               nombre={m.nombre}
@@ -69,36 +67,40 @@ const PeluditosRelacionados = ({ origen, mascotaId }) => {
               descripcion={m.descripcion}
               imagen={getImagenPrincipal(m.imagenes)}
             />
-          </div>
+          </button>
         ))}
       </div>
     </div>
   );
 };
 
-// ✅ Condiciones positivas y código limpio
+// ✅ Condición positiva en el cálculo de edad
 function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return 'N/A';
-  const nacimiento = new Date(fechaNacimiento);
-  const hoy = new Date();
-  let años = hoy.getFullYear() - nacimiento.getFullYear();
-  const m = hoy.getMonth() - nacimiento.getMonth();
+  if (fechaNacimiento) {
+    const nacimiento = new Date(fechaNacimiento);
+    const hoy = new Date();
+    let años = hoy.getFullYear() - nacimiento.getFullYear();
+    const m = hoy.getMonth() - nacimiento.getMonth();
 
-  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) años--;
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+      años--;
+    }
 
-  if (años > 0) {
-    return `${años} año${años !== 1 ? 's' : ''}`;
+    if (años > 0) {
+      return `${años} año${años !== 1 ? 's' : ''}`;
+    }
+
+    const meses =
+      (hoy.getMonth() + 12 * hoy.getFullYear()) -
+      (nacimiento.getMonth() + 12 * nacimiento.getFullYear());
+    const totalMeses = Math.max(1, meses);
+    return `${totalMeses} mes${totalMeses !== 1 ? 'es' : ''}`;
   }
 
-  const meses = Math.max(
-    1,
-    (hoy.getMonth() + 12 * hoy.getFullYear()) -
-      (nacimiento.getMonth() + 12 * nacimiento.getFullYear())
-  );
-  return `${meses} mes${meses !== 1 ? 'es' : ''}`;
+  return 'N/A';
 }
 
-// ✅ Validación de props añadida (errores 1 y 2 corregidos)
+// ✅ Validación de props
 PeluditosRelacionados.propTypes = {
   origen: PropTypes.string.isRequired,
   mascotaId: PropTypes.string.isRequired,

@@ -1,4 +1,3 @@
-// src/utils/composeCertificado.js
 import { CERT_LAYOUT as L } from '../config/certificadoLayout';
 
 const pxX = W => p => Math.round(p * W);
@@ -12,7 +11,7 @@ function setFont(ctx, font) {
 
 function alignX(x, w, align) {
   if (align === 'center') return x + w / 2;
-  if (align === 'right')  return x + w;
+  if (align === 'right') return x + w;
   return x; // left
 }
 
@@ -59,14 +58,39 @@ function cropTransparent(srcCanvas) {
   return out;
 }
 
+// ---- NUEVAS FUNCIONES PARA REDUCIR COMPLEJIDAD ----
+function drawCampoTexto(ctx, campo, datosCampo, xFn, yFn, debug, guide) {
+  setFont(ctx, campo.font);
+  const cx = xFn(campo.x - campo.w / 2);
+  const cy = yFn(campo.y);
+  const cw = xFn(campo.w);
+  guide(cx, cy - 60, cw, 90);
+  drawText(ctx, datosCampo || '', cx, cy, cw, campo.align);
+}
+
+function dibujarFirma(ctx, datos, xFn, yFn, debug, guide) {
+  if (!datos.firmaCanvas) return;
+  const bx = xFn(L.campos.firmaBox.x);
+  const by = yFn(L.campos.firmaBox.y);
+  const bw = xFn(L.campos.firmaBox.w);
+  const bh = yFn(L.campos.firmaBox.h);
+  guide(bx, by, bw, bh);
+
+  const cropped = cropTransparent(datos.firmaCanvas);
+  const r = Math.min(bw / cropped.width, bh / cropped.height);
+  const sw = cropped.width * r;
+  const sh = cropped.height * r;
+
+  const sx = bx + (bw - sw) / 2;
+  const sy = by + (bh - sh) - 2; // -2 px para apoyar justo en la línea
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(cropped, sx, sy, sw, sh);
+}
+// ----------------------------------------------------
+
 /**
  * Componer certificado sobre plantilla PNG
- * @param {Object} opts
- * @param {string} opts.plantillaSrc ruta de la plantilla (PNG)
- * @param {number} opts.W ancho de trabajo
- * @param {number} opts.H alto de trabajo
- * @param {Object} opts.datos { adoptante, mascota, fecha, firmaCanvas }
- * @param {boolean} opts.debug dibuja cajas guía
  */
 export async function composeCertificado({
   plantillaSrc = '/plantillas/certificado_adopcion.png',
@@ -111,49 +135,13 @@ export async function composeCertificado({
     ctx.restore();
   };
 
-  // 1) Adoptante (1ª línea punteada)
-  setFont(ctx, L.campos.adoptante.font);
-  const ax = x(L.campos.adoptante.x - L.campos.adoptante.w / 2);
-  const ay = y(L.campos.adoptante.y);
-  const aw = x(L.campos.adoptante.w);
-  guide(ax, ay - 60, aw, 90);
-  drawText(ctx, datos.adoptante || '', ax, ay, aw, L.campos.adoptante.align);
+  // Campos de texto
+  drawCampoTexto(ctx, L.campos.adoptante, datos.adoptante, x, y, debug, guide);
+  drawCampoTexto(ctx, L.campos.mascota, datos.mascota, x, y, debug, guide);
+  drawCampoTexto(ctx, L.campos.fecha, datos.fecha, x, y, debug, guide);
 
-  // 2) Mascota (2ª línea punteada)
-  setFont(ctx, L.campos.mascota.font);
-  const mx = x(L.campos.mascota.x - L.campos.mascota.w / 2);
-  const my = y(L.campos.mascota.y);
-  const mw = x(L.campos.mascota.w);
-  guide(mx, my - 60, mw, 90);
-  drawText(ctx, datos.mascota || '', mx, my, mw, L.campos.mascota.align);
-
-  // 3) Fecha (recuadro punteado arriba derecha)
-  setFont(ctx, L.campos.fecha.font);
-  const fx = x(L.campos.fecha.x - L.campos.fecha.w / 2);
-  const fy = y(L.campos.fecha.y);
-  const fw = x(L.campos.fecha.w);
-  guide(fx, fy - 40, fw, 70);
-  drawText(ctx, datos.fecha || '', fx, fy, fw, L.campos.fecha.align);
-
-  // 4) Firma: recorte + escala + alineada abajo a la línea
-  if (datos.firmaCanvas) {
-    const bx = x(L.campos.firmaBox.x);
-    const by = y(L.campos.firmaBox.y);
-    const bw = x(L.campos.firmaBox.w);
-    const bh = y(L.campos.firmaBox.h);
-    guide(bx, by, bw, bh);
-
-    const cropped = cropTransparent(datos.firmaCanvas);
-    const r = Math.min(bw / cropped.width, bh / cropped.height);
-    const sw = cropped.width * r;
-    const sh = cropped.height * r;
-
-    const sx = bx + (bw - sw) / 2;
-    const sy = by + (bh - sh) - 2; // -2 px para apoyar justo en la línea
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(cropped, sx, sy, sw, sh);
-  }
+  // Firma
+  dibujarFirma(ctx, datos, x, y, debug, guide);
 
   return await new Promise((resolve) => {
     c.toBlob(

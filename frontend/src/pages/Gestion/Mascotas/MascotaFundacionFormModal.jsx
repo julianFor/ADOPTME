@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Dialog } from "@headlessui/react";
 import {
   createMascota,
@@ -130,6 +131,26 @@ const MascotaFundacionFormModal = ({ isOpen, onClose, onSubmit, initialData }) =
       </div>
     </Dialog>
   );
+};
+
+// ✅ Validación de props agregada (para SonarQube S6774)
+MascotaFundacionFormModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    _id: PropTypes.string,
+    nombre: PropTypes.string,
+    especie: PropTypes.string,
+    raza: PropTypes.string,
+    fechaNacimiento: PropTypes.string,
+    sexo: PropTypes.string,
+    tamano: PropTypes.string,
+    descripcion: PropTypes.string,
+    estadoSalud: PropTypes.string,
+    esterilizado: PropTypes.bool,
+    origen: PropTypes.string,
+  }),
 };
 
 export default MascotaFundacionFormModal;
