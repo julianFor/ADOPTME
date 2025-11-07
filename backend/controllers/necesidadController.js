@@ -45,6 +45,7 @@ const toDate = (v) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+// Valida ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const allowedEstados = new Set(["activa", "pausada", "cumplida", "vencida"]);
@@ -62,26 +63,14 @@ const parseSort = (rawSort = "-fechaPublicacion") => {
 
 exports.crearNecesidad = async (req, res) => {
   try {
-    const {
-      titulo,
-      categoria,
-      urgencia,
-      descripcionBreve,
-      objetivo,
-      recibido,
-      fechaLimite,
-      estado,
-      visible,
-    } = req.body;
+    const { titulo, categoria, urgencia, descripcionBreve, objetivo, recibido, fechaLimite, estado, visible } = req.body;
 
-    // ✅ Corregido S7735 (condición positiva)
-    if (req.file?.path && req.file?.filename) {
-      // Continúa ejecución
-    } else {
+    // ✅ Evitamos condición negada con else y simplificamos lectura
+    if (!(req.file?.path && req.file?.filename)) {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // Sanitización segura (S5147)
+    // Sanitización segura
     const sTitulo = sanitizeText(titulo, 140);
     const sCategoria = sanitizeText(categoria, 60);
     const sUrgencia = sanitizeText(urgencia, 30);
@@ -95,18 +84,18 @@ exports.crearNecesidad = async (req, res) => {
     const estadoFinal = allowedEstados.has(sEstado) ? sEstado : "activa";
 
     const doc = {
-      titulo: String(sTitulo),
-      categoria: String(sCategoria),
-      urgencia: String(sUrgencia),
-      descripcionBreve: sDesc != null ? String(sDesc) : undefined,
+      titulo: sTitulo,
+      categoria: sCategoria,
+      urgencia: sUrgencia,
+      descripcionBreve: sDesc != null ? sDesc : undefined,
       objetivo: Number(toNumber(objetivo, 1)),
       recibido: Number(toNumber(recibido, 0)),
       fechaLimite: toDate(fechaLimite),
-      estado: String(estadoFinal),
+      estado: estadoFinal,
       visible: Boolean(toBool(visible, true)),
       imagenPrincipal: {
-        url: String(req.file.path),
-        publicId: String(req.file.filename),
+        url: req.file.path,
+        publicId: req.file.filename,
       },
       creadaPor: String(req.userId),
       fechaPublicacion: new Date(),
@@ -114,6 +103,7 @@ exports.crearNecesidad = async (req, res) => {
 
     const need = await Need.create(doc);
     return res.status(201).json({ ok: true, data: need });
+
   } catch (err) {
     console.error("💥 crearNecesidad:", err);
     return res.status(500).json({ ok: false, message: "Error al crear necesidad" });
@@ -122,7 +112,6 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
-    // ✅ Sanitización segura (S5147)
     const qRaw = safeString(req.query.q?.toString());
     const categoriaRaw = safeString(req.query.categoria?.toString());
     const urgenciaRaw = safeString(req.query.urgencia?.toString());
@@ -155,27 +144,18 @@ exports.listarPublicas = async (req, res) => {
       Need.countDocuments(filter),
     ]);
 
-    return res.json({
-      ok: true,
-      data,
-      total,
-      page: pag,
-      pages: Math.ceil(total / lim),
-    });
+    return res.json({ ok: true, data, total, page: pag, pages: Math.ceil(total / lim) });
   } catch (err) {
     console.error("💥 listarPublicas:", err);
     return res.status(500).json({ ok: false, message: "Error al listar necesidades" });
   }
 };
 
-// ✅ Refactor de complejidad cognitiva (S3776)
+// Refactor de complejidad cognitiva (S3776)
 async function actualizarImagenSiExiste(need, req) {
   if (req.file?.path && req.file?.filename) {
     const oldPublicId = need?.imagenPrincipal?.publicId;
-    need.imagenPrincipal = {
-      url: String(req.file.path),
-      publicId: String(req.file.filename),
-    };
+    need.imagenPrincipal = { url: req.file.path, publicId: req.file.filename };
     if (oldPublicId) {
       try {
         await cloudinary.uploader.destroy(oldPublicId, { resource_type: "image" });
@@ -189,14 +169,10 @@ async function actualizarImagenSiExiste(need, req) {
 exports.actualizar = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ ok: false, message: "ID inválido" });
-    }
+    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
 
     const need = await Need.findById(id);
-    if (!need) {
-      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-    }
+    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
     const body = req.body || {};
     const patch = buildPatch(body, need);
@@ -207,6 +183,7 @@ exports.actualizar = async (req, res) => {
 
     await need.save();
     return res.json({ ok: true, data: need });
+
   } catch (err) {
     console.error("💥 actualizar:", err);
     return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
@@ -216,14 +193,10 @@ exports.actualizar = async (req, res) => {
 exports.obtenerPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ ok: false, message: "ID inválido" });
-    }
+    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
 
     const need = await Need.findById(id);
-    if (!need) {
-      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-    }
+    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
     if (typeof need.syncEstado === "function") {
       need.syncEstado();
@@ -244,10 +217,8 @@ exports.cambiarEstado = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Parámetros inválidos" });
     }
 
-    const need = await Need.findByIdAndUpdate(id, { estado: String(estado) }, { new: true });
-    if (!need) {
-      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-    }
+    const need = await Need.findByIdAndUpdate(id, { estado }, { new: true });
+    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
     return res.json({ ok: true, data: need });
   } catch (err) {
@@ -259,22 +230,15 @@ exports.cambiarEstado = async (req, res) => {
 exports.eliminar = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!isValidObjectId(id)) {
-      return res.status(400).json({ ok: false, message: "ID inválido" });
-    }
+    if (!isValidObjectId(id)) return res.status(400).json({ ok: false, message: "ID inválido" });
 
     const need = await Need.findById(id);
-    if (!need) {
-      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-    }
+    if (!need) return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
 
     const publicId = need?.imagenPrincipal?.publicId;
     if (publicId) {
-      try {
-        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
-      } catch (e) {
-        console.warn("No se pudo eliminar imagen:", e?.message);
-      }
+      try { await cloudinary.uploader.destroy(publicId, { resource_type: "image" }); }
+      catch (e) { console.warn("No se pudo eliminar imagen:", e?.message); }
     }
 
     await Need.findByIdAndDelete(id);
@@ -285,22 +249,22 @@ exports.eliminar = async (req, res) => {
   }
 };
 
-// auxiliar
+// auxiliar para patch
 function buildPatch(body, current) {
   const patch = {};
-  if (body.titulo) patch.titulo = String(sanitizeText(body.titulo, 140) || current.titulo);
-  if (body.categoria) patch.categoria = String(sanitizeText(body.categoria, 60) || current.categoria);
-  if (body.urgencia) patch.urgencia = String(sanitizeText(body.urgencia, 30) || current.urgencia);
+  if (body.titulo) patch.titulo = sanitizeText(body.titulo, 140) || current.titulo;
+  if (body.categoria) patch.categoria = sanitizeText(body.categoria, 60) || current.categoria;
+  if (body.urgencia) patch.urgencia = sanitizeText(body.urgencia, 30) || current.urgencia;
   if (body.descripcionBreve !== undefined) {
     const s = sanitizeText(body.descripcionBreve, 600);
-    patch.descripcionBreve = s != null ? String(s) : undefined;
+    patch.descripcionBreve = s != null ? s : undefined;
   }
   if (body.objetivo !== undefined) patch.objetivo = Number(toNumber(body.objetivo, current.objetivo));
   if (body.recibido !== undefined) patch.recibido = Number(toNumber(body.recibido, current.recibido));
   if (body.fechaLimite !== undefined) patch.fechaLimite = toDate(body.fechaLimite);
   if (body.estado !== undefined) {
     const e = safeString(body.estado);
-    if (allowedEstados.has(e)) patch.estado = String(e);
+    if (allowedEstados.has(e)) patch.estado = e;
   }
   if (body.visible !== undefined) patch.visible = Boolean(toBool(body.visible, current.visible));
   return patch;
