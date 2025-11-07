@@ -2,6 +2,33 @@
 const Mascota = require('../models/Mascota');
 const mongoose = require('mongoose');
 
+/* ===== Helpers locales para bajar duplicación (mismo archivo) ===== */
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const ok = (res, data) => res.status(200).json(data);
+const created = (res, data) => res.status(201).json(data);
+const badRequest = (res, message) =>
+  res.status(400).json({ success: false, message });
+const notFound = (res, message) =>
+  res.status(404).json({ success: false, message });
+const serverError = (res, err, message) =>
+  res.status(500).json({ success: false, message, error: err?.message });
+
+/** Unifica la extracción de imágenes desde req.files (Cloudinary) o req.body
+ *  - Cloudinary: usa f.path o f.secure_url
+ *  - Body: acepta arreglo de URLs (http/https)
+ */
+const extractImages = (req) => {
+  const files = Array.isArray(req.files) ? req.files : (req.files?.imagenes || []);
+  if (files.length > 0) {
+    return files.map((f) => f.path || f.secure_url).filter(Boolean);
+  }
+  if (Array.isArray(req.body?.imagenes)) {
+    return req.body.imagenes.filter((u) => typeof u === 'string' && u.startsWith('http'));
+  }
+  return [];
+};
+
 /* ===== Helpers de parseo (aceptan form-data con corchetes y JSON string) ==== */
 const asJSON = (v) => {
   if (typeof v === 'string') {
@@ -82,36 +109,27 @@ function normalizeMascotaPayload(body = {}) {
 /* ===================== CREAR ===================== */
 exports.createMascota = async (req, res) => {
   try {
-    console.log("🐾 Datos recibidos:", { body: req.body, files: req.files });
+    console.log('🐾 Datos recibidos:', { body: req.body, files: req.files });
 
     const payload = normalizeMascotaPayload(req.body);
-
-    // ✅ Reescrito para mayor claridad y sin ternarios anidados
-    let imagenes = [];
-    const files = Array.isArray(req.files) ? req.files : (req.files?.imagenes || []);
-
-    if (files.length > 0) {
-      imagenes = files.map(f => f.path || f.secure_url).filter(Boolean);
-    } else if (Array.isArray(req.body.imagenes)) {
-      imagenes = req.body.imagenes.filter(u => typeof u === 'string' && u.startsWith('http'));
-    }
+    const imagenes = extractImages(req);
 
     const nuevaMascota = new Mascota({
       ...payload,
       imagenes,
-      ...(typeof req.body.publicada === 'boolean' ? { publicada: req.body.publicada } : {})
+      ...(typeof req.body.publicada === 'boolean' ? { publicada: req.body.publicada } : {}),
     });
 
     const mascotaGuardada = await nuevaMascota.save();
 
-    res.status(201).json({
+    return created(res, {
       success: true,
       message: 'Mascota registrada con éxito',
-      mascota: mascotaGuardada
+      mascota: mascotaGuardada,
     });
   } catch (error) {
     console.error('💥 Error en createMascota:', error);
-    res.status(500).json({ success: false, message: 'Error al registrar mascota', error: error.message });
+    return serverError(res, error, 'Error al registrar mascota');
   }
 };
 
@@ -119,9 +137,9 @@ exports.createMascota = async (req, res) => {
 exports.getMascotas = async (_req, res) => {
   try {
     const mascotas = await Mascota.find({ publicada: true });
-    res.status(200).json(mascotas);
+    return ok(res, mascotas);
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al obtener mascotas', error: error.message });
+    return serverError(res, error, 'Error al obtener mascotas');
   }
 };
 
@@ -129,16 +147,16 @@ exports.getMascotas = async (_req, res) => {
 exports.getMascotaById = async (req, res) => {
   try {
     const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'ID inválido' });
+    if (!isValidId(id)) {
+      return badRequest(res, 'ID inválido');
     }
     const mascota = await Mascota.findById(id);
     if (!mascota) {
-      return res.status(404).json({ success: false, message: 'Mascota no encontrada' });
+      return notFound(res, 'Mascota no encontrada');
     }
-    res.status(200).json(mascota);
+    return ok(res, mascota);
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al obtener la mascota', error: error.message });
+    return serverError(res, error, 'Error al obtener la mascota');
   }
 };
 
@@ -146,16 +164,13 @@ exports.getMascotaById = async (req, res) => {
 exports.updateMascota = async (req, res) => {
   try {
     const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'ID inválido' });
+    if (!isValidId(id)) {
+      return badRequest(res, 'ID inválido');
     }
 
     const updates = normalizeMascotaPayload(req.body);
-
-    const files = Array.isArray(req.files) ? req.files : (req.files?.imagenes || []);
-    if (files.length > 0) {
-      updates.imagenes = files.map(f => f.path || f.secure_url).filter(Boolean);
-    }
+    const imgs = extractImages(req);
+    if (imgs.length > 0) updates.imagenes = imgs;
 
     const mascotaActualizada = await Mascota.findByIdAndUpdate(
       id,
@@ -164,17 +179,17 @@ exports.updateMascota = async (req, res) => {
     );
 
     if (!mascotaActualizada) {
-      return res.status(404).json({ success: false, message: 'Mascota no encontrada' });
+      return notFound(res, 'Mascota no encontrada');
     }
 
-    res.status(200).json({
+    return ok(res, {
       success: true,
       message: 'Mascota actualizada correctamente',
-      mascota: mascotaActualizada
+      mascota: mascotaActualizada,
     });
   } catch (error) {
     console.error('💥 Error en updateMascota:', error);
-    res.status(500).json({ success: false, message: 'Error al actualizar la mascota', error: error.message });
+    return serverError(res, error, 'Error al actualizar la mascota');
   }
 };
 
@@ -182,17 +197,17 @@ exports.updateMascota = async (req, res) => {
 exports.deleteMascota = async (req, res) => {
   try {
     const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'ID inválido' });
+    if (!isValidId(id)) {
+      return badRequest(res, 'ID inválido');
     }
 
     const mascota = await Mascota.findByIdAndDelete(id);
     if (!mascota) {
-      return res.status(404).json({ success: false, message: 'Mascota no encontrada' });
+      return notFound(res, 'Mascota no encontrada');
     }
-    res.status(200).json({ success: true, message: 'Mascota eliminada correctamente' });
+    return ok(res, { success: true, message: 'Mascota eliminada correctamente' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al eliminar la mascota', error: error.message });
+    return serverError(res, error, 'Error al eliminar la mascota');
   }
 };
 
@@ -203,17 +218,17 @@ exports.getMascotasPorOrigen = async (req, res) => {
 
     // ✅ S5147: sanitizar entrada controlada por usuario
     if (typeof origen !== 'string') {
-      return res.status(400).json({ success: false, message: 'Formato de origen inválido' });
+      return badRequest(res, 'Formato de origen inválido');
     }
 
     origen = origen.toLowerCase().trim();
     if (!['fundacion', 'externo'].includes(origen)) {
-      return res.status(400).json({ success: false, message: 'Origen no válido' });
+      return badRequest(res, 'Origen no válido');
     }
 
     const mascotas = await Mascota.find({ origen, publicada: true });
-    res.status(200).json(mascotas);
+    return ok(res, mascotas);
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al obtener mascotas por origen', error: error.message });
+    return serverError(res, error, 'Error al obtener mascotas por origen');
   }
 };
