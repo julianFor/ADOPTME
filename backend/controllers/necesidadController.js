@@ -1,6 +1,7 @@
 // controllers/necesidadController.js
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
+const { sanitizeMongoId, sanitizeQueryParams, sanitizeUpdateData } = require("../utils/sanitize");
 
 // Proyección tipo “tarjeta”
 const cardProjection =
@@ -77,25 +78,15 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
-    const {
-      q,
-      categoria,
-      urgencia,
-      estado = "activa",
-      sort = "-fechaPublicacion",
-      limit = 12,
-      page = 1,
-    } = req.query;
-
+    const sanitizedParams = sanitizeQueryParams(req.query);
+    
     const filter = { visible: true };
-    if (estado) filter.estado = estado;
-    if (categoria) filter.categoria = categoria;
-    if (urgencia) filter.urgencia = urgencia;
-    if (q) filter.titulo = { $regex: q, $options: "i" };
+    if (sanitizedParams.estado) filter.estado = sanitizedParams.estado;
+    if (sanitizedParams.categoria) filter.categoria = sanitizedParams.categoria;
+    if (sanitizedParams.urgencia) filter.urgencia = sanitizedParams.urgencia;
+    if (sanitizedParams.q) filter.titulo = { $regex: sanitizedParams.q, $options: "i" };
 
-    const lim = Number(limit) || 12;
-    const pag = Number(page) || 1;
-    const skip = (pag - 1) * lim;
+    const skip = (sanitizedParams.page - 1) * sanitizedParams.limit;
 
     const [data, total] = await Promise.all([
       Need.find(filter)
@@ -123,7 +114,12 @@ exports.listarPublicas = async (req, res) => {
 
 exports.obtenerPorId = async (req, res) => {
   try {
-    const need = await Need.findById(req.params.id);
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
+
+    const need = await Need.findById(id);
     if (!need)
       return res
         .status(404)
@@ -191,7 +187,11 @@ const updateImage = async (need, file) => {
 
 exports.actualizar = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
+    
     const need = await Need.findById(id);
     
     if (!need) {
@@ -222,13 +222,22 @@ exports.actualizar = async (req, res) => {
 
 exports.cambiarEstado = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { estado } = req.body; // "activa" | "pausada" | "cumplida" | "vencida"
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
+
+    const estadosValidos = ["activa", "pausada", "cumplida", "vencida"];
+    const estado = req.body.estado;
+    
+    if (!estadosValidos.includes(estado)) {
+      return res.status(400).json({ ok: false, message: "Estado no válido" });
+    }
 
     const need = await Need.findByIdAndUpdate(
       id,
       { estado },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!need)
@@ -247,7 +256,10 @@ exports.cambiarEstado = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = sanitizeMongoId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ ok: false, message: "ID no válido" });
+    }
 
     const need = await Need.findById(id);
     if (!need)
