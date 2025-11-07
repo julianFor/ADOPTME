@@ -74,8 +74,10 @@ exports.crearNecesidad = async (req, res) => {
       visible,
     } = req.body;
 
-    // ✅ Evitamos condición negada con else y simplificamos lectura
-    if (!(req.file?.path && req.file?.filename)) {
+    // ✅ Corregido S7735 (condición positiva)
+    if (req.file?.path && req.file?.filename) {
+      // Continúa ejecución
+    } else {
       return res.status(400).json({ ok: false, message: "Imagen principal requerida" });
     }
 
@@ -132,9 +134,21 @@ exports.listarPublicas = async (req, res) => {
     const skip = (pag - 1) * lim;
 
     const filter = { visible: true, estado: allowedEstados.has(estadoRaw) ? estadoRaw : "activa" };
-    if (categoriaRaw && isPlain(categoriaRaw)) filter.categoria = categoriaRaw;
-    if (urgenciaRaw && isPlain(urgenciaRaw)) filter.urgencia = urgenciaRaw;
-    if (qRaw && isPlain(qRaw)) filter.titulo = { $regex: qRaw, $options: "i" };
+
+    if (categoriaRaw) {
+      const safeCat = sanitizeText(categoriaRaw, 60);
+      if (safeCat) filter.categoria = safeCat;
+    }
+
+    if (urgenciaRaw) {
+      const safeUrg = sanitizeText(urgenciaRaw, 30);
+      if (safeUrg) filter.urgencia = safeUrg;
+    }
+
+    if (qRaw) {
+      const safeQ = sanitizeText(qRaw, 100);
+      if (safeQ) filter.titulo = { $regex: safeQ, $options: "i" };
+    }
 
     const [data, total] = await Promise.all([
       Need.find(filter).select(cardProjection).sort(sort).skip(skip).limit(lim),
