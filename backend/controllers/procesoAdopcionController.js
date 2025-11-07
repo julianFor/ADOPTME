@@ -8,8 +8,19 @@ const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const sanitizeString = (s) => {
-  if (!s || typeof s !== 'string') return '';
-  return s.replace(/[$.{}[\]]/g, '').trim(); // elimina caracteres peligrosos
+  // Si el valor es nulo o no es string, retornamos cadena vacía
+  if (s === null || typeof s !== 'string') return '';
+  
+  // Array de caracteres a reemplazar
+  const caracteresProhibidos = ['$', '.', '{', '}', '[', ']'];
+  
+  // Reemplazamos cada carácter prohibido con cadena vacía
+  let resultado = s;
+  for (const caracter of caracteresProhibidos) {
+    resultado = resultado.replaceAll(caracter, '');
+  }
+  
+  return resultado.trim();
 };
 
 // --- Crear un nuevo proceso ---
