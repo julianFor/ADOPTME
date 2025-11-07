@@ -31,17 +31,6 @@ const toNullable = (v) => (hasValue(v) ? v : null);
 exports.crearNecesidad = async (req, res) => {
   try {
     const sanitizedData = sanitizeUpdateData(req.body);
-    const {
-      titulo,
-      categoria,
-      urgencia,
-      descripcionBreve,
-      objetivo,
-      recibido,
-      fechaLimite,
-      estado,
-      visible,
-    } = sanitizedData;
 
     // Imagen principal obligatoria (el middleware pone req.file)
     if (!req.file?.path || !req.file?.filename) {
@@ -50,23 +39,37 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    const need = await Need.create({
-      titulo,
-      categoria,
-      urgencia,
-      descripcionBreve,
-      objetivo: toNumber(objetivo, 1),
-      recibido: toNumber(recibido, 0),
-      fechaLimite: toNullable(fechaLimite),
-      estado: hasValue(estado) ? estado : "activa",
-      visible: toBool(visible, true),
+    // Validar y sanitizar datos antes de crear
+    const needData = {
+      titulo: sanitizedData.titulo,
+      categoria: sanitizedData.categoria,
+      urgencia: sanitizedData.urgencia,
+      descripcionBreve: sanitizedData.descripcionBreve,
+      objetivo: toNumber(sanitizedData.objetivo, 1),
+      recibido: toNumber(sanitizedData.recibido, 0),
+      fechaLimite: toNullable(sanitizedData.fechaLimite),
+      estado: sanitizedData.estado || "activa",
+      visible: toBool(sanitizedData.visible, true),
       imagenPrincipal: {
-        url: req.file.path, // secure_url
-        publicId: req.file.filename, // public_id
+        url: String(req.file.path), // secure_url
+        publicId: String(req.file.filename), // public_id
       },
-      creadaPor: req.userId,
+      creadaPor: String(req.userId),
       fechaPublicacion: new Date(),
-    });
+    };
+
+    // Validar campos requeridos
+    const camposRequeridos = ['titulo', 'categoria', 'urgencia'];
+    const camposFaltantes = camposRequeridos.filter(campo => !needData[campo]);
+    
+    if (camposFaltantes.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        message: `Campos requeridos faltantes: ${camposFaltantes.join(', ')}`
+      });
+    }
+
+    const need = await Need.create(needData);
 
     return res.status(201).json({ ok: true, data: need });
   } catch (err) {
@@ -81,13 +84,33 @@ exports.listarPublicas = async (req, res) => {
   try {
     const sanitizedParams = sanitizeQueryParams(req.query);
     
+    // Construir filtro de manera segura con validación de tipos y valores permitidos
     const filter = { visible: true };
-    if (sanitizedParams.estado) filter.estado = sanitizedParams.estado;
-    if (sanitizedParams.categoria) filter.categoria = sanitizedParams.categoria;
-    if (sanitizedParams.urgencia) filter.urgencia = sanitizedParams.urgencia;
-    if (sanitizedParams.q) {
-      const escapedQuery = sanitizedParams.q.replaceAll(/[.*+?^${}()|[\]\\]/g, '');
-      filter.titulo = { $regex: new RegExp(escapedQuery, 'i') };
+    
+    // Lista de estados válidos
+    const estadosValidos = ['activa', 'pausada', 'cumplida', 'vencida'];
+    if (sanitizedParams.estado && estadosValidos.includes(sanitizedParams.estado)) {
+      filter.estado = sanitizedParams.estado;
+    }
+    
+    // Lista de categorías válidas (ajusta según tus categorías)
+    const categoriasValidas = ['alimentos', 'medicinas', 'insumos', 'otros'];
+    if (sanitizedParams.categoria && categoriasValidas.includes(sanitizedParams.categoria)) {
+      filter.categoria = sanitizedParams.categoria;
+    }
+    
+    // Lista de niveles de urgencia válidos
+    const urgenciasValidas = ['alta', 'media', 'baja'];
+    if (sanitizedParams.urgencia && urgenciasValidas.includes(sanitizedParams.urgencia)) {
+      filter.urgencia = sanitizedParams.urgencia;
+    }
+    
+    // Sanitización segura para búsqueda por título
+    if (sanitizedParams.q && typeof sanitizedParams.q === 'string') {
+      const searchTerm = sanitizedParams.q.replaceAll(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '').trim();
+      if (searchTerm) {
+        filter.titulo = { $regex: new RegExp(searchTerm, 'i') };
+      }
     }
 
     const page = Math.max(1, Number.parseInt(sanitizedParams.page) || 1);
