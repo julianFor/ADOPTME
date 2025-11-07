@@ -11,13 +11,13 @@ const MAX_FOTOS = 5;
 
 // --- Sanitizadores ---
 // Nota: mantuve regex cuando se requiere (p. ej. eliminar no dígitos).
-const onlyDigits = (v) => (v || '').replace(/\D+/g, '');
+const onlyDigits = (v) => (v || '').replaceAll(/\D+/g, '');
 const onlyLettersSpaces = (v) =>
-  (v || '').replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
+  (v || '').replaceAll(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
 const addressSafe = (v) =>
-  (v || '').replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-,.]/g, '');
+  (v || '').replaceAll(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ\s#\-,.]/g, '');
 const textSafe = (v) =>
-  (v || '').replace(/[<>]/g, ''); // ✅ reemplazo seguro con regex
+  (v || '').replaceAll(/[<>]/g, ''); // ✅ reemplazo seguro con regex
 
 const SANITIZE = {
   nombre: onlyLettersSpaces,
@@ -44,7 +44,7 @@ const preventNonDigitsKeyDown = (e) => {
 };
 const handlePasteDigitsOnly = (e, setter) => {
   e.preventDefault();
-  const pasted = (e.clipboardData.getData('text') || '').replace(/\D+/g, '');
+  const pasted = (e.clipboardData.getData('text') || '').replaceAll(/\D+/g, '');
   if (typeof setter === 'function') setter(pasted);
 };
 
@@ -488,30 +488,33 @@ const FormularioPublicacion = () => {
       <section>
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Condiciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="aceptaVisita" 
               checked={form.aceptaVisita} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>¿Acepta visitas?</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="aceptaVerificacion" 
               checked={form.aceptaVerificacion} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>¿Acepta verificación?</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="tieneCondiciones" 
               checked={form.tieneCondiciones} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>¿Tiene condiciones para el adoptante?</span>
           </label>
@@ -522,30 +525,33 @@ const FormularioPublicacion = () => {
       <section>
         <h3 className="text-lg font-semibold text-gray-700 mb-2">📌 Confirmaciones</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="esResponsable" 
               checked={form.esResponsable} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>Soy responsable de esta mascota</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="noSolicitaPago" 
               checked={form.noSolicitaPago} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>No solicito pago por la adopción</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
               name="aceptaVerificacion2" 
               checked={form.aceptaVerificacion2} 
-              onChange={handleChange} 
+              onChange={handleChange}
+              className="cursor-pointer" 
             />
             <span>Acepto verificación de información</span>
           </label>
@@ -583,15 +589,18 @@ const FormularioPublicacion = () => {
       </section>
 
       {/* Confirmación final */}
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          name="aceptaTerminos"
-          checked={form.aceptaTerminos}
-          onChange={handleChange}
-        />
-        <span>Declaro que la información es verídica y autorizo su revisión por el equipo de AdoptMe.</span>
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            name="aceptaTerminos"
+            checked={form.aceptaTerminos}
+            onChange={handleChange}
+            className="cursor-pointer"
+          />
+          <span>Declaro que la información es verídica y autorizo su revisión por el equipo de AdoptMe.</span>
+        </label>
+      </div>
 
       <div className="flex justify-end gap-4">
         <button

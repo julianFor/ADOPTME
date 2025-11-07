@@ -3,37 +3,29 @@ import { useParams, useNavigate } from "react-router-dom";
 import { obtenerSolicitudesPorMascota } from "../../../services/solicitudAdopcionService";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
+const getCloudinaryUrlFromString = (imgString) => {
+  if (/^https?:\/\//i.test(imgString)) return imgString;
+  
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  if (cloud) {
+    return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_112,h_112,c_fill/${imgString}`;
+  }
+  return `/uploads/${imgString}`;
+};
+
+const getCloudinaryUrlFromObject = (imgObject) => {
+  if (imgObject.secure_url) return imgObject.secure_url;
+  if (imgObject.url) return imgObject.url;
+  if (imgObject.public_id && import.meta.env.VITE_CLOUDINARY_CLOUD_NAME) {
+    return getCloudinaryUrlFromString(imgObject.public_id);
+  }
+  return "";
+};
+
 const getCloudinaryUrl = (img) => {
   if (!img) return "";
-
-  // Caso 1: ya es string
-  if (typeof img === "string") {
-    // si ya viene con http(s), úsalo tal cual (Cloudinary o cualquier CDN)
-    if (/^https?:\/\//i.test(img)) return img;
-
-    // si te llega un public_id como "carpeta/archivo_xxx"
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (cloud) {
-      // optimizaciones básicas f_auto,q_auto y tamaño pequeño para avatar
-      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_112,h_112,c_fill/${img}`;
-    }
-
-    // Fallback (solo para datos viejos locales; puedes eliminarlo cuando migres todo)
-    return `/uploads/${img}`;
-  }
-
-  // Caso 2: objeto desde Cloudinary
-  if (typeof img === "object" && img !== null) {
-    if (img.secure_url) return img.secure_url;
-    if (img.url) return img.url;
-    if (img.public_id) {
-      const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      if (cloud) {
-        return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_112,h_112,c_fill/${img.public_id}`;
-      }
-    }
-  }
-
+  if (typeof img === "string") return getCloudinaryUrlFromString(img);
+  if (typeof img === "object" && img !== null) return getCloudinaryUrlFromObject(img);
   return "";
 };
 
@@ -78,8 +70,12 @@ const SolicitudesDetalleMascota = () => {
     setSolicitudesFiltradas(filtradas);
   }, [estadoFiltro, busqueda, solicitudesOriginales]);
 
-  const firstImg = mascotaInfo?.imagenes?.[0];
-  const avatarSrc = getCloudinaryUrl(firstImg);
+  const getAvatarSrc = () => {
+    if (!mascotaInfo?.imagenes?.length) return null;
+    return getCloudinaryUrl(mascotaInfo.imagenes[0]);
+  };
+
+  const avatarSrc = getAvatarSrc();
 
   return (
     <div className="p-6">

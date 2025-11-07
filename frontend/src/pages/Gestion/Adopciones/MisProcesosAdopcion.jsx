@@ -5,34 +5,45 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../../context/UserContext";
 
+const buildCloudinaryUrl = (cloud, publicId, resourceType = 'image', format = '') => {
+  if (!cloud || !publicId) return '';
+  const suffix = format ? `.${format}` : '';
+  return `https://res.cloudinary.com/${cloud}/${resourceType}/upload/${publicId}${suffix}`;
+};
+
+const getUrlFromAssetObject = (asset) => {
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  
+  if (asset.secure_url) return asset.secure_url;
+  if (asset.url) return asset.url;
+  
+  const publicId = asset.public_id || asset.filename;
+  const format = (asset.format || '').toLowerCase();
+  const resourceType = asset.resource_type || 'image';
+  
+  return buildCloudinaryUrl(cloud, publicId, resourceType, format);
+};
+
+const getUrlFromString = (asset) => {
+  if (/^https?:\/\//i.test(asset)) return asset;
+  
+  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  return buildCloudinaryUrl(cloud, asset);
+};
+
 /** Helper: resuelve URL Cloudinary desde objeto/string/array */
 const getCloudinaryUrl = (asset) => {
   if (!asset) return '';
   if (Array.isArray(asset)) return getCloudinaryUrl(asset[0]);
-  if (typeof asset === 'string' && /^https?:\/\//i.test(asset)) return asset;
-
+  
   if (typeof asset === 'object' && asset !== null) {
-    if (asset.secure_url) return asset.secure_url;
-    if (asset.url) return asset.url;
-
-    // Fallback si solo tienes public_id/format
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const public_id = asset.public_id || asset.filename;
-    const fmt = (asset.format || '').toLowerCase();
-    if (cloud && public_id) {
-      const rt = asset.resource_type || 'image';
-      const suffix = fmt ? `.${fmt}` : '';
-      return `https://res.cloudinary.com/${cloud}/${rt}/upload/${public_id}${suffix}`;
-    }
+    return getUrlFromAssetObject(asset);
   }
-
-  // public_id como string plano
+  
   if (typeof asset === 'string') {
-    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (!cloud) return '';
-    return `https://res.cloudinary.com/${cloud}/image/upload/${asset}`;
+    return getUrlFromString(asset);
   }
-
+  
   return '';
 };
 
