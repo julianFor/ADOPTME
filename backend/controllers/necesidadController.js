@@ -37,15 +37,15 @@ const validateEstado = (estado) => {
 };
 
 const validateUrgencia = (urgencia) => {
-  if (!urgencia) return undefined;
+  if (!urgencia) return "baja";
   const val = String(urgencia).toLowerCase().trim();
-  return VALID_URGENCIAS.has(val) ? val : undefined;
+  return VALID_URGENCIAS.has(val) ? val : "baja";
 };
 
 const validateCategoria = (categoria) => {
-  if (!categoria) return undefined;
+  if (!categoria) return "otro";
   const val = String(categoria).toLowerCase().trim();
-  return VALID_CATEGORIAS.has(val) ? val : undefined;
+  return VALID_CATEGORIAS.has(val) ? val : "otro";
 };
 
 const validateVisible = (visible) => {
@@ -76,6 +76,21 @@ const sanitizeRegex = (str) => {
   return escapedChars;
 };
 
+// ───────── Helper para validar entrada requerida ─────────
+const validateRequiredFields = (titulo, descripcionBreve) => {
+  const errors = [];
+  
+  if (!titulo || String(titulo).trim().length === 0) {
+    errors.push("El título es requerido");
+  }
+  
+  if (!descripcionBreve || String(descripcionBreve).trim().length === 0) {
+    errors.push("La descripción breve es requerida");
+  }
+
+  return errors;
+};
+
 // ───────── Helper para aplicar patch de entrada ─────────
 const applyPatch = (body, need) => {
   const patch = {};
@@ -85,14 +100,10 @@ const applyPatch = (body, need) => {
   }
 
   const validCategoria = validateCategoria(body.categoria);
-  if (validCategoria) {
-    patch.categoria = validCategoria;
-  }
+  patch.categoria = validCategoria;
 
   const validUrgencia = validateUrgencia(body.urgencia);
-  if (validUrgencia) {
-    patch.urgencia = validUrgencia;
-  }
+  patch.urgencia = validUrgencia;
 
   if (body.descripcionBreve) {
     patch.descripcionBreve = String(body.descripcionBreve).trim();
@@ -175,14 +186,22 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
+    // Validar campos requeridos
+    const requiredErrors = validateRequiredFields(titulo, descripcionBreve);
+    if (requiredErrors.length > 0) {
+      return res
+        .status(400)
+        .json({ ok: false, message: requiredErrors.join(", ") });
+    }
+
     // Validar y sanitizar TODA la entrada - NO usar datos del usuario directamente
     const validEstado = validateEstado(estado);
     const validCategoria = validateCategoria(categoria);
     const validUrgencia = validateUrgencia(urgencia);
     const validVisible = validateVisible(visible);
     const validFechaLimite = toNullable(fechaLimite);
-    const validTitulo = String(titulo || "").trim();
-    const validDescripcionBreve = String(descripcionBreve || "").trim();
+    const validTitulo = String(titulo).trim();
+    const validDescripcionBreve = String(descripcionBreve).trim();
     const validObjetivo = toNumber(objetivo, 1);
     const validRecibido = toNumber(recibido, 0);
 
@@ -227,19 +246,25 @@ exports.listarPublicas = async (req, res) => {
 
     const filter = { visible: true };
     
-    const validEstado = validateEstado(estado);
-    filter.estado = validEstado;
+    // Solo agregar filtro de estado si se especifica explícitamente
+    if (estado) {
+      const validEstado = validateEstado(estado);
+      filter.estado = validEstado;
+    }
     
-    const validCategoria = validateCategoria(categoria);
-    if (validCategoria) {
+    // Solo agregar filtro de categoría si se especifica explícitamente
+    if (categoria) {
+      const validCategoria = validateCategoria(categoria);
       filter.categoria = validCategoria;
     }
     
-    const validUrgencia = validateUrgencia(urgencia);
-    if (validUrgencia) {
+    // Solo agregar filtro de urgencia si se especifica explícitamente
+    if (urgencia) {
+      const validUrgencia = validateUrgencia(urgencia);
       filter.urgencia = validUrgencia;
     }
     
+    // Sanitizar búsqueda de texto si se proporciona
     if (q && typeof q === "string" && q.trim().length > 0) {
       const escapedQ = sanitizeRegex(q);
       filter.titulo = { $regex: escapedQ, $options: "i" };
