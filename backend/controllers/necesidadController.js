@@ -2,20 +2,20 @@
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
 
-// Proyección tipo “tarjeta”
+// Proyección tipo "tarjeta"
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
 
 // ───────── helpers de casteo (multipart/form-data llega como string) ─────────
-const toNumber = (v, def = undefined) =>
-  typeof v === "undefined" ? def : Number(v);
-const toBool = (v, def = undefined) => {
-  if (typeof v === "undefined") return def;
+const toNumber = (v, def) =>
+  v === undefined ? def : Number(v);
+const toBool = (v, def) => {
+  if (v === undefined) return def;
   if (typeof v === "boolean") return v;
   const s = String(v).toLowerCase().trim();
   return s === "true" || s === "1" || s === "on";
 };
-const toNullable = (v) => (v === "" || typeof v === "undefined" ? null : v);
+const toNullable = (v) => (v === "" || v === undefined ? null : v);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -153,17 +153,17 @@ exports.actualizar = async (req, res) => {
       ...(body.categoria && { categoria: body.categoria }),
       ...(body.urgencia && { urgencia: body.urgencia }),
       ...(body.descripcionBreve && { descripcionBreve: body.descripcionBreve }),
-      ...(typeof body.objetivo !== "undefined" && {
+      ...(body.objetivo !== undefined && {
         objetivo: toNumber(body.objetivo, need.objetivo),
       }),
-      ...(typeof body.recibido !== "undefined" && {
+      ...(body.recibido !== undefined && {
         recibido: toNumber(body.recibido, need.recibido),
       }),
-      ...(typeof body.fechaLimite !== "undefined" && {
+      ...(body.fechaLimite !== undefined && {
         fechaLimite: toNullable(body.fechaLimite),
       }),
-      ...(typeof body.estado !== "undefined" && { estado: body.estado }),
-      ...(typeof body.visible !== "undefined" && {
+      ...(body.estado !== undefined && { estado: body.estado }),
+      ...(body.visible !== undefined && {
         visible: toBool(body.visible, need.visible),
       }),
     };
