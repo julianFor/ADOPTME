@@ -12,19 +12,26 @@ const VALID_CATEGORIAS = new Set(["alimentos", "medicina", "educacion", "infraes
 const VALID_SORTS = new Set(["titulo", "-titulo", "fechaPublicacion", "-fechaPublicacion", "urgencia", "-urgencia"]);
 
 // ───────── helpers de casteo (multipart/form-data llega como string) ─────────
-const toNumber = (v, def) =>
-  v === undefined ? def : Number(v);
+const toNumber = (v, def) => {
+  if (v === undefined || v === null) return def;
+  const num = Number(v);
+  return Number.isNaN(num) ? def : num;
+};
 
 const toBool = (v, def) => {
-  if (v === undefined) return def;
+  if (v === undefined || v === null) return def;
   if (typeof v === "boolean") return v;
   const s = String(v).toLowerCase().trim();
   return s === "true" || s === "1" || s === "on";
 };
 
-const toNullable = (v) => (v === "" || v === undefined ? null : v);
+const toNullable = (v) => {
+  if (v === "" || v === undefined || v === null) return null;
+  return v;
+};
 
 const validateEstado = (estado) => {
+  if (!estado) return "activa";
   const val = String(estado).toLowerCase().trim();
   return VALID_ESTADOS.has(val) ? val : "activa";
 };
@@ -41,11 +48,18 @@ const validateCategoria = (categoria) => {
   return VALID_CATEGORIAS.has(val) ? val : undefined;
 };
 
+const validateVisible = (visible) => {
+  if (visible === undefined || visible === null) return true;
+  return toBool(visible, true);
+};
+
 const validateSort = (sort) => {
+  if (!sort) return "-fechaPublicacion";
   return VALID_SORTS.has(sort) ? sort : "-fechaPublicacion";
 };
 
 const validateId = (id) => {
+  if (!id) return null;
   const idStr = String(id).trim();
   return /^[0-9a-fA-F]{24}$/.test(idStr) ? idStr : null;
 };
@@ -101,7 +115,7 @@ const applyPatch = (body, need) => {
   }
 
   if (body.visible !== undefined) {
-    patch.visible = toBool(body.visible, need.visible);
+    patch.visible = validateVisible(body.visible);
   }
 
   return patch;
@@ -161,21 +175,27 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // Validar y sanitizar entrada - NO usar datos del usuario directamente
+    // Validar y sanitizar TODA la entrada - NO usar datos del usuario directamente
     const validEstado = validateEstado(estado);
     const validCategoria = validateCategoria(categoria);
     const validUrgencia = validateUrgencia(urgencia);
+    const validVisible = validateVisible(visible);
+    const validFechaLimite = toNullable(fechaLimite);
+    const validTitulo = String(titulo || "").trim();
+    const validDescripcionBreve = String(descripcionBreve || "").trim();
+    const validObjetivo = toNumber(objetivo, 1);
+    const validRecibido = toNumber(recibido, 0);
 
     const need = await Need.create({
-      titulo: String(titulo || "").trim(),
+      titulo: validTitulo,
       categoria: validCategoria,
       urgencia: validUrgencia,
-      descripcionBreve: String(descripcionBreve || "").trim(),
-      objetivo: toNumber(objetivo, 1),
-      recibido: toNumber(recibido, 0),
-      fechaLimite: toNullable(fechaLimite),
+      descripcionBreve: validDescripcionBreve,
+      objetivo: validObjetivo,
+      recibido: validRecibido,
+      fechaLimite: validFechaLimite,
       estado: validEstado,
-      visible: toBool(visible, true),
+      visible: validVisible,
       imagenPrincipal: {
         url: String(req.file.path),
         publicId: String(req.file.filename),
@@ -303,20 +323,86 @@ exports.actualizar = async (req, res) => {
     const body = req.body || {};
     const patch = applyPatch(body, need);
 
-        const imageData = await handleImageUpload(req, need);
-        if (imageData) {
-          patch.imagenPrincipal = imageData;
-        }
-    
-        Object.assign(need, patch);
-        syncNeedEstado(need);
-        await need.save();
-    
-        return res.json({ ok: true, data: need });
-      } catch (err) {
-        console.error("💥 actualizar:", err);
-        return res
-          .status(500)
-          .json({ ok: false, message: "Error al actualizar necesidad" });
+    const imageData = await handleImageUpload(req, need);
+    if (imageData) {
+      patch.imagenPrincipal = imageData;
+    }
+
+    Object.assign(need, patch);
+    syncNeedEstado(need);
+    await need.save();
+
+    return res.json({ ok: true, data: need });
+  } catch (err) {
+    console.error("💥 actualizar:", err);
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al actualizar necesidad" });
+  }
+};
+
+exports.cambiarEstado = async (req, res) => {
+  try {
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
+
+    const { estado } = req.body;
+    const validEstado = validateEstado(estado);
+
+    const need = await Need.findById(validId);
+    if (!need) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    need.estado = validEstado;
+    await need.save();
+
+    return res.json({ ok: true, data: need });
+  } catch (err) {
+    console.error("💥 cambiarEstado:", err);
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al cambiar estado" });
+  }
+};
+
+exports.eliminar = async (req, res) => {
+  try {
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
+
+    const need = await Need.findById(validId);
+    if (!need) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Necesidad no encontrada" });
+    }
+
+    const publicId = need?.imagenPrincipal?.publicId;
+    if (publicId) {
+      try {
+        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+      } catch (e) {
+        console.warn("No se pudo eliminar imagen de Cloudinary:", e?.message);
       }
-    };
+    }
+
+    await Need.findByIdAndDelete(validId);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("💥 eliminar:", err);
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al eliminar necesidad" });
+  }
+};
