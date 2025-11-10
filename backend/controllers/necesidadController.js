@@ -17,6 +17,28 @@ const toBool = (v, def) => {
 };
 const toNullable = (v) => (v === "" || v === undefined ? null : v);
 
+// ───────── helpers de validación ─────────
+const VALID_ESTADOS = new Set(["activa", "pausada", "cumplida", "vencida"]);
+const VALID_URGENCIAS = new Set(["baja", "media", "alta"]);
+const VALID_CATEGORIAS = new Set(["alimentos", "medicina", "educacion", "infraestructura", "otro"]);
+
+const validateEstado = (estado) => {
+  return VALID_ESTADOS.has(String(estado).toLowerCase()) ? String(estado).toLowerCase() : "activa";
+};
+
+const validateUrgencia = (urgencia) => {
+  return VALID_URGENCIAS.has(String(urgencia).toLowerCase()) ? String(urgencia).toLowerCase() : undefined;
+};
+
+const validateCategoria = (categoria) => {
+  return VALID_CATEGORIAS.has(String(categoria).toLowerCase()) ? String(categoria).toLowerCase() : undefined;
+};
+
+const validateSort = (sort) => {
+  const allowed = new Set(["titulo", "-titulo", "fechaPublicacion", "-fechaPublicacion", "urgencia", "-urgencia"]);
+  return allowed.has(sort) ? sort : "-fechaPublicacion";
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.crearNecesidad = async (req, res) => {
@@ -40,19 +62,24 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
+    // Validar y sanitizar entrada
+    const validEstado = validateEstado(estado);
+    const validCategoria = validateCategoria(categoria);
+    const validUrgencia = validateUrgencia(urgencia);
+
     const need = await Need.create({
-      titulo,
-      categoria,
-      urgencia,
-      descripcionBreve,
+      titulo: titulo?.trim(),
+      categoria: validCategoria,
+      urgencia: validUrgencia,
+      descripcionBreve: descripcionBreve?.trim(),
       objetivo: toNumber(objetivo, 1),
       recibido: toNumber(recibido, 0),
       fechaLimite: toNullable(fechaLimite),
-      estado: estado || "activa",
+      estado: validEstado,
       visible: toBool(visible, true),
       imagenPrincipal: {
-        url: req.file.path, // secure_url
-        publicId: req.file.filename, // public_id
+        url: req.file.path,
+        publicId: req.file.filename,
       },
       creadaPor: req.userId,
       fechaPublicacion: new Date(),
@@ -80,19 +107,33 @@ exports.listarPublicas = async (req, res) => {
     } = req.query;
 
     const filter = { visible: true };
-    if (estado) filter.estado = estado;
-    if (categoria) filter.categoria = categoria;
-    if (urgencia) filter.urgencia = urgencia;
-    if (q) filter.titulo = { $regex: q, $options: "i" };
+    
+    // Validar y usar solo valores permitidos
+    const validEstado = validateEstado(estado);
+    if (validEstado) filter.estado = validEstado;
+    
+    const validCategoria = validateCategoria(categoria);
+    if (validCategoria) filter.categoria = validCategoria;
+    
+    const validUrgencia = validateUrgencia(urgencia);
+    if (validUrgencia) filter.urgencia = validUrgencia;
+    
+    // Sanitizar búsqueda de texto
+    if (q && typeof q === "string" && q.trim().length > 0) {
+      const escapedQ = q.trim().replaceAll(/[\\^$.|?*+()[\]{}]/g, String.raw`\$&`);
+      filter.titulo = { $regex: escapedQ, $options: "i" };
+    }
 
-    const lim = Number(limit) || 12;
-    const pag = Number(page) || 1;
+    const lim = Math.min(Math.max(Number(limit) || 12, 1), 100);
+    const pag = Math.max(Number(page) || 1, 1);
     const skip = (pag - 1) * lim;
+
+    const validSort = validateSort(sort);
 
     const [data, total] = await Promise.all([
       Need.find(filter)
         .select(cardProjection)
-        .sort(sort)
+        .sort(validSort)
         .skip(skip)
         .limit(lim),
       Need.countDocuments(filter),
@@ -146,29 +187,37 @@ exports.actualizar = async (req, res) => {
         .status(404)
         .json({ ok: false, message: "Necesidad no encontrada" });
 
-    // Campos permitidos (se castea lo que venga)
     const body = req.body || {};
-    const patch = {
-      ...(body.titulo && { titulo: body.titulo }),
-      ...(body.categoria && { categoria: body.categoria }),
-      ...(body.urgencia && { urgencia: body.urgencia }),
-      ...(body.descripcionBreve && { descripcionBreve: body.descripcionBreve }),
-      ...(body.objetivo !== undefined && {
-        objetivo: toNumber(body.objetivo, need.objetivo),
-      }),
-      ...(body.recibido !== undefined && {
-        recibido: toNumber(body.recibido, need.recibido),
-      }),
-      ...(body.fechaLimite !== undefined && {
-        fechaLimite: toNullable(body.fechaLimite),
-      }),
-      ...(body.estado !== undefined && { estado: body.estado }),
-      ...(body.visible !== undefined && {
-        visible: toBool(body.visible, need.visible),
-      }),
-    };
+    const patch = {};
 
-    // ¿Llega nueva imagen? (req.file vía multer)
+    if (body.titulo && typeof body.titulo === "string") {
+      patch.titulo = body.titulo.trim();
+    }
+    if (validateCategoria(body.categoria)) {
+      patch.categoria = validateCategoria(body.categoria);
+    }
+    if (validateUrgencia(body.urgencia)) {
+      patch.urgencia = validateUrgencia(body.urgencia);
+    }
+    if (body.descripcionBreve && typeof body.descripcionBreve === "string") {
+      patch.descripcionBreve = body.descripcionBreve.trim();
+    }
+    if (body.objetivo !== undefined) {
+      patch.objetivo = toNumber(body.objetivo, need.objetivo);
+    }
+    if (body.recibido !== undefined) {
+      patch.recibido = toNumber(body.recibido, need.recibido);
+    }
+    if (body.fechaLimite !== undefined) {
+      patch.fechaLimite = toNullable(body.fechaLimite);
+    }
+    if (body.estado !== undefined) {
+      patch.estado = validateEstado(body.estado);
+    }
+    if (body.visible !== undefined) {
+      patch.visible = toBool(body.visible, need.visible);
+    }
+
     if (req.file?.path && req.file?.filename) {
       const oldPublicId = need?.imagenPrincipal?.publicId;
       patch.imagenPrincipal = {
@@ -176,7 +225,6 @@ exports.actualizar = async (req, res) => {
         publicId: req.file.filename,
       };
 
-      // elimina asset anterior en Cloudinary (opcional pero recomendado)
       if (oldPublicId) {
         try {
           await cloudinary.uploader.destroy(oldPublicId, {
@@ -208,11 +256,14 @@ exports.actualizar = async (req, res) => {
 exports.cambiarEstado = async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado } = req.body; // "activa" | "pausada" | "cumplida" | "vencida"
+    const { estado } = req.body;
+
+    // Validar estado permitido
+    const validEstado = validateEstado(estado);
 
     const need = await Need.findByIdAndUpdate(
       id,
-      { estado },
+      { estado: validEstado },
       { new: true }
     );
 
