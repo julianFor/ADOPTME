@@ -52,7 +52,85 @@ const validateId = (id) => {
 
 const sanitizeRegex = (str) => {
   if (!str || typeof str !== "string") return "";
-  return String(str).trim().replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+  return String(str).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+// ───────── Helper para aplicar patch de entrada ─────────
+const applyPatch = (body, need) => {
+  const patch = {};
+
+  if (body.titulo) {
+    patch.titulo = String(body.titulo).trim();
+  }
+
+  const validCategoria = validateCategoria(body.categoria);
+  if (validCategoria) {
+    patch.categoria = validCategoria;
+  }
+
+  const validUrgencia = validateUrgencia(body.urgencia);
+  if (validUrgencia) {
+    patch.urgencia = validUrgencia;
+  }
+
+  if (body.descripcionBreve) {
+    patch.descripcionBreve = String(body.descripcionBreve).trim();
+  }
+
+  if (body.objetivo !== undefined) {
+    patch.objetivo = toNumber(body.objetivo, need.objetivo);
+  }
+
+  if (body.recibido !== undefined) {
+    patch.recibido = toNumber(body.recibido, need.recibido);
+  }
+
+  if (body.fechaLimite !== undefined) {
+    patch.fechaLimite = toNullable(body.fechaLimite);
+  }
+
+  if (body.estado !== undefined) {
+    patch.estado = validateEstado(body.estado);
+  }
+
+  if (body.visible !== undefined) {
+    patch.visible = toBool(body.visible, need.visible);
+  }
+
+  return patch;
+};
+
+// ───────── Helper para manejar imagen ─────────
+const handleImageUpload = async (req, need) => {
+  if (!req.file?.path || !req.file?.filename) {
+    return null;
+  }
+
+  const oldPublicId = need?.imagenPrincipal?.publicId;
+  const imageData = {
+    url: String(req.file.path),
+    publicId: String(req.file.filename),
+  };
+
+  // Elimina imagen anterior en Cloudinary si existe
+  if (oldPublicId) {
+    try {
+      await cloudinary.uploader.destroy(oldPublicId, {
+        resource_type: "image",
+      });
+    } catch (e) {
+      console.warn("No se pudo eliminar imagen anterior:", e?.message);
+    }
+  }
+
+  return imageData;
+};
+
+// ───────── Helper para sincronizar estado ─────────
+const syncNeedEstado = (need) => {
+  if (typeof need.syncEstado === "function") {
+    need.syncEstado();
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -194,10 +272,8 @@ exports.obtenerPorId = async (req, res) => {
         .json({ ok: false, message: "Necesidad no encontrada" });
 
     // si tienes este método en el modelo
-    if (typeof need.syncEstado === "function") {
-      need.syncEstado();
-      await need.save();
-    }
+    syncNeedEstado(need);
+    await need.save();
 
     return res.json({ ok: true, data: need });
   } catch (err) {
@@ -226,72 +302,16 @@ exports.actualizar = async (req, res) => {
 
     // Campos permitidos (se castea lo que venga)
     const body = req.body || {};
-    const patch = {};
+    const patch = applyPatch(body, need);
 
-    if (body.titulo) {
-      patch.titulo = String(body.titulo).trim();
-    }
-
-    const validCategoria = validateCategoria(body.categoria);
-    if (validCategoria) {
-      patch.categoria = validCategoria;
-    }
-
-    const validUrgencia = validateUrgencia(body.urgencia);
-    if (validUrgencia) {
-      patch.urgencia = validUrgencia;
-    }
-
-    if (body.descripcionBreve) {
-      patch.descripcionBreve = String(body.descripcionBreve).trim();
-    }
-
-    if (body.objetivo !== undefined) {
-      patch.objetivo = toNumber(body.objetivo, need.objetivo);
-    }
-
-    if (body.recibido !== undefined) {
-      patch.recibido = toNumber(body.recibido, need.recibido);
-    }
-
-    if (body.fechaLimite !== undefined) {
-      patch.fechaLimite = toNullable(body.fechaLimite);
-    }
-
-    if (body.estado !== undefined) {
-      patch.estado = validateEstado(body.estado);
-    }
-
-    if (body.visible !== undefined) {
-      patch.visible = toBool(body.visible, need.visible);
-    }
-
-    // ¿Llega nueva imagen? (req.file vía multer)
-    if (req.file?.path && req.file?.filename) {
-      const oldPublicId = need?.imagenPrincipal?.publicId;
-      patch.imagenPrincipal = {
-        url: String(req.file.path),
-        publicId: String(req.file.filename),
-      };
-
-      // elimina asset anterior en Cloudinary (opcional pero recomendado)
-      if (oldPublicId) {
-        try {
-          await cloudinary.uploader.destroy(oldPublicId, {
-            resource_type: "image",
-          });
-        } catch (e) {
-          console.warn("No se pudo eliminar imagen anterior:", e?.message);
-        }
-      }
+    const imageData = await handleImageUpload(req, need);
+    if (imageData) {
+      patch.imagenPrincipal = imageData;
     }
 
     Object.assign(need, patch);
 
-    if (typeof need.syncEstado === "function") {
-      need.syncEstado();
-    }
-
+    syncNeedEstado(need);
     await need.save();
 
     return res.json({ ok: true, data: need });
