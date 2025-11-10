@@ -1,45 +1,37 @@
 // controllers/necesidadController.js
-const mongoose = require('mongoose');
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
-const { sanitizeMongoId, sanitizeQueryParams, sanitizeUpdateData } = require("../utils/sanitize");
-
-// Función de utilidad para sanitizar valores de consulta
-const sanitizeQueryValue = (value) => {
-  if (value === null || value === undefined) return null;
-  if (Array.isArray(value)) return null; // No permitir arrays
-  if (typeof value === 'object') return null; // No permitir objetos
-  return String(value).trim(); // Convertir a string y eliminar espacios
-};
 
 // Proyección tipo “tarjeta”
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
 
 // ───────── helpers de casteo (multipart/form-data llega como string) ─────────
-const hasValue = (v) => v != null && v !== '';
-
-const toNumber = (v, def) => {
-  if (!hasValue(v)) return def;
-  const num = Number(v);
-  return Number.isNaN(num) ? def : num;
-};
-
-const toBool = (v, def) => {
-  if (!hasValue(v)) return def;
+const toNumber = (v, def = undefined) =>
+  typeof v === "undefined" ? def : Number(v);
+const toBool = (v, def = undefined) => {
+  if (typeof v === "undefined") return def;
   if (typeof v === "boolean") return v;
-  if (typeof v === "number") return Boolean(v);
   const s = String(v).toLowerCase().trim();
   return s === "true" || s === "1" || s === "on";
 };
-
-const toNullable = (v) => (hasValue(v) ? v : null);
+const toNullable = (v) => (v === "" || typeof v === "undefined" ? null : v);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.crearNecesidad = async (req, res) => {
   try {
-    const sanitizedData = sanitizeUpdateData(req.body);
+    const {
+      titulo,
+      categoria,
+      urgencia,
+      descripcionBreve,
+      objetivo,
+      recibido,
+      fechaLimite,
+      estado,
+      visible,
+    } = req.body;
 
     // Imagen principal obligatoria (el middleware pone req.file)
     if (!req.file?.path || !req.file?.filename) {
@@ -48,74 +40,23 @@ exports.crearNecesidad = async (req, res) => {
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // Validación de valores permitidos
-    const categoriasValidas = ['alimentos', 'medicinas', 'insumos', 'otros'];
-    const urgenciasValidas = ['alta', 'media', 'baja'];
-    const estadosValidos = ['activa', 'pausada', 'cumplida', 'vencida'];
-
-    // Validar y sanitizar datos antes de crear
-    const needData = {
-      titulo: typeof sanitizedData.titulo === 'string' 
-        ? sanitizedData.titulo.slice(0, 100) // limitar longitud
-        : null,
-      
-      categoria: categoriasValidas.includes(sanitizedData.categoria)
-        ? sanitizedData.categoria
-        : null,
-      
-      urgencia: urgenciasValidas.includes(sanitizedData.urgencia)
-        ? sanitizedData.urgencia
-        : null,
-      
-      descripcionBreve: typeof sanitizedData.descripcionBreve === 'string'
-        ? sanitizedData.descripcionBreve.slice(0, 500)
-        : null,
-      
-      objetivo: Math.max(1, Math.min(1000000, toNumber(sanitizedData.objetivo, 1))), // límite razonable
-      recibido: Math.max(0, Math.min(1000000, toNumber(sanitizedData.recibido, 0))),
-      
-      fechaLimite: sanitizedData.fechaLimite instanceof Date 
-        ? sanitizedData.fechaLimite 
-        : toNullable(sanitizedData.fechaLimite),
-      
-      estado: estadosValidos.includes(sanitizedData.estado)
-        ? sanitizedData.estado
-        : 'activa',
-      
-      visible: toBool(sanitizedData.visible, true),
-      
+    const need = await Need.create({
+      titulo,
+      categoria,
+      urgencia,
+      descripcionBreve,
+      objetivo: toNumber(objetivo, 1),
+      recibido: toNumber(recibido, 0),
+      fechaLimite: toNullable(fechaLimite),
+      estado: estado || "activa",
+      visible: toBool(visible, true),
       imagenPrincipal: {
-        url: req.file.path.toString().slice(0, 500), // limitar longitud
-        publicId: req.file.filename.toString().slice(0, 100),
+        url: req.file.path, // secure_url
+        publicId: req.file.filename, // public_id
       },
-      
-      creadaPor: mongoose.Types.ObjectId.isValid(req.userId) 
-        ? req.userId.toString()
-        : null,
-        
+      creadaPor: req.userId,
       fechaPublicacion: new Date(),
-    };
-
-    // Validar campos requeridos y tipos de datos
-    const validaciones = [
-      { campo: 'titulo', valido: Boolean(needData.titulo), mensaje: 'Título es requerido y debe ser texto' },
-      { campo: 'categoria', valido: Boolean(needData.categoria), mensaje: 'Categoría debe ser válida' },
-      { campo: 'urgencia', valido: Boolean(needData.urgencia), mensaje: 'Urgencia debe ser válida' },
-      { campo: 'creadaPor', valido: Boolean(needData.creadaPor), mensaje: 'Usuario creador inválido' },
-    ];
-
-    const errores = validaciones.filter(v => !v.valido);
-    if (errores.length > 0) {
-      return res.status(400).json({
-        ok: false,
-        message: 'Datos inválidos',
-        errores: errores.map(e => e.mensaje)
-      });
-    }
-
-    // Crear documento utilizando el modelo (que aplicará sus propias validaciones)
-    const need = new Need(needData);
-    await need.save();
+    });
 
     return res.status(201).json({ ok: true, data: need });
   } catch (err) {
@@ -128,48 +69,32 @@ exports.crearNecesidad = async (req, res) => {
 
 exports.listarPublicas = async (req, res) => {
   try {
-    const sanitizedParams = sanitizeQueryParams(req.query);
-    
-    // Construir filtro de manera segura con validación de tipos y valores permitidos
-    const filter = { visible: true };
-    
-    // Lista de estados válidos
-    const estadosValidos = ['activa', 'pausada', 'cumplida', 'vencida'];
-    if (sanitizedParams.estado && estadosValidos.includes(sanitizedParams.estado)) {
-      filter.estado = sanitizedParams.estado;
-    }
-    
-    // Lista de categorías válidas (ajusta según tus categorías)
-    const categoriasValidas = ['alimentos', 'medicinas', 'insumos', 'otros'];
-    if (sanitizedParams.categoria && categoriasValidas.includes(sanitizedParams.categoria)) {
-      filter.categoria = sanitizedParams.categoria;
-    }
-    
-    // Lista de niveles de urgencia válidos
-    const urgenciasValidas = ['alta', 'media', 'baja'];
-    if (sanitizedParams.urgencia && urgenciasValidas.includes(sanitizedParams.urgencia)) {
-      filter.urgencia = sanitizedParams.urgencia;
-    }
-    
-    // Sanitización segura para búsqueda por título
-    if (sanitizedParams.q && typeof sanitizedParams.q === 'string') {
-      const searchTerm = sanitizedParams.q.replaceAll(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '').trim();
-      if (searchTerm) {
-        filter.titulo = { $regex: new RegExp(searchTerm, 'i') };
-      }
-    }
+    const {
+      q,
+      categoria,
+      urgencia,
+      estado = "activa",
+      sort = "-fechaPublicacion",
+      limit = 12,
+      page = 1,
+    } = req.query;
 
-    const page = Math.max(1, Number.parseInt(sanitizedParams.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number.parseInt(sanitizedParams.limit) || 10));
-    const skip = (page - 1) * limit;
-    const sortField = sanitizedParams.sort || '-fechaPublicacion';
+    const filter = { visible: true };
+    if (estado) filter.estado = estado;
+    if (categoria) filter.categoria = categoria;
+    if (urgencia) filter.urgencia = urgencia;
+    if (q) filter.titulo = { $regex: q, $options: "i" };
+
+    const lim = Number(limit) || 12;
+    const pag = Number(page) || 1;
+    const skip = (pag - 1) * lim;
 
     const [data, total] = await Promise.all([
       Need.find(filter)
         .select(cardProjection)
-        .sort(sortField)
+        .sort(sort)
         .skip(skip)
-        .limit(limit),
+        .limit(lim),
       Need.countDocuments(filter),
     ]);
 
@@ -177,8 +102,8 @@ exports.listarPublicas = async (req, res) => {
       ok: true,
       data,
       total,
-      page: page,
-      pages: Math.ceil(total / limit),
+      page: pag,
+      pages: Math.ceil(total / lim),
     });
   } catch (err) {
     console.error("💥 listarPublicas:", err);
@@ -190,12 +115,7 @@ exports.listarPublicas = async (req, res) => {
 
 exports.obtenerPorId = async (req, res) => {
   try {
-    const id = sanitizeMongoId(req.params.id);
-    if (!id) {
-      return res.status(400).json({ ok: false, message: "ID no válido" });
-    }
-
-    const need = await Need.findById(id);
+    const need = await Need.findById(req.params.id);
     if (!need)
       return res
         .status(404)
@@ -216,104 +136,84 @@ exports.obtenerPorId = async (req, res) => {
   }
 };
 
-// Función auxiliar para construir el patch
-const buildPatchObject = (body, need) => {
-  const patch = {};
-  const fields = {
-    titulo: (v) => v,
-    categoria: (v) => v,
-    urgencia: (v) => v,
-    descripcionBreve: (v) => v,
-    objetivo: (v) => toNumber(v, need.objetivo),
-    recibido: (v) => toNumber(v, need.recibido),
-    fechaLimite: (v) => toNullable(v),
-    estado: (v) => v,
-    visible: (v) => toBool(v, need.visible)
-  };
-
-  for (const [field, transform] of Object.entries(fields)) {
-    if (hasValue(body[field])) {
-      patch[field] = transform(body[field]);
-    }
-  }
-
-  return patch;
-};
-
-// Función auxiliar para manejar la actualización de imagen
-const updateImage = async (need, file) => {
-  if (!file?.path || !file?.filename) return null;
-
-  const oldPublicId = need?.imagenPrincipal?.publicId;
-  const newImage = {
-    url: file.path,
-    publicId: file.filename,
-  };
-
-  if (oldPublicId) {
-    try {
-      await cloudinary.uploader.destroy(oldPublicId, { resource_type: "image" });
-    } catch (e) {
-      console.warn("No se pudo eliminar imagen anterior:", e?.message);
-    }
-  }
-
-  return newImage;
-};
-
 exports.actualizar = async (req, res) => {
   try {
-    const id = sanitizeMongoId(req.params.id);
-    if (!id) {
-      return res.status(400).json({ ok: false, message: "ID no válido" });
-    }
-    
-    const need = await Need.findById(id);
-    
-    if (!need) {
-      return res.status(404).json({ ok: false, message: "Necesidad no encontrada" });
-    }
+    const { id } = req.params;
 
-    const patch = buildPatchObject(req.body || {}, need);
-    const newImage = await updateImage(need, req.file);
-    
-    if (newImage) {
-      patch.imagenPrincipal = newImage;
+    const need = await Need.findById(id);
+    if (!need)
+      return res
+        .status(404)
+        .json({ ok: false, message: "Necesidad no encontrada" });
+
+    // Campos permitidos (se castea lo que venga)
+    const body = req.body || {};
+    const patch = {
+      ...(body.titulo && { titulo: body.titulo }),
+      ...(body.categoria && { categoria: body.categoria }),
+      ...(body.urgencia && { urgencia: body.urgencia }),
+      ...(body.descripcionBreve && { descripcionBreve: body.descripcionBreve }),
+      ...(typeof body.objetivo !== "undefined" && {
+        objetivo: toNumber(body.objetivo, need.objetivo),
+      }),
+      ...(typeof body.recibido !== "undefined" && {
+        recibido: toNumber(body.recibido, need.recibido),
+      }),
+      ...(typeof body.fechaLimite !== "undefined" && {
+        fechaLimite: toNullable(body.fechaLimite),
+      }),
+      ...(typeof body.estado !== "undefined" && { estado: body.estado }),
+      ...(typeof body.visible !== "undefined" && {
+        visible: toBool(body.visible, need.visible),
+      }),
+    };
+
+    // ¿Llega nueva imagen? (req.file vía multer)
+    if (req.file?.path && req.file?.filename) {
+      const oldPublicId = need?.imagenPrincipal?.publicId;
+      patch.imagenPrincipal = {
+        url: req.file.path,
+        publicId: req.file.filename,
+      };
+
+      // elimina asset anterior en Cloudinary (opcional pero recomendado)
+      if (oldPublicId) {
+        try {
+          await cloudinary.uploader.destroy(oldPublicId, {
+            resource_type: "image",
+          });
+        } catch (e) {
+          console.warn("No se pudo eliminar imagen anterior:", e?.message);
+        }
+      }
     }
 
     Object.assign(need, patch);
-    
+
     if (typeof need.syncEstado === "function") {
       need.syncEstado();
     }
 
     await need.save();
+
     return res.json({ ok: true, data: need });
-    
   } catch (err) {
     console.error("💥 actualizar:", err);
-    return res.status(500).json({ ok: false, message: "Error al actualizar necesidad" });
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al actualizar necesidad" });
   }
 };
 
 exports.cambiarEstado = async (req, res) => {
   try {
-    const id = sanitizeMongoId(req.params.id);
-    if (!id) {
-      return res.status(400).json({ ok: false, message: "ID no válido" });
-    }
-
-    const estadosValidos = ["activa", "pausada", "cumplida", "vencida"];
-    const estado = sanitizeUpdateData(req.body).estado;
-    
-    if (!estado || !estadosValidos.includes(estado)) {
-      return res.status(400).json({ ok: false, message: "Estado no válido" });
-    }
+    const { id } = req.params;
+    const { estado } = req.body; // "activa" | "pausada" | "cumplida" | "vencida"
 
     const need = await Need.findByIdAndUpdate(
       id,
       { estado },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
     if (!need)
@@ -332,10 +232,7 @@ exports.cambiarEstado = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    const id = sanitizeMongoId(req.params.id);
-    if (!id) {
-      return res.status(400).json({ ok: false, message: "ID no válido" });
-    }
+    const { id } = req.params;
 
     const need = await Need.findById(id);
     if (!need)
