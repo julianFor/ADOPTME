@@ -1,3 +1,4 @@
+const mongoose = require('mongoose'); // ✅ agregado para validar ObjectId
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
 const { enviarNotificacionPersonalizada } = require('../utils/notificaciones'); 
@@ -9,7 +10,8 @@ exports.crearProceso = async (req, res) => {
 
     const solicitud = await SolicitudAdopcion.findById(solicitudId);
 
-    if (!solicitud || solicitud.estado !== 'pendiente') {
+    // ✅ SonarQube S6582 - uso de encadenamiento opcional
+    if (solicitud?.estado !== 'pendiente') {
       return res.status(400).json({ success: false, message: 'La solicitud no es válida o ya está en proceso.' });
     }
 
@@ -81,7 +83,6 @@ exports.registrarVisita = async (req, res) => {
           fechaVisita,
           horaVisita,
           responsable,
-          // direccionVisita,
           observacionesVisita,
           asistio: Boolean(asistio),
           aprobada: Boolean(aprobada)
@@ -115,9 +116,9 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     proceso.compromiso = {
-      archivo: req.cloudinaryCompromiso, // ← objeto Cloudinary
-      firmado: true,                     // ← ya está firmado por el adoptante
-      aprobada: false                    // ← la aprueba admin/adminFundación
+      archivo: req.cloudinaryCompromiso, 
+      firmado: true,                     
+      aprobada: false                    
     };
 
     await proceso.save();
@@ -132,7 +133,6 @@ exports.subirCompromiso = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al subir compromiso firmado.', error: error.message });
   }
 };
-
 
 // Registrar entrega de la mascota
 exports.registrarEntrega = async (req, res) => {
@@ -158,7 +158,6 @@ exports.registrarEntrega = async (req, res) => {
 
     await proceso.save();
 
-    //  Notificar al adoptante
     const mensaje = '¡Entrega confirmada! Gracias por brindarle un hogar a tu nuevo compañero peludo 🐾';
     const datosAdicionales = {
       procesoId: proceso._id,
@@ -203,7 +202,14 @@ exports.getAllProcesos = async (req, res) => {
 // Obtener proceso por ID de solicitud
 exports.getProcesoPorSolicitud = async (req, res) => {
   try {
-    const proceso = await ProcesoAdopcion.findOne({ solicitud: req.params.solicitudId }).populate({
+    const { solicitudId } = req.params;
+
+    // ✅ SonarQube S5147 - evitar NoSQL injection
+    if (!mongoose.Types.ObjectId.isValid(solicitudId)) {
+      return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
+    }
+
+    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
     });
@@ -218,8 +224,7 @@ exports.getProcesoPorSolicitud = async (req, res) => {
   }
 };
 
-
-// Aprobar etapa del proceso: entrevista, visita, compromiso o entrega
+// Aprobar etapa del proceso
 exports.aprobarEtapa = async (req, res) => {
   const { id, etapa } = req.params;
 
@@ -234,19 +239,15 @@ exports.aprobarEtapa = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
     }
 
-    // Aprobar la etapa correspondiente
     if (!proceso[etapa]) {
-      proceso[etapa] = {}; // inicializar si no existe
+      proceso[etapa] = {}; 
     }
     proceso[etapa].aprobada = true;
 
-    // Verificar si todas las etapas están aprobadas
     const todasAprobadas = etapasValidas.every(et => proceso[et]?.aprobada === true);
 
     if (todasAprobadas) {
       proceso.finalizado = true;
-
-      // Cambiar estado de la solicitud asociada
       const solicitud = await SolicitudAdopcion.findById(proceso.solicitud);
       if (solicitud) {
         solicitud.estado = 'finalizada';
@@ -261,7 +262,6 @@ exports.aprobarEtapa = async (req, res) => {
       message: `Etapa '${etapa}' aprobada.${todasAprobadas ? ' Proceso finalizado.' : ''}`,
       proceso
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -271,8 +271,7 @@ exports.aprobarEtapa = async (req, res) => {
   }
 };
 
-
-// Rechazar etapa del proceso: entrevista, visita, compromiso o entrega
+// Rechazar etapa
 exports.rechazarEtapa = async (req, res) => {
   const { id, etapa } = req.params;
   const { motivo } = req.body;
@@ -293,15 +292,10 @@ exports.rechazarEtapa = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Solicitud asociada no encontrada.' });
     }
 
-    // Marcar como rechazada la etapa
     proceso[etapa].aprobada = false;
-
-    // Marcar como finalizado el proceso
     proceso.finalizado = true;
     proceso.etapaRechazada = etapa;
     proceso.motivoRechazo = motivo;
-
-    // Cambiar estado de la solicitud a rechazada
     solicitud.estado = 'rechazada';
 
     await proceso.save();
@@ -324,7 +318,7 @@ exports.getProcesoPorId = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          { path: 'adoptante', select: 'username email' } // 👈 necesario para validar dueño
+          { path: 'adoptante', select: 'username email' }
         ]
       });
 
@@ -332,7 +326,6 @@ exports.getProcesoPorId = async (req, res) => {
       return res.status(404).json({ message: 'Proceso no encontrado' });
     }
 
-    // 🔐 Validación para que el adoptante solo vea sus propios procesos
     if (
       req.userRole === 'adoptante' &&
       proceso.solicitud.adoptante._id.toString() !== req.userId
@@ -347,9 +340,7 @@ exports.getProcesoPorId = async (req, res) => {
   }
 };
 
-
-
-// Obtener procesos de adopción del usuario autenticado 
+// Obtener procesos del usuario autenticado 
 exports.getMisProcesos = async (req, res) => {
   try {
     const procesos = await ProcesoAdopcion.find()
@@ -359,9 +350,7 @@ exports.getMisProcesos = async (req, res) => {
         populate: { path: 'mascota' }
       });
 
-    // Filtrar los procesos donde la solicitud fue excluida (por no coincidir con el userId)
     const procesosFiltrados = procesos.filter(p => p.solicitud !== null);
-
     res.status(200).json({ success: true, procesos: procesosFiltrados });
   } catch (error) {
     console.error('Error al obtener procesos del usuario:', error);
