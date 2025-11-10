@@ -1,3 +1,5 @@
+// controllers/procesoAdopcionController.js
+
 const mongoose = require('mongoose');
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
@@ -5,22 +7,37 @@ const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
 
 // 🔒 Middleware reutilizable: validar y limpiar IDs
 function validarObjectId(id) {
+  if (!id) return null;
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
   return id.toString();
 }
 
-// Crear un nuevo proceso (solo si la solicitud está aprobada)
+// Normaliza el campo de correo en documentos poblados (si existe 'correo' lo copia a 'email')
+function normalizarEmailEnObjeto(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (!obj.email && obj.correo) {
+    // copia correo a email para consistencia
+    obj.email = obj.correo;
+  }
+  return obj;
+}
+
+// Crear un nuevo proceso (solo si la solicitud está pendiente)
 exports.crearProceso = async (req, res) => {
   try {
-    const rawId = req.body.solicitudId;
+    const rawId = req.body.solicitudId || req.body.solicitud; // aceptar ambos nombres si vienen
     const solicitudId = validarObjectId(rawId);
     if (!solicitudId) {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
     const solicitud = await SolicitudAdopcion.findById(solicitudId);
+    if (!solicitud) {
+      return res.status(404).json({ success: false, message: 'Solicitud no encontrada.' });
+    }
 
-    if (solicitud?.estado !== 'pendiente') {
+    // Sólo crear proceso si la solicitud está pendiente (evita crear duplicados)
+    if (solicitud.estado !== 'pendiente') {
       return res.status(400).json({ success: false, message: 'La solicitud no es válida o ya está en proceso.' });
     }
 
@@ -36,6 +53,7 @@ exports.crearProceso = async (req, res) => {
       procesoId: guardado._id
     };
 
+    // Adoptante puede ser ObjectId; enviarNotificacionPersonalizada debe aceptar array de ids
     await enviarNotificacionPersonalizada(
       [solicitud.adoptante],
       'solicitud-adopcion-aprobada',
@@ -49,6 +67,7 @@ exports.crearProceso = async (req, res) => {
       proceso: guardado
     });
   } catch (error) {
+    console.error('crearProceso error:', error);
     res.status(500).json({
       success: false,
       message: 'Error al crear proceso',
@@ -66,6 +85,7 @@ exports.agendarEntrevista = async (req, res) => {
     }
 
     const { fechaEntrevista, enlaceMeet, observacionesEntrevista, aprobada } = req.body;
+
     const proceso = await ProcesoAdopcion.findByIdAndUpdate(
       procesoId,
       {
@@ -78,8 +98,14 @@ exports.agendarEntrevista = async (req, res) => {
       },
       { new: true }
     );
+
+    if (!proceso) {
+      return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
+    }
+
     res.status(200).json({ success: true, message: 'Entrevista agendada', proceso });
   } catch (error) {
+    console.error('agendarEntrevista error:', error);
     res.status(500).json({ success: false, message: 'Error al agendar entrevista', error: error.message });
   }
 };
@@ -93,6 +119,7 @@ exports.registrarVisita = async (req, res) => {
     }
 
     const { fechaVisita, horaVisita, responsable, observacionesVisita, asistio, aprobada } = req.body;
+
     const proceso = await ProcesoAdopcion.findByIdAndUpdate(
       procesoId,
       {
@@ -107,8 +134,14 @@ exports.registrarVisita = async (req, res) => {
       },
       { new: true }
     );
+
+    if (!proceso) {
+      return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
+    }
+
     res.status(200).json({ success: true, message: 'Visita registrada', proceso });
   } catch (error) {
+    console.error('registrarVisita error:', error);
     res.status(500).json({ success: false, message: 'Error al registrar visita', error: error.message });
   }
 };
@@ -131,7 +164,12 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     const solicitud = await SolicitudAdopcion.findById(proceso.solicitud);
-    if (!solicitud || solicitud.adoptante.toString() !== req.userId) {
+    if (!solicitud) {
+      return res.status(404).json({ success: false, message: 'Solicitud asociada no encontrada.' });
+    }
+
+    // Verificar que el usuario actual sea el adoptante
+    if (!req.userId || solicitud.adoptante.toString() !== req.userId) {
       return res.status(403).json({ success: false, message: 'No tienes permisos para subir el compromiso.' });
     }
 
@@ -149,7 +187,7 @@ exports.subirCompromiso = async (req, res) => {
       proceso
     });
   } catch (error) {
-    console.error('Error al subir compromiso:', error);
+    console.error('subirCompromiso error:', error);
     res.status(500).json({ success: false, message: 'Error al subir compromiso firmado.', error: error.message });
   }
 };
@@ -202,6 +240,7 @@ exports.registrarEntrega = async (req, res) => {
       entrega: proceso.entrega
     });
   } catch (error) {
+    console.error('registrarEntrega error:', error);
     res.status(500).json({
       success: false,
       message: 'Error al registrar entrega.',
@@ -218,8 +257,16 @@ exports.getAllProcesos = async (req, res) => {
       populate: { path: 'adoptante mascota' }
     });
 
+    // Normalizar email en adoptante si es necesario
+    procesos.forEach(p => {
+      if (p && p.solicitud && p.solicitud.adoptante) {
+        normalizarEmailEnObjeto(p.solicitud.adoptante);
+      }
+    });
+
     res.status(200).json({ success: true, procesos });
   } catch (error) {
+    console.error('getAllProcesos error:', error);
     res.status(500).json({ success: false, message: 'Error al obtener procesos', error: error.message });
   }
 };
@@ -232,6 +279,7 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
+    // Uso seguro de findOne y comprobación de resultado
     const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
@@ -241,8 +289,14 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Proceso no encontrado para esta solicitud' });
     }
 
+    // Normalizar adoptante.email si viene como correo
+    if (proceso.solicitud && proceso.solicitud.adoptante) {
+      normalizarEmailEnObjeto(proceso.solicitud.adoptante);
+    }
+
     res.status(200).json({ success: true, proceso });
   } catch (error) {
+    console.error('getProcesoPorSolicitud error:', error);
     res.status(500).json({ success: false, message: 'Error al consultar proceso por solicitud', error: error.message });
   }
 };
@@ -263,7 +317,8 @@ exports.aprobarEtapa = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
     }
 
-    if (!proceso[etapa]) proceso[etapa] = {};
+    // Asegurarse de que la etapa exista como objeto antes de asignar
+    if (!proceso[etapa] || typeof proceso[etapa] !== 'object') proceso[etapa] = {};
     proceso[etapa].aprobada = true;
 
     const todasAprobadas = etapasValidas.every(et => proceso[et]?.aprobada === true);
@@ -285,6 +340,7 @@ exports.aprobarEtapa = async (req, res) => {
       proceso
     });
   } catch (error) {
+    console.error('aprobarEtapa error:', error);
     res.status(500).json({
       success: false,
       message: 'Error al aprobar etapa.',
@@ -315,10 +371,13 @@ exports.rechazarEtapa = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Solicitud asociada no encontrada.' });
     }
 
+    // Asegurarse de que la etapa exista
+    if (!proceso[etapa] || typeof proceso[etapa] !== 'object') proceso[etapa] = {};
     proceso[etapa].aprobada = false;
+
     proceso.finalizado = true;
     proceso.etapaRechazada = etapa;
-    proceso.motivoRechazo = motivo;
+    proceso.motivoRechazo = motivo || 'No especificado';
     solicitud.estado = 'rechazada';
 
     await proceso.save();
@@ -330,6 +389,7 @@ exports.rechazarEtapa = async (req, res) => {
       proceso
     });
   } catch (error) {
+    console.error('rechazarEtapa error:', error);
     res.status(500).json({ success: false, message: 'Error al rechazar etapa.', error: error.message });
   }
 };
@@ -346,39 +406,67 @@ exports.getProcesoPorId = async (req, res) => {
       path: 'solicitud',
       populate: [
         { path: 'mascota' },
-        { path: 'adoptante', select: 'username email' }
+        { path: 'adoptante', select: 'username email correo' } // traer ambos posibles campos
       ]
     });
 
     if (!proceso) {
-      return res.status(404).json({ message: 'Proceso no encontrado' });
+      return res.status(404).json({ success: false, message: 'Proceso no encontrado' });
     }
 
-    if (req.userRole === 'adoptante' && proceso.solicitud.adoptante._id.toString() !== req.userId) {
-      return res.status(403).json({ message: 'Acceso denegado' });
+    // Normalizar correo/email en adoptante poblado
+    if (proceso.solicitud && proceso.solicitud.adoptante) {
+      normalizarEmailEnObjeto(proceso.solicitud.adoptante);
+    }
+
+    // Si el rol adoptante intenta acceder, verificar ownership
+    if (req.userRole === 'adoptante') {
+      const adoptanteId = proceso.solicitud && proceso.solicitud.adoptante && proceso.solicitud.adoptante._id
+        ? proceso.solicitud.adoptante._id.toString()
+        : null;
+      if (!adoptanteId || adoptanteId !== req.userId) {
+        return res.status(403).json({ success: false, message: 'Acceso denegado' });
+      }
     }
 
     res.json({ success: true, proceso });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al obtener el proceso' });
+    console.error('getProcesoPorId error:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener el proceso', error: error.message });
   }
 };
 
 // Obtener procesos del usuario autenticado
 exports.getMisProcesos = async (req, res) => {
   try {
+    const userIdValid = validarObjectId(req.userId);
+    if (!userIdValid) {
+      return res.status(400).json({ success: false, message: 'Usuario no autenticado o ID inválido.' });
+    }
+
+    // Buscar procesos y popular solicitud.mascota y adoptante; filtrar por adoptante en la población
     const procesos = await ProcesoAdopcion.find()
       .populate({
         path: 'solicitud',
-        match: { adoptante: req.userId },
-        populate: { path: 'mascota' }
+        populate: [
+          { path: 'mascota' },
+          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(req.userId) } }
+        ]
       });
 
-    const procesosFiltrados = procesos.filter(p => p.solicitud !== null);
+    // Filtrar los que tenían adoptante poblado (match)
+    const procesosFiltrados = procesos.filter(p => p.solicitud && p.solicitud.adoptante);
+
+    // Normalizar emails
+    procesosFiltrados.forEach(p => {
+      if (p && p.solicitud && p.solicitud.adoptante) {
+        normalizarEmailEnObjeto(p.solicitud.adoptante);
+      }
+    });
+
     res.status(200).json({ success: true, procesos: procesosFiltrados });
   } catch (error) {
-    console.error('Error al obtener procesos del usuario:', error);
+    console.error('getMisProcesos error:', error);
     res.status(500).json({ success: false, message: 'Error al obtener procesos del usuario.', error: error.message });
   }
 };
