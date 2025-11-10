@@ -53,7 +53,6 @@ const validateId = (id) => {
 const sanitizeRegex = (str) => {
   if (!str || typeof str !== "string") return "";
   const trimmed = String(str).trim();
-  // Escapar caracteres especiales de regex de forma segura
   const escapedChars = trimmed.split("").map((char) => {
     if (/[.*+?^${}()|[\]\\]/.test(char)) {
       return `\\${char}`;
@@ -120,7 +119,6 @@ const handleImageUpload = async (req, need) => {
     publicId: String(req.file.filename),
   };
 
-  // Elimina imagen anterior en Cloudinary si existe
   if (oldPublicId) {
     try {
       await cloudinary.uploader.destroy(oldPublicId, {
@@ -157,14 +155,13 @@ exports.crearNecesidad = async (req, res) => {
       visible,
     } = req.body;
 
-    // Imagen principal obligatoria (el middleware pone req.file)
     if (!req.file?.path || !req.file?.filename) {
       return res
         .status(400)
         .json({ ok: false, message: "Imagen principal requerida" });
     }
 
-    // Validar y sanitizar entrada
+    // Validar y sanitizar entrada - NO usar datos del usuario directamente
     const validEstado = validateEstado(estado);
     const validCategoria = validateCategoria(categoria);
     const validUrgencia = validateUrgencia(urgencia);
@@ -210,23 +207,19 @@ exports.listarPublicas = async (req, res) => {
 
     const filter = { visible: true };
     
-    // Validar estado
     const validEstado = validateEstado(estado);
     filter.estado = validEstado;
     
-    // Validar categoría
     const validCategoria = validateCategoria(categoria);
     if (validCategoria) {
       filter.categoria = validCategoria;
     }
     
-    // Validar urgencia
     const validUrgencia = validateUrgencia(urgencia);
     if (validUrgencia) {
       filter.urgencia = validUrgencia;
     }
     
-    // Sanitizar búsqueda de texto - prevenir NoSQL injection
     if (q && typeof q === "string" && q.trim().length > 0) {
       const escapedQ = sanitizeRegex(q);
       filter.titulo = { $regex: escapedQ, $options: "i" };
@@ -265,7 +258,6 @@ exports.listarPublicas = async (req, res) => {
 
 exports.obtenerPorId = async (req, res) => {
   try {
-    // Validar ID antes de consulta
     const validId = validateId(req.params.id);
     if (!validId) {
       return res
@@ -280,7 +272,6 @@ exports.obtenerPorId = async (req, res) => {
         .json({ ok: false, message: "Necesidad no encontrada" });
     }
 
-    // si tienes este método en el modelo
     syncNeedEstado(need);
     await need.save();
 
@@ -295,7 +286,6 @@ exports.obtenerPorId = async (req, res) => {
 
 exports.actualizar = async (req, res) => {
   try {
-    // Validar ID antes de consulta - prevenir NoSQL injection
     const validId = validateId(req.params.id);
     if (!validId) {
       return res
@@ -310,28 +300,23 @@ exports.actualizar = async (req, res) => {
         .json({ ok: false, message: "Necesidad no encontrada" });
     }
 
-    // Campos permitidos (se castea lo que venga)
     const body = req.body || {};
     const patch = applyPatch(body, need);
 
-    const imageData = await handleImageUpload(req, need);
-    if (imageData) {
-      patch.imagenPrincipal = imageData;
-    }
-
-    const updated = await Need.findByIdAndUpdate(validId, patch, {
-      new: true,
-      runValidators: true,
-    });
-
-    syncNeedEstado(updated);
-    await updated.save();
-
-    return res.json({ ok: true, data: updated });
-  } catch (err) {
-    console.error("💥 actualizar:", err);
-    return res
-      .status(500)
-      .json({ ok: false, message: "Error al actualizar necesidad" });
-  }
-};
+        const imageData = await handleImageUpload(req, need);
+        if (imageData) {
+          patch.imagenPrincipal = imageData;
+        }
+    
+        Object.assign(need, patch);
+        syncNeedEstado(need);
+        await need.save();
+    
+        return res.json({ ok: true, data: need });
+      } catch (err) {
+        console.error("💥 actualizar:", err);
+        return res
+          .status(500)
+          .json({ ok: false, message: "Error al actualizar necesidad" });
+      }
+    };
