@@ -1,16 +1,25 @@
-const mongoose = require('mongoose'); // ✅ agregado para validar ObjectId
+const mongoose = require('mongoose');
 const ProcesoAdopcion = require('../models/ProcesoAdopcion');
 const SolicitudAdopcion = require('../models/SolicitudAdopcion');
-const { enviarNotificacionPersonalizada } = require('../utils/notificaciones'); 
+const { enviarNotificacionPersonalizada } = require('../utils/notificaciones');
+
+// 🔒 Middleware reutilizable: validar y limpiar IDs
+function validarObjectId(id) {
+  if (!mongoose.Types.ObjectId.isValid(id)) return null;
+  return id.toString();
+}
 
 // Crear un nuevo proceso (solo si la solicitud está aprobada)
 exports.crearProceso = async (req, res) => {
   try {
-    const { solicitudId } = req.body;
+    const rawId = req.body.solicitudId;
+    const solicitudId = validarObjectId(rawId);
+    if (!solicitudId) {
+      return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
+    }
 
     const solicitud = await SolicitudAdopcion.findById(solicitudId);
 
-    // ✅ SonarQube S6582 - uso de encadenamiento opcional
     if (solicitud?.estado !== 'pendiente') {
       return res.status(400).json({ success: false, message: 'La solicitud no es válida o ya está en proceso.' });
     }
@@ -21,7 +30,6 @@ exports.crearProceso = async (req, res) => {
     const proceso = new ProcesoAdopcion({ solicitud: solicitudId });
     const guardado = await proceso.save();
 
-    //  Notificar al adoptante
     const mensaje = 'Tu solicitud de adopción fue aprobada. Hemos iniciado el proceso de adopción.';
     const datosAdicionales = {
       solicitudId: solicitud._id,
@@ -40,7 +48,6 @@ exports.crearProceso = async (req, res) => {
       message: 'Proceso de adopción creado',
       proceso: guardado
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -53,9 +60,14 @@ exports.crearProceso = async (req, res) => {
 // Agendar entrevista virtual
 exports.agendarEntrevista = async (req, res) => {
   try {
+    const procesoId = validarObjectId(req.params.id);
+    if (!procesoId) {
+      return res.status(400).json({ success: false, message: 'ID de proceso no válido.' });
+    }
+
     const { fechaEntrevista, enlaceMeet, observacionesEntrevista, aprobada } = req.body;
     const proceso = await ProcesoAdopcion.findByIdAndUpdate(
-      req.params.id,
+      procesoId,
       {
         entrevista: {
           fechaEntrevista,
@@ -75,9 +87,14 @@ exports.agendarEntrevista = async (req, res) => {
 // Registrar visita presencial
 exports.registrarVisita = async (req, res) => {
   try {
+    const procesoId = validarObjectId(req.params.id);
+    if (!procesoId) {
+      return res.status(400).json({ success: false, message: 'ID de proceso no válido.' });
+    }
+
     const { fechaVisita, horaVisita, responsable, observacionesVisita, asistio, aprobada } = req.body;
     const proceso = await ProcesoAdopcion.findByIdAndUpdate(
-      req.params.id,
+      procesoId,
       {
         visita: {
           fechaVisita,
@@ -99,7 +116,10 @@ exports.registrarVisita = async (req, res) => {
 // Subir imagen del compromiso firmado (adoptante)
 exports.subirCompromiso = async (req, res) => {
   try {
-    const procesoId = req.params.id;
+    const procesoId = validarObjectId(req.params.id);
+    if (!procesoId) {
+      return res.status(400).json({ success: false, message: 'ID de proceso no válido.' });
+    }
 
     if (!req.cloudinaryCompromiso) {
       return res.status(400).json({ success: false, message: 'No se ha subido ningún archivo.' });
@@ -116,9 +136,9 @@ exports.subirCompromiso = async (req, res) => {
     }
 
     proceso.compromiso = {
-      archivo: req.cloudinaryCompromiso, 
-      firmado: true,                     
-      aprobada: false                    
+      archivo: req.cloudinaryCompromiso,
+      firmado: true,
+      aprobada: false
     };
 
     await proceso.save();
@@ -137,9 +157,14 @@ exports.subirCompromiso = async (req, res) => {
 // Registrar entrega de la mascota
 exports.registrarEntrega = async (req, res) => {
   try {
+    const procesoId = validarObjectId(req.params.id);
+    if (!procesoId) {
+      return res.status(400).json({ success: false, message: 'ID de proceso no válido.' });
+    }
+
     const { fechaEntrega, personaEntrega, observacionesEntrega, aprobada } = req.body;
 
-    const proceso = await ProcesoAdopcion.findById(req.params.id);
+    const proceso = await ProcesoAdopcion.findById(procesoId);
     if (!proceso) {
       return res.status(404).json({ success: false, message: 'Proceso de adopción no encontrado.' });
     }
@@ -185,7 +210,7 @@ exports.registrarEntrega = async (req, res) => {
   }
 };
 
-// Obtener todos los procesos (admin/adminFundacion)
+// Obtener todos los procesos
 exports.getAllProcesos = async (req, res) => {
   try {
     const procesos = await ProcesoAdopcion.find().populate({
@@ -202,10 +227,8 @@ exports.getAllProcesos = async (req, res) => {
 // Obtener proceso por ID de solicitud
 exports.getProcesoPorSolicitud = async (req, res) => {
   try {
-    const { solicitudId } = req.params;
-
-    // ✅ SonarQube S5147 - evitar NoSQL injection
-    if (!mongoose.Types.ObjectId.isValid(solicitudId)) {
+    const solicitudId = validarObjectId(req.params.solicitudId);
+    if (!solicitudId) {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
@@ -226,22 +249,21 @@ exports.getProcesoPorSolicitud = async (req, res) => {
 
 // Aprobar etapa del proceso
 exports.aprobarEtapa = async (req, res) => {
-  const { id, etapa } = req.params;
+  const procesoId = validarObjectId(req.params.id);
+  const { etapa } = req.params;
 
   const etapasValidas = ['entrevista', 'visita', 'compromiso', 'entrega'];
-  if (!etapasValidas.includes(etapa)) {
-    return res.status(400).json({ success: false, message: 'Etapa no válida.' });
+  if (!procesoId || !etapasValidas.includes(etapa)) {
+    return res.status(400).json({ success: false, message: 'Etapa o ID no válidos.' });
   }
 
   try {
-    const proceso = await ProcesoAdopcion.findById(id);
+    const proceso = await ProcesoAdopcion.findById(procesoId);
     if (!proceso) {
       return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
     }
 
-    if (!proceso[etapa]) {
-      proceso[etapa] = {}; 
-    }
+    if (!proceso[etapa]) proceso[etapa] = {};
     proceso[etapa].aprobada = true;
 
     const todasAprobadas = etapasValidas.every(et => proceso[et]?.aprobada === true);
@@ -273,16 +295,17 @@ exports.aprobarEtapa = async (req, res) => {
 
 // Rechazar etapa
 exports.rechazarEtapa = async (req, res) => {
-  const { id, etapa } = req.params;
+  const procesoId = validarObjectId(req.params.id);
+  const { etapa } = req.params;
   const { motivo } = req.body;
 
   const etapasValidas = ['entrevista', 'visita', 'compromiso', 'entrega'];
-  if (!etapasValidas.includes(etapa)) {
-    return res.status(400).json({ success: false, message: 'Etapa no válida.' });
+  if (!procesoId || !etapasValidas.includes(etapa)) {
+    return res.status(400).json({ success: false, message: 'Etapa o ID no válidos.' });
   }
 
   try {
-    const proceso = await ProcesoAdopcion.findById(id);
+    const proceso = await ProcesoAdopcion.findById(procesoId);
     if (!proceso) {
       return res.status(404).json({ success: false, message: 'Proceso no encontrado.' });
     }
@@ -311,25 +334,27 @@ exports.rechazarEtapa = async (req, res) => {
   }
 };
 
+// Obtener proceso por ID
 exports.getProcesoPorId = async (req, res) => {
   try {
-    const proceso = await ProcesoAdopcion.findById(req.params.id)
-      .populate({
-        path: 'solicitud',
-        populate: [
-          { path: 'mascota' },
-          { path: 'adoptante', select: 'username email' }
-        ]
-      });
+    const procesoId = validarObjectId(req.params.id);
+    if (!procesoId) {
+      return res.status(400).json({ success: false, message: 'ID de proceso no válido.' });
+    }
+
+    const proceso = await ProcesoAdopcion.findById(procesoId).populate({
+      path: 'solicitud',
+      populate: [
+        { path: 'mascota' },
+        { path: 'adoptante', select: 'username email' }
+      ]
+    });
 
     if (!proceso) {
       return res.status(404).json({ message: 'Proceso no encontrado' });
     }
 
-    if (
-      req.userRole === 'adoptante' &&
-      proceso.solicitud.adoptante._id.toString() !== req.userId
-    ) {
+    if (req.userRole === 'adoptante' && proceso.solicitud.adoptante._id.toString() !== req.userId) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
@@ -340,7 +365,7 @@ exports.getProcesoPorId = async (req, res) => {
   }
 };
 
-// Obtener procesos del usuario autenticado 
+// Obtener procesos del usuario autenticado
 exports.getMisProcesos = async (req, res) => {
   try {
     const procesos = await ProcesoAdopcion.find()
