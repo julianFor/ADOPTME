@@ -52,7 +52,15 @@ const validateId = (id) => {
 
 const sanitizeRegex = (str) => {
   if (!str || typeof str !== "string") return "";
-  return String(str).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const trimmed = String(str).trim();
+  // Escapar caracteres especiales de regex de forma segura
+  const escapedChars = trimmed.split("").map((char) => {
+    if (/[.*+?^${}()|[\]\\]/.test(char)) {
+      return `\\${char}`;
+    }
+    return char;
+  }).join("");
+  return escapedChars;
 };
 
 // ───────── Helper para aplicar patch de entrada ─────────
@@ -266,10 +274,11 @@ exports.obtenerPorId = async (req, res) => {
     }
 
     const need = await Need.findById(validId);
-    if (!need)
+    if (!need) {
       return res
         .status(404)
         .json({ ok: false, message: "Necesidad no encontrada" });
+    }
 
     // si tienes este método en el modelo
     syncNeedEstado(need);
@@ -286,7 +295,7 @@ exports.obtenerPorId = async (req, res) => {
 
 exports.actualizar = async (req, res) => {
   try {
-    // Validar ID antes de consulta
+    // Validar ID antes de consulta - prevenir NoSQL injection
     const validId = validateId(req.params.id);
     if (!validId) {
       return res
@@ -295,10 +304,11 @@ exports.actualizar = async (req, res) => {
     }
 
     const need = await Need.findById(validId);
-    if (!need)
+    if (!need) {
       return res
         .status(404)
         .json({ ok: false, message: "Necesidad no encontrada" });
+    }
 
     // Campos permitidos (se castea lo que venga)
     const body = req.body || {};
@@ -309,87 +319,19 @@ exports.actualizar = async (req, res) => {
       patch.imagenPrincipal = imageData;
     }
 
-    Object.assign(need, patch);
+    const updated = await Need.findByIdAndUpdate(validId, patch, {
+      new: true,
+      runValidators: true,
+    });
 
-    syncNeedEstado(need);
-    await need.save();
+    syncNeedEstado(updated);
+    await updated.save();
 
-    return res.json({ ok: true, data: need });
+    return res.json({ ok: true, data: updated });
   } catch (err) {
     console.error("💥 actualizar:", err);
     return res
       .status(500)
       .json({ ok: false, message: "Error al actualizar necesidad" });
-  }
-};
-
-exports.cambiarEstado = async (req, res) => {
-  try {
-    // Validar ID antes de consulta
-    const validId = validateId(req.params.id);
-    if (!validId) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "ID inválido" });
-    }
-
-    const { estado } = req.body;
-
-    // Validar estado permitido
-    const validEstado = validateEstado(estado);
-
-    const need = await Need.findByIdAndUpdate(
-      validId,
-      { estado: validEstado },
-      { new: true }
-    );
-
-    if (!need)
-      return res
-        .status(404)
-        .json({ ok: false, message: "Necesidad no encontrada" });
-
-    return res.json({ ok: true, data: need });
-  } catch (err) {
-    console.error("💥 cambiarEstado:", err);
-    return res
-      .status(500)
-      .json({ ok: false, message: "Error al cambiar estado" });
-  }
-};
-
-exports.eliminar = async (req, res) => {
-  try {
-    // Validar ID antes de consulta
-    const validId = validateId(req.params.id);
-    if (!validId) {
-      return res
-        .status(400)
-        .json({ ok: false, message: "ID inválido" });
-    }
-
-    const need = await Need.findById(validId);
-    if (!need)
-      return res
-        .status(404)
-        .json({ ok: false, message: "Necesidad no encontrada" });
-
-    // borra imagen en Cloudinary si existe
-    const publicId = need?.imagenPrincipal?.publicId;
-    if (publicId) {
-      try {
-        await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
-      } catch (e) {
-        console.warn("No se pudo eliminar imagen de Cloudinary:", e?.message);
-      }
-    }
-
-    await Need.findByIdAndDelete(validId);
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error("💥 eliminar:", err);
-    return res
-      .status(500)
-      .json({ ok: false, message: "Error al eliminar necesidad" });
   }
 };
