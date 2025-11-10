@@ -1,4 +1,3 @@
-// controllers/necesidadController.js
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
 
@@ -6,37 +5,54 @@ const cloudinary = require("../config/cloudinary");
 const cardProjection =
   "titulo categoria urgencia objetivo recibido fechaLimite estado fechaPublicacion imagenPrincipal visible";
 
+// ───────── Validadores de seguridad ─────────
+const VALID_ESTADOS = new Set(["activa", "pausada", "cumplida", "vencida"]);
+const VALID_URGENCIAS = new Set(["baja", "media", "alta"]);
+const VALID_CATEGORIAS = new Set(["alimentos", "medicina", "educacion", "infraestructura", "otro"]);
+const VALID_SORTS = new Set(["titulo", "-titulo", "fechaPublicacion", "-fechaPublicacion", "urgencia", "-urgencia"]);
+
 // ───────── helpers de casteo (multipart/form-data llega como string) ─────────
 const toNumber = (v, def) =>
   v === undefined ? def : Number(v);
+
 const toBool = (v, def) => {
   if (v === undefined) return def;
   if (typeof v === "boolean") return v;
   const s = String(v).toLowerCase().trim();
   return s === "true" || s === "1" || s === "on";
 };
+
 const toNullable = (v) => (v === "" || v === undefined ? null : v);
 
-// ───────── helpers de validación ─────────
-const VALID_ESTADOS = new Set(["activa", "pausada", "cumplida", "vencida"]);
-const VALID_URGENCIAS = new Set(["baja", "media", "alta"]);
-const VALID_CATEGORIAS = new Set(["alimentos", "medicina", "educacion", "infraestructura", "otro"]);
-
 const validateEstado = (estado) => {
-  return VALID_ESTADOS.has(String(estado).toLowerCase()) ? String(estado).toLowerCase() : "activa";
+  const val = String(estado).toLowerCase().trim();
+  return VALID_ESTADOS.has(val) ? val : "activa";
 };
 
 const validateUrgencia = (urgencia) => {
-  return VALID_URGENCIAS.has(String(urgencia).toLowerCase()) ? String(urgencia).toLowerCase() : undefined;
+  if (!urgencia) return undefined;
+  const val = String(urgencia).toLowerCase().trim();
+  return VALID_URGENCIAS.has(val) ? val : undefined;
 };
 
 const validateCategoria = (categoria) => {
-  return VALID_CATEGORIAS.has(String(categoria).toLowerCase()) ? String(categoria).toLowerCase() : undefined;
+  if (!categoria) return undefined;
+  const val = String(categoria).toLowerCase().trim();
+  return VALID_CATEGORIAS.has(val) ? val : undefined;
 };
 
 const validateSort = (sort) => {
-  const allowed = new Set(["titulo", "-titulo", "fechaPublicacion", "-fechaPublicacion", "urgencia", "-urgencia"]);
-  return allowed.has(sort) ? sort : "-fechaPublicacion";
+  return VALID_SORTS.has(sort) ? sort : "-fechaPublicacion";
+};
+
+const validateId = (id) => {
+  const idStr = String(id).trim();
+  return /^[0-9a-fA-F]{24}$/.test(idStr) ? idStr : null;
+};
+
+const sanitizeRegex = (str) => {
+  if (!str || typeof str !== "string") return "";
+  return String(str).trim().replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,18 +84,18 @@ exports.crearNecesidad = async (req, res) => {
     const validUrgencia = validateUrgencia(urgencia);
 
     const need = await Need.create({
-      titulo: titulo?.trim(),
+      titulo: String(titulo || "").trim(),
       categoria: validCategoria,
       urgencia: validUrgencia,
-      descripcionBreve: descripcionBreve?.trim(),
+      descripcionBreve: String(descripcionBreve || "").trim(),
       objetivo: toNumber(objetivo, 1),
       recibido: toNumber(recibido, 0),
       fechaLimite: toNullable(fechaLimite),
       estado: validEstado,
       visible: toBool(visible, true),
       imagenPrincipal: {
-        url: req.file.path,
-        publicId: req.file.filename,
+        url: String(req.file.path),
+        publicId: String(req.file.filename),
       },
       creadaPor: req.userId,
       fechaPublicacion: new Date(),
@@ -108,19 +124,25 @@ exports.listarPublicas = async (req, res) => {
 
     const filter = { visible: true };
     
-    // Validar y usar solo valores permitidos
+    // Validar estado
     const validEstado = validateEstado(estado);
-    if (validEstado) filter.estado = validEstado;
+    filter.estado = validEstado;
     
+    // Validar categoría
     const validCategoria = validateCategoria(categoria);
-    if (validCategoria) filter.categoria = validCategoria;
+    if (validCategoria) {
+      filter.categoria = validCategoria;
+    }
     
+    // Validar urgencia
     const validUrgencia = validateUrgencia(urgencia);
-    if (validUrgencia) filter.urgencia = validUrgencia;
+    if (validUrgencia) {
+      filter.urgencia = validUrgencia;
+    }
     
-    // Sanitizar búsqueda de texto
+    // Sanitizar búsqueda de texto - prevenir NoSQL injection
     if (q && typeof q === "string" && q.trim().length > 0) {
-      const escapedQ = q.trim().replaceAll(/[\\^$.|?*+()[\]{}]/g, String.raw`\$&`);
+      const escapedQ = sanitizeRegex(q);
       filter.titulo = { $regex: escapedQ, $options: "i" };
     }
 
@@ -135,7 +157,8 @@ exports.listarPublicas = async (req, res) => {
         .select(cardProjection)
         .sort(validSort)
         .skip(skip)
-        .limit(lim),
+        .limit(lim)
+        .lean(),
       Need.countDocuments(filter),
     ]);
 
@@ -156,7 +179,15 @@ exports.listarPublicas = async (req, res) => {
 
 exports.obtenerPorId = async (req, res) => {
   try {
-    const need = await Need.findById(req.params.id);
+    // Validar ID antes de consulta
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
+
+    const need = await Need.findById(validId);
     if (!need)
       return res
         .status(404)
@@ -179,52 +210,71 @@ exports.obtenerPorId = async (req, res) => {
 
 exports.actualizar = async (req, res) => {
   try {
-    const { id } = req.params;
+    // Validar ID antes de consulta
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
 
-    const need = await Need.findById(id);
+    const need = await Need.findById(validId);
     if (!need)
       return res
         .status(404)
         .json({ ok: false, message: "Necesidad no encontrada" });
 
+    // Campos permitidos (se castea lo que venga)
     const body = req.body || {};
     const patch = {};
 
-    if (body.titulo && typeof body.titulo === "string") {
-      patch.titulo = body.titulo.trim();
+    if (body.titulo) {
+      patch.titulo = String(body.titulo).trim();
     }
-    if (validateCategoria(body.categoria)) {
-      patch.categoria = validateCategoria(body.categoria);
+
+    const validCategoria = validateCategoria(body.categoria);
+    if (validCategoria) {
+      patch.categoria = validCategoria;
     }
-    if (validateUrgencia(body.urgencia)) {
-      patch.urgencia = validateUrgencia(body.urgencia);
+
+    const validUrgencia = validateUrgencia(body.urgencia);
+    if (validUrgencia) {
+      patch.urgencia = validUrgencia;
     }
-    if (body.descripcionBreve && typeof body.descripcionBreve === "string") {
-      patch.descripcionBreve = body.descripcionBreve.trim();
+
+    if (body.descripcionBreve) {
+      patch.descripcionBreve = String(body.descripcionBreve).trim();
     }
+
     if (body.objetivo !== undefined) {
       patch.objetivo = toNumber(body.objetivo, need.objetivo);
     }
+
     if (body.recibido !== undefined) {
       patch.recibido = toNumber(body.recibido, need.recibido);
     }
+
     if (body.fechaLimite !== undefined) {
       patch.fechaLimite = toNullable(body.fechaLimite);
     }
+
     if (body.estado !== undefined) {
       patch.estado = validateEstado(body.estado);
     }
+
     if (body.visible !== undefined) {
       patch.visible = toBool(body.visible, need.visible);
     }
 
+    // ¿Llega nueva imagen? (req.file vía multer)
     if (req.file?.path && req.file?.filename) {
       const oldPublicId = need?.imagenPrincipal?.publicId;
       patch.imagenPrincipal = {
-        url: req.file.path,
-        publicId: req.file.filename,
+        url: String(req.file.path),
+        publicId: String(req.file.filename),
       };
 
+      // elimina asset anterior en Cloudinary (opcional pero recomendado)
       if (oldPublicId) {
         try {
           await cloudinary.uploader.destroy(oldPublicId, {
@@ -255,14 +305,21 @@ exports.actualizar = async (req, res) => {
 
 exports.cambiarEstado = async (req, res) => {
   try {
-    const { id } = req.params;
+    // Validar ID antes de consulta
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
+
     const { estado } = req.body;
 
     // Validar estado permitido
     const validEstado = validateEstado(estado);
 
     const need = await Need.findByIdAndUpdate(
-      id,
+      validId,
       { estado: validEstado },
       { new: true }
     );
@@ -283,9 +340,15 @@ exports.cambiarEstado = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    const { id } = req.params;
+    // Validar ID antes de consulta
+    const validId = validateId(req.params.id);
+    if (!validId) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "ID inválido" });
+    }
 
-    const need = await Need.findById(id);
+    const need = await Need.findById(validId);
     if (!need)
       return res
         .status(404)
@@ -301,7 +364,7 @@ exports.eliminar = async (req, res) => {
       }
     }
 
-    await Need.findByIdAndDelete(id);
+    await Need.findByIdAndDelete(validId);
     return res.json({ ok: true });
   } catch (err) {
     console.error("💥 eliminar:", err);
