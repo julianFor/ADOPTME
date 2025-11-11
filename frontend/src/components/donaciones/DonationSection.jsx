@@ -8,7 +8,7 @@ function DonationSection() {
 
   useEffect(() => {
     // Obtener la meta actual
-    fetch("http://localhost:3000/api/metas/actual", {
+    fetch("http://35.173.248.164:3000/api/metas/actual", {
       headers: {
         "Content-Type": "application/json",
         "x-access-token": localStorage.getItem("token"),
@@ -20,7 +20,7 @@ function DonationSection() {
           setMeta(data);
 
           // Obtener donaciones asociadas a esa meta
-          fetch(`http://localhost:3000/api/donaciones/${data?._id}`, {
+          fetch(`http://35.173.248.164:3000/api/donaciones/${data?._id}`, {
             headers: {
               "Content-Type": "application/json",
               "x-access-token": localStorage.getItem("token"),
@@ -43,7 +43,7 @@ function DonationSection() {
   const handleDonation = (form) => {
     const body = { ...form, goalId: meta?._id };
 
-    fetch("http://localhost:3000/api/donaciones", {
+    fetch("http://35.173.248.164:3000/api/donaciones", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

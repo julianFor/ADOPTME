@@ -7,7 +7,7 @@ function DonationGoalCRUD() {
 
   const fetchGoals = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/metas", {
+      const res = await fetch("http://35.173.248.164:3000/api/metas", {
         headers: {
           "Content-Type": "application/json",
           "x-access-token": localStorage.getItem("token"),
@@ -39,8 +39,8 @@ function DonationGoalCRUD() {
 
     const method = editingId ? "PUT" : "POST";
     const url = editingId
-      ? `http://localhost:3000/api/metas/${editingId}`
-      : "http://localhost:3000/api/metas";
+      ? `http://35.173.248.164:3000/api/metas/${editingId}`
+      : "http://35.173.248.164:3000/api/metas";
 
     try {
       const res = await fetch(url, {
@@ -73,7 +73,7 @@ function DonationGoalCRUD() {
     if (!confirm("¿Seguro que deseas eliminar esta meta?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/metas/${id}`, {
+      const res = await fetch(`http://35.173.248.164:3000/api/metas/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

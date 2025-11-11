@@ -44,7 +44,7 @@ function DonationForm({ onDonate, goalId }) {
       try {
         const details = await actions.order.capture();
 
-        const response = await fetch("http://localhost:3000/api/donaciones", {
+        const response = await fetch("http://35.173.248.164:3000/api/donaciones", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
