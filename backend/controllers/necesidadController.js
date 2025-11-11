@@ -1,5 +1,6 @@
 const Need = require("../models/Need");
 const cloudinary = require("../config/cloudinary");
+const mongoose = require('mongoose');
 
 // Proyección tipo "tarjeta"
 const cardProjection =
@@ -205,6 +206,10 @@ exports.crearNecesidad = async (req, res) => {
     const validObjetivo = toNumber(objetivo, 1);
     const validRecibido = toNumber(recibido, 0);
 
+    // Validar y castear userId a ObjectId antes de usar en el documento
+    let creadaPorId = validateId(req.userId);
+    creadaPorId = creadaPorId ? mongoose.Types.ObjectId(creadaPorId) : req.userId;
+
     const need = await Need.create({
       titulo: validTitulo,
       categoria: validCategoria,
@@ -219,7 +224,7 @@ exports.crearNecesidad = async (req, res) => {
         url: String(req.file.path),
         publicId: String(req.file.filename),
       },
-      creadaPor: req.userId,
+      creadaPor: creadaPorId,
       fechaPublicacion: new Date(),
     });
 
