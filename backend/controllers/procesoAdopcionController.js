@@ -451,7 +451,7 @@ exports.getMisProcesos = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          { path: 'adoptante', match: { _id: new mongoose.Types.ObjectId(userIdValid) } }
+          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId.createFromHexString(userIdValid) } }
         ]
       });
 
