@@ -25,12 +25,12 @@ exports.obtenerPorMeta = async (req, res) => {
 // ✅ Obtener total recaudado por goalId
 exports.totalRecaudado = async (req, res) => {
   try {
-    const goalObjectId = new mongoose.Types.ObjectId(req.params.goalId);
+    const goalObjectId = mongoose.Types.ObjectId.createFromHexString(req.params.goalId);
     const total = await Donation.aggregate([
       { $match: { goalId: goalObjectId } },
       { $group: { _id: null, total: { $sum: "$monto" } } }
     ]);
- new    res.json({ total: total[0]?.total || 0 });
+    res.json({ total: total[0]?.total || 0 });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
