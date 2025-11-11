@@ -258,11 +258,11 @@ exports.getAllProcesos = async (req, res) => {
     });
 
     // Normalizar email en adoptante si es necesario
-    for (const p of procesos) {
-      if (p?.solicitud?.adoptante) {
+    procesos.forEach(p => {
+      if (p && p.solicitud && p.solicitud.adoptante) {
         normalizarEmailEnObjeto(p.solicitud.adoptante);
       }
-    }
+    });
 
     res.status(200).json({ success: true, procesos });
   } catch (error) {
@@ -279,8 +279,8 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
-  // Usar la ID validada directamente en la consulta (evita construir un ObjectId con la firma deprecada)
-  const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
+    // Uso seguro de findOne y comprobación de resultado
+    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
     });
@@ -290,7 +290,7 @@ exports.getProcesoPorSolicitud = async (req, res) => {
     }
 
     // Normalizar adoptante.email si viene como correo
-    if (proceso.solicitud?.adoptante) {
+    if (proceso.solicitud && proceso.solicitud.adoptante) {
       normalizarEmailEnObjeto(proceso.solicitud.adoptante);
     }
 
@@ -415,13 +415,15 @@ exports.getProcesoPorId = async (req, res) => {
     }
 
     // Normalizar correo/email en adoptante poblado
-    if (proceso.solicitud?.adoptante) {
+    if (proceso.solicitud && proceso.solicitud.adoptante) {
       normalizarEmailEnObjeto(proceso.solicitud.adoptante);
     }
 
     // Si el rol adoptante intenta acceder, verificar ownership
     if (req.userRole === 'adoptante') {
-      const adoptanteId = proceso.solicitud?.adoptante?._id?.toString() ?? null;
+      const adoptanteId = proceso.solicitud && proceso.solicitud.adoptante && proceso.solicitud.adoptante._id
+        ? proceso.solicitud.adoptante._id.toString()
+        : null;
       if (!adoptanteId || adoptanteId !== req.userId) {
         return res.status(403).json({ success: false, message: 'Acceso denegado' });
       }
@@ -448,20 +450,19 @@ exports.getMisProcesos = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          // Usar la ID validada como string; Mongoose la castea automáticamente a ObjectId
-          { path: 'adoptante', match: { _id: userIdValid } }
+          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(req.userId) } }
         ]
       });
 
     // Filtrar los que tenían adoptante poblado (match)
-    const procesosFiltrados = procesos.filter(p => p.solicitud?.adoptante);
+    const procesosFiltrados = procesos.filter(p => p.solicitud && p.solicitud.adoptante);
 
     // Normalizar emails
-    for (const p of procesosFiltrados) {
-      if (p?.solicitud?.adoptante) {
+    procesosFiltrados.forEach(p => {
+      if (p && p.solicitud && p.solicitud.adoptante) {
         normalizarEmailEnObjeto(p.solicitud.adoptante);
       }
-    }
+    });
 
     res.status(200).json({ success: true, procesos: procesosFiltrados });
   } catch (error) {
