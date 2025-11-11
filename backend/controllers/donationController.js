@@ -15,7 +15,12 @@ exports.crearDonacion = async (req, res) => {
 // ✅ Obtener donaciones por goalId
 exports.obtenerPorMeta = async (req, res) => {
   try {
-    const donaciones = await Donation.find({ goalId: req.params.goalId });
+    let { goalId } = req.params;
+    if (typeof goalId !== 'string' || !mongoose.Types.ObjectId.isValid(goalId)) {
+      return res.status(400).json({ message: 'goalId inválido' });
+    }
+    const goalObjectId = new mongoose.Types.ObjectId(goalId);
+    const donaciones = await Donation.find({ goalId: goalObjectId });
     res.status(200).json(donaciones);
   } catch (err) {
     res.status(500).json({ message: err.message });
