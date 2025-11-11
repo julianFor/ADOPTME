@@ -181,6 +181,7 @@ exports.crearNecesidad = async (req, res) => {
       visible,
     } = req.body;
 
+    // Validar que exista imagen principal (multer/Cloudinary coloca datos en req.file)
     if (!req.file?.path || !req.file?.filename) {
       return res
         .status(400)
@@ -206,10 +207,23 @@ exports.crearNecesidad = async (req, res) => {
     const validObjetivo = toNumber(objetivo, 1);
     const validRecibido = toNumber(recibido, 0);
 
-    // Validar y castear userId a ObjectId antes de usar en el documento
-    let creadaPorId = validateId(req.userId);
-    creadaPorId = creadaPorId ? mongoose.Types.ObjectId(creadaPorId) : req.userId;
+    // Validar y castear userId a ObjectId antes de usar en el documento.
+    // Rechazamos la petición si el id no es un ObjectId válido para evitar
+    // que datos de usuario no validados se introduzcan en la consulta.
+    if (!mongoose.isValidObjectId(req.userId)) {
+      return res.status(400).json({ ok: false, message: "Usuario inválido" });
+    }
+    const creadaPorId = mongoose.Types.ObjectId(String(req.userId));
 
+    // Usar helper para procesar la imagen (centraliza validación y eliminación)
+    const imageData = await handleImageUpload(req, null);
+    if (!imageData) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "Imagen principal requerida" });
+    }
+
+    // Construir explícitamente el objeto con valores ya validados/sanitizados
     const need = await Need.create({
       titulo: validTitulo,
       categoria: validCategoria,
@@ -220,10 +234,7 @@ exports.crearNecesidad = async (req, res) => {
       fechaLimite: validFechaLimite,
       estado: validEstado,
       visible: validVisible,
-      imagenPrincipal: {
-        url: String(req.file.path),
-        publicId: String(req.file.filename),
-      },
+      imagenPrincipal: imageData,
       creadaPor: creadaPorId,
       fechaPublicacion: new Date(),
     });
