@@ -279,8 +279,11 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
+    // Convertir la ID validada a ObjectId antes de usar en la consulta
+    const solicitudObjectId = mongoose.Types.ObjectId.createFromHexString(solicitudId);
+
     // Uso seguro de findOne y comprobación de resultado
-    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
+    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudObjectId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
     });
@@ -448,7 +451,7 @@ exports.getMisProcesos = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(req.userId) } }
+          { path: 'adoptante', match: { _id: new mongoose.Types.ObjectId(userIdValid) } }
         ]
       });
 
