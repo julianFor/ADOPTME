@@ -448,7 +448,8 @@ exports.getMisProcesos = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(req.userId) } }
+          // Usar la ID validada para evitar construir la query directamente desde req
+          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(userIdValid) } }
         ]
       });
 
