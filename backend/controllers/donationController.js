@@ -26,7 +26,7 @@ exports.obtenerPorMeta = async (req, res) => {
       return res.status(400).json({ message: 'goalId no es un ObjectId válido' });
     }
 
-    const goalObjectId = new mongoose.Types.ObjectId(goalId);
+  const goalObjectId = mongoose.Types.ObjectId(goalId);
     const donaciones = await Donation.find({ goalId: goalObjectId });
 
     res.status(200).json(donaciones);
@@ -48,7 +48,7 @@ exports.totalRecaudado = async (req, res) => {
       return res.status(400).json({ message: 'goalId no es un ObjectId válido' });
     }
 
-    const goalObjectId = new mongoose.Types.ObjectId(goalId);
+  const goalObjectId = mongoose.Types.ObjectId(goalId);
     const total = await Donation.aggregate([
       { $match: { goalId: goalObjectId } },
       { $group: { _id: null, total: { $sum: '$monto' } } }

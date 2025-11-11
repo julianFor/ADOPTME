@@ -164,7 +164,7 @@ exports.obtenerSolicitudesPorMascota = async (req, res) => {
         message: 'ID de mascota inválido'
       });
     }
-    const idMascota = new mongoose.Types.ObjectId(idMascotaRaw);
+  const idMascota = new mongoose.Types.ObjectId(idMascotaRaw);
 
     const solicitudes = await SolicitudAdopcion.find({ mascota: idMascota })
       .populate('adoptante', 'username email role') //  trae datos del adoptante

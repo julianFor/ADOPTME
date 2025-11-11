@@ -279,11 +279,8 @@ exports.getProcesoPorSolicitud = async (req, res) => {
       return res.status(400).json({ success: false, message: 'ID de solicitud no válido.' });
     }
 
-    // Convertir la ID validada a ObjectId antes de usarla en la consulta
-    const solicitudObjectId = mongoose.Types.ObjectId(solicitudId);
-
-    // Uso seguro de findOne y comprobación de resultado
-    const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudObjectId }).populate({
+  // Usar la ID validada directamente en la consulta (evita construir un ObjectId con la firma deprecada)
+  const proceso = await ProcesoAdopcion.findOne({ solicitud: solicitudId }).populate({
       path: 'solicitud',
       populate: { path: 'adoptante mascota' }
     });
@@ -451,8 +448,8 @@ exports.getMisProcesos = async (req, res) => {
         path: 'solicitud',
         populate: [
           { path: 'mascota' },
-          // Usar la ID validada para evitar construir la query directamente desde req
-          { path: 'adoptante', match: { _id: mongoose.Types.ObjectId(userIdValid) } }
+          // Usar la ID validada como string; Mongoose la castea automáticamente a ObjectId
+          { path: 'adoptante', match: { _id: userIdValid } }
         ]
       });
 
