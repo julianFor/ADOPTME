@@ -1,5 +1,8 @@
-// src/components/Contacto.jsx
+// src/components/Home/Contacto.jsx
 import { useState } from "react";
+
+// Base de la API desde .env (VITE_API_URL=http://<IP>:3000/api)
+const API = import.meta.env.VITE_API_URL;
 
 function Contacto() {
   const [formData, setFormData] = useState({
@@ -21,7 +24,6 @@ function Contacto() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Validaciones básicas
     const msg = formData.mensaje.trim();
 
     if (msg.length < 10) {
@@ -34,7 +36,7 @@ function Contacto() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/contact", {
+      const response = await fetch(`${API}/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -81,6 +83,7 @@ function Contacto() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
+                autoComplete="name"
               />
             </div>
 
@@ -95,6 +98,7 @@ function Contacto() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
+                autoComplete="tel"
               />
             </div>
 
@@ -109,10 +113,11 @@ function Contacto() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
+                autoComplete="email"
               />
             </div>
 
-            {/* ✅ Mensaje */}
+            {/* Mensaje */}
             <div>
               <label htmlFor="mensaje" className="sr-only">Mensaje</label>
               <textarea

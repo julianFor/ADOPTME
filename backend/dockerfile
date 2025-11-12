@@ -1,0 +1,21 @@
+# Etapa 1: instalar dependencias
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Etapa 2: ejecución del backend
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copiamos dependencias instaladas
+COPY --from=deps /app/node_modules ./node_modules
+# Copiamos todo el código fuente
+COPY . .
+
+# Exponemos el puerto que usa el backend
+EXPOSE 3000
+
+# Inicia el servidor
+CMD ["node", "server.js"]

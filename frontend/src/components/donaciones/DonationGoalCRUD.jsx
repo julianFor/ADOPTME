@@ -1,4 +1,8 @@
+// src/components/donaciones/DonationGoalCRUD.jsx
 import { useEffect, useState } from "react";
+
+// Base de la API desde el archivo .env (VITE_API_URL=http://<IP>:3000/api)
+const API = import.meta.env.VITE_API_URL;
 
 function DonationGoalCRUD() {
   const [goals, setGoals] = useState([]);
@@ -7,13 +11,15 @@ function DonationGoalCRUD() {
 
   const fetchGoals = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/metas", {
+      const res = await fetch(`${API}/metas`, {
         headers: {
           "Content-Type": "application/json",
           "x-access-token": localStorage.getItem("token"),
         },
       });
+
       if (!res.ok) throw new Error("No se pudieron obtener las metas");
+
       const data = await res.json();
       if (Array.isArray(data)) {
         setGoals(data);
@@ -38,9 +44,7 @@ function DonationGoalCRUD() {
     e.preventDefault();
 
     const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `http://localhost:3000/api/metas/${editingId}`
-      : "http://localhost:3000/api/metas";
+    const url = editingId ? `${API}/metas/${editingId}` : `${API}/metas`;
 
     try {
       const res = await fetch(url, {
@@ -53,7 +57,6 @@ function DonationGoalCRUD() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Error al guardar");
 
       fetchGoals();
@@ -73,7 +76,7 @@ function DonationGoalCRUD() {
     if (!confirm("¿Seguro que deseas eliminar esta meta?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/metas/${id}`, {
+      const res = await fetch(`${API}/metas/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +85,6 @@ function DonationGoalCRUD() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Error al eliminar");
 
       fetchGoals();

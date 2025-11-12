@@ -1,68 +1,76 @@
+// src/components/donaciones/DonationSection.jsx
 import { useState, useEffect } from "react";
 import DonationForm from "./DonationForm";
 import DonationProgress from "./DonationProgress";
+
+// Base de la API desde el archivo .env (VITE_API_URL=http://<IP>:3000/api)
+const API = import.meta.env.VITE_API_URL;
 
 function DonationSection() {
   const [donaciones, setDonaciones] = useState([]);
   const [meta, setMeta] = useState(null);
 
   useEffect(() => {
-    // Obtener la meta actual
-    fetch("http://localhost:3000/api/metas/actual", {
-      headers: {
-        "Content-Type": "application/json",
-        "x-access-token": localStorage.getItem("token"),
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.monto) {
-          setMeta(data);
+    const fetchMeta = async () => {
+      try {
+        // Obtener la meta actual
+        const metaRes = await fetch(`${API}/metas/actual`, {
+          headers: {
+            "Content-Type": "application/json",
+            "x-access-token": localStorage.getItem("token"),
+          },
+        });
+        const metaData = await metaRes.json();
+
+        if (metaData?.monto) {
+          setMeta(metaData);
 
           // Obtener donaciones asociadas a esa meta
-          fetch(`http://localhost:3000/api/donaciones/${data?._id}`, {
+          const donsRes = await fetch(`${API}/donaciones/${metaData._id}`, {
             headers: {
               "Content-Type": "application/json",
               "x-access-token": localStorage.getItem("token"),
             },
-          })
-            .then((res) => res.json())
-            .then((dons) => setDonaciones(dons))
-            .catch((err) =>
-              console.error("❌ Error al cargar donaciones:", err)
-            );
+          });
+
+          const donsData = await donsRes.json();
+          setDonaciones(Array.isArray(donsData) ? donsData : []);
         } else {
           console.warn("⚠️ No hay meta activa.");
         }
-      })
-      .catch((err) => {
-        console.error("❌ Error al obtener la meta:", err);
-      });
+      } catch (err) {
+        console.error("❌ Error al obtener la meta o donaciones:", err);
+      }
+    };
+
+    fetchMeta();
   }, []);
 
-  const handleDonation = (form) => {
+  const handleDonation = async (form) => {
     const body = { ...form, goalId: meta?._id };
 
-    fetch("http://localhost:3000/api/donaciones", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-access-token": localStorage.getItem("token"),
-      },
-      body: JSON.stringify(body),
-    })
-      .then((res) => res.json())
-      .then((nuevaDonacion) => {
-        if (nuevaDonacion?._id) {
-          setDonaciones((prev) => [...prev, nuevaDonacion]);
-        } else {
-          alert("❌ Error al guardar la donación.");
-        }
-      })
-      .catch((err) => {
-        console.error("❌ Error al donar:", err);
-        alert("❌ Ocurrió un error al enviar la donación.");
+    try {
+      const res = await fetch(`${API}/donaciones`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-token": localStorage.getItem("token"),
+        },
+        body: JSON.stringify(body),
       });
+
+      const nuevaDonacion = await res.json();
+
+      if (res.ok && nuevaDonacion?._id) {
+        setDonaciones((prev) => [...prev, nuevaDonacion]);
+      } else {
+        console.error("❌ Error al guardar donación:", nuevaDonacion);
+        alert("❌ Error al guardar la donación.");
+      }
+    } catch (err) {
+      console.error("❌ Error al donar:", err);
+      alert("❌ Ocurrió un error al enviar la donación.");
+    }
   };
 
   const total = donaciones.reduce((sum, d) => sum + Number(d.monto), 0);

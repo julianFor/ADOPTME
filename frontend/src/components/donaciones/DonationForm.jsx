@@ -1,7 +1,10 @@
-// src/components/DonationForm.jsx
+// src/components/donaciones/DonationForm.jsx
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import ThankYouModal from "./ThankYouModal";
+
+// Base de la API desde .env (VITE_API_URL=http://<IP>:3000/api)
+const API = import.meta.env.VITE_API_URL;
 
 function DonationForm({ onDonate, goalId }) {
   const [form, setForm] = useState({ monto: "" });
@@ -17,49 +20,42 @@ function DonationForm({ onDonate, goalId }) {
       alert("Por favor, ingresa un monto válido");
       return;
     }
-
     onDonate({ monto: form.monto });
     setShowModal(true);
     setForm({ monto: "" });
   };
 
   useEffect(() => {
-    // --- Callbacks externos para evitar anidamiento profundo (S2004) ---
     const createOrder = (data, actions) => {
       if (!form.monto || form.monto <= 0) {
         alert("Por favor, ingresa un monto válido");
         return;
       }
       return actions.order.create({
-        purchase_units: [
-          {
-            amount: { value: form.monto.toString() },
-          },
-        ],
+        purchase_units: [{ amount: { value: form.monto.toString() } }],
       });
     };
 
-    // ✅ Refactor con async/await para eliminar niveles de .then()
     const onApprove = async (data, actions) => {
       try {
         const details = await actions.order.capture();
 
-        const response = await fetch("http://localhost:3000/api/donaciones", {
+        const token = globalThis.localStorage?.getItem("token");
+        const response = await fetch(`${API}/donaciones`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-access-token": globalThis.localStorage?.getItem("token"),
+            ...(token ? { "x-access-token": token } : {}),
           },
           body: JSON.stringify({
             nombre: details?.payer?.name?.given_name,
             monto: form.monto || 1,
             tipo: "dinero",
             descripcion: "Donación vía PayPal",
-            goalId: goalId,
+            goalId,
           }),
         });
 
-        // Esperamos la respuesta para asegurar consistencia con el then original
         await response.json();
         setShowModal(true);
         setForm({ monto: "" });
@@ -89,7 +85,6 @@ function DonationForm({ onDonate, goalId }) {
         .render("#paypal-button-container");
     };
 
-    // Evitar condición negada con else
     const hasSdk = document.getElementById("paypal-sdk");
     if (hasSdk) {
       renderPayPalButton();
