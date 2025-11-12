@@ -93,5 +93,5 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor backend escuchando en http://35.173.248.164:${PORT}`);
+  console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
 });
