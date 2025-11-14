@@ -1,93 +1,254 @@
-// src/components/necesidades/NeedsCatalog.jsx
-import { useEffect, useState } from "react";
-import { listarNecesidades } from "../../services/necesidadService";
-import NecesidadCard from "./NecesidadCard";
-import CalloutContacto from "./CalloutContacto";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  listarNecesidades,
+  eliminarNecesidad,
+} from "../../../services/necesidadService";
+import {
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import ConfirmModal from "../../../components/ConfirmModal";
+import NecesidadFormModal from "../../../components/necesidades/NecesidadFormModal";
 
-export default function NeedsCatalog() {
-  const [loading, setLoading] = useState(true);
-  const [resp, setResp] = useState({ data: [], total: 0, page: 1, pages: 1 });
-  const [filters, setFilters] = useState({
-    estado: "activa",
-    limit: 6,
-    page: 1,
-    sort: "-fechaPublicacion",
+/* ====== Helpers ====== */
+const formatFecha = (date) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
+};
+
+const estadoLabel = (e) =>
+  (
+    {
+      activa: "Pendiente",
+      pausada: "Pausada",
+      cumplida: "Cumplida",
+      vencida: "Vencida",
+    }[e] || e || "-"
+  );
+
+const getImagenPrincipal = (item) =>
+  item?.imagenPrincipal?.url || "/placeholder-catdog.jpg";
+
+export default function NecesidadFundacionList() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // UI
+  const [searchText, setSearchText] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+
+  // modal
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null); // null = crear
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await listarNecesidades({
+        estado: "",
+        limit: 200,
+        page: 1,
+        sort: "-fechaPublicacion",
+      });
+      setRows(res.data || []);
+    } catch (err) {
+      console.error("Error al listar necesidades:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let on = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const r = await listarNecesidades(filters);
-        if (on) setResp(r);
-      } finally {
-        if (on) setLoading(false);
-      }
-    })();
-    return () => (on = false);
-  }, [filters]);
+    fetchData();
+  }, []);
 
-  const onPage = (dir) =>
-    setFilters((f) => ({
-      ...f,
-      page: Math.max(1, Math.min(resp.pages || 1, f.page + dir)),
-    }));
+  const filtered = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((n) =>
+      `${n.titulo} ${n.categoria} ${n.urgencia} ${estadoLabel(n.estado)}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [rows, searchText]);
+
+  /* ====== handlers ====== */
+  const onEditar = (row) => {
+    setSelectedRow(row);
+    setShowModal(true);
+  };
+
+  const onEliminar = (row) => {
+    setToDelete(row);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      if (!toDelete) return;
+      await eliminarNecesidad(toDelete._id);
+      await fetchData();
+    } catch (e) {
+      console.error("Error al eliminar:", e);
+    } finally {
+      setConfirmOpen(false);
+      setToDelete(null);
+    }
+  };
+
+  const onCrear = () => {
+    setSelectedRow(null);
+    setShowModal(true);
+  };
+
+  const handleSaved = async () => {
+    await fetchData();
+  };
+
+  /* ====== render body de tabla ====== */
+  const renderTableBody = () => {
+    if (loading) {
+      return Array.from({ length: 5 }).map((_, index) => (
+        <tr key={`need-row-skeleton-${index}`} className="border-b">
+          <td className="px-4 py-3">
+            <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
+          </td>
+          <td className="px-4 py-3">
+            <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
+          </td>
+        </tr>
+      ));
+    }
+
+    if (filtered.length > 0) {
+      return filtered.map((n) => (
+        <tr key={n._id} className="border-b hover:bg-gray-50">
+          <td className="px-4 py-3">
+            <img
+              src={getImagenPrincipal(n)}
+              alt={n.titulo}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          </td>
+          <td className="px-4 py-3">
+            <div className="font-medium text-gray-800">{n.titulo}</div>
+            <div className="text-xs text-gray-400 capitalize">
+              {n.categoria} · {n.urgencia}
+            </div>
+          </td>
+          <td className="px-4 py-3">{n.objetivo}u</td>
+          <td className="px-4 py-3">{formatFecha(n.fechaPublicacion)}</td>
+          <td className="px-4 py-3">{estadoLabel(n.estado)}</td>
+          <td className="px-4 py-3">
+            <div className="flex items-center justify-center gap-4">
+              <PencilIcon
+                title="Editar"
+                className="h-5 w-5 text-purple-500 cursor-pointer"
+                onClick={() => onEditar(n)}
+              />
+              <TrashIcon
+                title="Eliminar"
+                className="h-5 w-5 text-purple-500 cursor-pointer"
+                onClick={() => onEliminar(n)}
+              />
+            </div>
+          </td>
+        </tr>
+      ));
+    }
+
+    return (
+      <tr>
+        <td colSpan={7} className="py-8 text-center text-gray-500">
+          No hay necesidades que coincidan con la búsqueda.
+        </td>
+      </tr>
+    );
+  };
 
   return (
-    <div className="space-y-10">
-      {/* GRID: 1 col en mobile, 2 en md+ para igualar Figma */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* ✅ Corregido: se usa un UID en lugar del índice */}
-          {Array.from({ length: 4 }).map(() => {
-            const uid = crypto.randomUUID();
-            return (
-              <div
-                key={uid}
-                className="h-64 bg-purple-50 rounded-[24px] shadow-[0_8px_24px_rgba(0,0,0,0.06)] animate-pulse"
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {resp.data?.map((n) => (
-              <NecesidadCard key={n._id} item={n} />
-            ))}
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Necesidades de la Fundación</h1>
+
+        <div className="flex gap-4">
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="pl-4 pr-10 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            <MagnifyingGlassIcon className="h-5 w-5 text-purple-500 absolute right-3 top-2.5" />
           </div>
 
-          {/* Paginación muy sutil (coincide con tu estilo) */}
-          {resp.pages > 1 && (
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={() => onPage(-1)}
-                disabled={resp.page <= 1}
-                className="h-10 px-6 rounded-full bg-white border border-purple-200 shadow-[0_6px_0_#E9E4FB] disabled:opacity-50"
-              >
-                Anterior
-              </button>
-              <span className="text-sm text-slate-600">
-                {resp.page} / {resp.pages}
-              </span>
-              <button
-                onClick={() => onPage(+1)}
-                disabled={resp.page >= resp.pages}
-                className="h-10 px-6 rounded-full bg-white border border-purple-200 shadow-[0_6px_0_#E9E4FB] disabled:opacity-50"
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
+          {/* Añadir */}
+          <button
+            onClick={onCrear}
+            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600"
+          >
+            Añadir Necesidad
+          </button>
+        </div>
+      </div>
 
-          {/* Bloque de contacto igual al Figma */}
-          <CalloutContacto
-            whatsapp1="https://wa.me/573001112233"
-            whatsapp2="https://wa.me/573004445566"
-          />
-        </>
-      )}
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto">
+          <thead>
+            <tr className="border-b text-left text-gray-400 font-light">
+              <th className="px-4 py-2">Imagen</th>
+              <th className="px-4 py-2">Necesidad</th>
+              <th className="px-4 py-2">Cantidad</th>
+              <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">Estado</th>
+              <th className="px-4 py-2 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>{renderTableBody()}</tbody>
+        </table>
+      </div>
+
+      {/* Modal confirmar eliminación */}
+      <ConfirmModal
+        isOpen={confirmOpen}
+        message={`¿Eliminar la necesidad "${toDelete?.titulo}"?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      {/* Modal crear/editar */}
+      <NecesidadFormModal
+        isOpen={showModal}
+        initialData={selectedRow}
+        onClose={() => setShowModal(false)}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
