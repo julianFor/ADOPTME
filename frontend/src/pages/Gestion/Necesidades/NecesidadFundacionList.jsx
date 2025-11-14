@@ -113,11 +113,11 @@ export default function NecesidadFundacionList() {
     await fetchData();
   };
 
-  /* ====== Nueva función: renderiza el cuerpo de la tabla ====== */
+  /* ====== render body de tabla ====== */
   const renderTableBody = () => {
     if (loading) {
-      return Array.from({ length: 5 }).map(() => (
-        <tr key={crypto.randomUUID()} className="border-b">
+      return Array.from({ length: 5 }).map((_, index) => (
+        <tr key={`need-row-skeleton-${index}`} className="border-b">
           <td className="px-4 py-3">
             <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
           </td>
