@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1763852395058" clover="3.2.0">
+  <project timestamp="1763852395058" name="All files">
+    <metrics statements="32" coveredstatements="25" conditionals="10" coveredconditionals="8" methods="3" coveredmethods="1" elements="45" coveredelements="34" complexity="0" loc="32" ncloc="32" packages="2" files="2" classes="2"/>
+    <package name="middlewares">
+      <metrics statements="19" coveredstatements="19" conditionals="8" coveredconditionals="8" methods="1" coveredmethods="1"/>
+      <file name="authJwt.js" path="C:\xampp\htdocs\ADOPTME\backend\middlewares\authJwt.js">
+        <metrics statements="19" coveredstatements="19" conditionals="8" coveredconditionals="8" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="7" count="17" type="stmt"/>
+        <line num="9" count="17" type="stmt"/>
+        <line num="12" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="15" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="17" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="25" count="15" type="stmt"/>
+        <line num="28" count="11" type="stmt"/>
+        <line num="29" count="11" type="stmt"/>
+        <line num="30" count="11" type="cond" truecount="2" falsecount="0"/>
+        <line num="32" count="11" type="stmt"/>
+        <line num="33" count="11" type="stmt"/>
+        <line num="36" count="4" type="stmt"/>
+        <line num="37" count="4" type="stmt"/>
+        <line num="45" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="models">
+      <metrics statements="13" coveredstatements="6" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
+      <file name="User.js" path="C:\xampp\htdocs\ADOPTME\backend\models\User.js">
+        <metrics statements="13" coveredstatements="6" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="31" count="1" type="stmt"/>
+        <line num="32" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="36" count="0" type="stmt"/>
+        <line num="37" count="0" type="stmt"/>
+        <line num="39" count="0" type="stmt"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="48" count="1" type="stmt"/>
+      </file>
+    </package>
+  </project>
+</coverage>

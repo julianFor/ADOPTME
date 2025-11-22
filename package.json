@@ -4,6 +4,14 @@
     "jest": "^30.2.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "cd backend && npm test",
+    "test:unit": "cd backend && npm run test:unit",
+    "test:integration": "cd backend && npm run test:integration",
+    "test:watch": "cd backend && npm run test:watch",
+    "test:coverage": "cd backend && npm run test:coverage",
+    "test:verbose": "cd backend && npm run test:verbose",
+    "test:debug": "cd backend && npm run test:debug",
+    "test:ci": "cd backend && npm run test:ci"
   }
 }
+

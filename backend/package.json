@@ -4,10 +4,14 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon server.js",
-    "test": "jest --forceExit",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage --forceExit",
-    "test:verbose": "jest --verbose --forceExit"
+    "test": "jest --forceExit --colors",
+    "test:unit": "jest __tests__/unit/ --forceExit --colors",
+    "test:integration": "jest __tests__/integration/ --forceExit --colors",
+    "test:watch": "jest --watch --colors",
+    "test:coverage": "jest --coverage --forceExit --colors",
+    "test:verbose": "jest --verbose --forceExit --colors",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:ci": "jest --coverage --ci --maxWorkers=2"
   },
   "keywords": [],
   "author": "",

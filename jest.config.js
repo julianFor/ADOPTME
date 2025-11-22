@@ -18,7 +18,7 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
   verbose: true,
-  setupFilesAfterEnv: ['<rootDir>/backend/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/backend/__tests__/globalSetup.js'],
   collectCoverageFrom: [
     'backend/**/*.js',
     '!backend/node_modules/**',
@@ -29,7 +29,6 @@ module.exports = {
     '!backend/config/db.js'
   ],
   rootDir: '.',
-  testRegex: '(/__tests__/.*\\.test\\.js)$',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/backend/$1'
   },
