@@ -1,0 +1,50 @@
+# .sonarignore - Archivos que SonarQube debe ignorar completamente
+# ==============================================================
+
+# Tests - NO ANALIZAR
+__tests__/**
+tests/**
+*.test.js
+*.spec.js
+jest.config.js
+jest.setup.js
+
+# Coverage - NO ANALIZAR
+coverage/**
+
+# Dependencies - NO ANALIZAR
+node_modules/**
+package-lock.json
+yarn.lock
+
+# Backup files - NO ANALIZAR
+*.bak
+*.backup
+*.tmp
+*~
+
+# Documentation - NO ANALIZAR
+*.md
+DOCUMENTATION_INDEX.md
+QUICK_START.md
+TESTING.md
+TESTING_COMPLETE_FINAL.md
+INTEGRATION_TESTS_REPORT.md
+FINAL_TESTING_REPORT.md
+TEST_SUMMARY_COMPLETE.md
+TESTING_COMPLETED.md
+TESTING_FINAL_SUMMARY.md
+TESTS_GUIDE.md
+TESTS_SUMMARY.md
+INDEX_DOCUMENTACION.md
+README_TESTING.md
+
+# Environment - NO ANALIZAR
+.env
+.env.local
+.env.*.local
+
+# System - NO ANALIZAR
+.git/**
+.DS_Store
+Thumbs.db

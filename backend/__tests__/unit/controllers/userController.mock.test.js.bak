@@ -1,0 +1,463 @@
+const userController = require('../../../controllers/userController');
+
+// Mocks
+jest.mock('../../../models/User');
+jest.mock('bcryptjs');
+jest.mock('mongoose');
+
+describe('Controller - User', () => {
+  let req, res;
+  let User, bcrypt;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    User = require('../../../models/User');
+    bcrypt = require('bcryptjs');
+
+    req = {
+      body: {},
+      params: {},
+      userRole: 'admin',
+      userId: '507f1f77bcf86cd799439011'
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis()
+    };
+  });
+
+  describe('registrarse', () => {
+    test('debe registrar un nuevo usuario adoptante', async () => {
+      req.body = {
+        username: 'newuser',
+        email: 'newuser@example.com',
+        password: 'password123'
+      };
+
+      User.findOne = jest.fn()
+        .mockResolvedValueOnce(null) // No existe email
+        .mockResolvedValueOnce(null); // No existe username
+
+      const mockSave = jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439012',
+        username: 'newuser',
+        email: 'newuser@example.com',
+        role: 'adoptante'
+      });
+
+      User.mockImplementation(() => ({
+        save: mockSave
+      }));
+
+      await userController.registrarse(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Registro exitoso'
+        })
+      );
+    });
+
+    test('debe retornar error si email ya existe', async () => {
+      req.body = {
+        username: 'newuser',
+        email: 'existing@example.com',
+        password: 'password123'
+      };
+
+      User.findOne = jest.fn().mockResolvedValueOnce({
+        email: 'existing@example.com'
+      });
+
+      await userController.registrarse(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'El correo ya está registrado'
+        })
+      );
+    });
+
+    test('debe retornar error si username ya existe', async () => {
+      req.body = {
+        username: 'existinguser',
+        email: 'newuser@example.com',
+        password: 'password123'
+      };
+
+      User.findOne = jest.fn()
+        .mockResolvedValueOnce(null) // No existe email
+        .mockResolvedValueOnce({ username: 'existinguser' }); // Existe username
+
+      await userController.registrarse(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'El nombre de usuario ya está en uso'
+        })
+      );
+    });
+
+    test('debe retornar error si faltan campos', async () => {
+      req.body = {
+        username: 'newuser'
+        // Faltan email y password
+      };
+
+      await userController.registrarse(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Todos los campos son obligatorios'
+        })
+      );
+    });
+  });
+
+  describe('getAllUsers', () => {
+    test('debe obtener todos los usuarios si es admin', async () => {
+      req.userRole = 'admin';
+
+      const mockUsers = [
+        { _id: '1', username: 'user1', email: 'user1@example.com' },
+        { _id: '2', username: 'user2', email: 'user2@example.com' }
+      ];
+
+      User.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUsers)
+      });
+
+      await userController.getAllUsers(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: mockUsers
+        })
+      );
+    });
+
+    test('debe filtrar usuarios si es adminFundacion', async () => {
+      req.userRole = 'adminFundacion';
+
+      const mockUsers = [
+        { _id: '1', username: 'user1', role: 'adoptante' },
+        { _id: '2', username: 'user2', role: 'adminFundacion' }
+      ];
+
+      User.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUsers)
+      });
+
+      await userController.getAllUsers(req, res);
+
+      expect(User.find).toHaveBeenCalledWith({
+        role: { $in: ['adminFundacion', 'adoptante'] }
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test('debe denegar acceso si no es admin o adminFundacion', async () => {
+      req.userRole = 'adoptante';
+
+      await userController.getAllUsers(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'No tienes permiso para ver todos los usuarios'
+        })
+      );
+    });
+  });
+
+  describe('getUserById', () => {
+    test('debe obtener un usuario por ID si es admin', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'admin';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'adoptante'
+      };
+
+      User.findById = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser)
+      });
+
+      await userController.getUserById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: mockUser
+        })
+      );
+    });
+
+    test('debe retornar error 400 si ID es inválido', async () => {
+      req.params = { id: 'invalid-id' };
+      req.userRole = 'admin';
+
+      await userController.getUserById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'ID inválido'
+        })
+      );
+    });
+
+    test('debe retornar error 404 si usuario no existe', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'admin';
+
+      User.findById = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(null)
+      });
+
+      await userController.getUserById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Usuario no encontrado'
+        })
+      );
+    });
+
+    test('debe denegar acceso a adoptante que intenta ver otro perfil', async () => {
+      req.params = { id: '507f1f77bcf86cd799439012' };
+      req.userRole = 'adoptante';
+      req.userId = '507f1f77bcf86cd799439011';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439012',
+        username: 'otheruser',
+        role: 'adoptante'
+      };
+
+      User.findById = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser)
+      });
+
+      await userController.getUserById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'No tienes permiso para ver este perfil'
+        })
+      );
+    });
+  });
+
+  describe('createUser', () => {
+    test('debe crear un nuevo usuario', async () => {
+      req.body = {
+        username: 'newuser',
+        email: 'newuser@example.com',
+        password: 'password123',
+        role: 'adoptante'
+      };
+
+      const mockSave = jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439012',
+        username: 'newuser',
+        email: 'newuser@example.com',
+        role: 'adoptante'
+      });
+
+      User.mockImplementation(() => ({
+        save: mockSave
+      }));
+
+      await userController.createUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Usuario creado exitosamente'
+        })
+      );
+    });
+  });
+
+  describe('updateUser', () => {
+    test('debe actualizar un usuario si es admin', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'admin';
+      req.body = { username: 'updateduser' };
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'olduser',
+        role: 'adoptante'
+      };
+
+      const updatedUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'updateduser',
+        role: 'adoptante'
+      };
+
+      User.findById = jest.fn().mockResolvedValue(mockUser);
+      User.findByIdAndUpdate = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(updatedUser)
+      });
+
+      await userController.updateUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Usuario actualizado exitosamente'
+        })
+      );
+    });
+
+    test('debe denegar actualizar usuario admin si es adminFundacion', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'adminFundacion';
+      req.body = { username: 'updateduser' };
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'admin',
+        role: 'admin'
+      };
+
+      User.findById = jest.fn().mockResolvedValue(mockUser);
+
+      await userController.updateUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'No puedes modificar usuarios admin del sistema'
+        })
+      );
+    });
+
+    test('debe retornar error 400 si ID es inválido', async () => {
+      req.params = { id: 'invalid-id' };
+      req.userRole = 'admin';
+
+      await userController.updateUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'ID inválido'
+        })
+      );
+    });
+  });
+
+  describe('deleteUser', () => {
+    test('debe eliminar un usuario si es admin', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'admin';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'userToDelete'
+      };
+
+      User.findByIdAndDelete = jest.fn().mockResolvedValue(mockUser);
+
+      await userController.deleteUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Usuario eliminado exitosamente'
+        })
+      );
+    });
+
+    test('debe denegar eliminación si no es admin', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'adoptante';
+
+      await userController.deleteUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Solo el administrador del sistema puede eliminar usuarios'
+        })
+      );
+    });
+
+    test('debe retornar error 404 si usuario no existe', async () => {
+      req.params = { id: '507f1f77bcf86cd799439011' };
+      req.userRole = 'admin';
+
+      User.findByIdAndDelete = jest.fn().mockResolvedValue(null);
+
+      await userController.deleteUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Usuario no encontrado'
+        })
+      );
+    });
+  });
+
+  describe('getMiPerfil', () => {
+    test('debe obtener el perfil del usuario autenticado', async () => {
+      req.userId = '507f1f77bcf86cd799439011';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439011',
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'adoptante'
+      };
+
+      User.findById = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser)
+      });
+
+      await userController.getMiPerfil(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: mockUser
+        })
+      );
+    });
+  });
+});
